@@ -727,38 +727,74 @@ async function triggerGithubWorkflow(estateName, runId) {
 
 // ── Poll Dropbox for result ───────────────────────────────────────────────────
 async function pollDropbox(runId, timeoutSecs, intervalMs) {
-  const path    = `/preflight_${runId}.json`;
   const deadline = Date.now() + timeoutSecs * 1000;
+  const filename = `preflight_${runId}.json`;
 
   while (Date.now() < deadline) {
     await sleep(intervalMs);
     try {
-      const data = await downloadFromDropbox(path);
+      // List the app folder and find the file by name
+      const data = await findInDropbox(filename);
       if (data) return data;
-    } catch (_) { /* not ready yet */ }
+    } catch (err) {
+      console.warn(`Poll attempt failed: ${err.message}`);
+    }
   }
   throw new Error('Timed out waiting for Skylark result. Check GitHub Actions for errors.');
 }
 
-async function downloadFromDropbox(path) {
-  try {
-    const resp = await fetch('https://content.dropboxapi.com/2/files/download', {
-      method: 'POST',
-      headers: {
-        'Authorization':   `Bearer ${CONFIG.DROPBOX_TOKEN}`,
-        'Dropbox-API-Arg': JSON.stringify({ path }),
-      },
-    });
-    if (!resp.ok) {
-      const errText = await resp.text();
-      console.warn(`Dropbox poll ${resp.status}: ${errText.slice(0,200)}`);
-      return null;
-    }
-    return resp.json();
-  } catch (err) {
-    console.warn(`Dropbox fetch error: ${err.message}`);
+async function findInDropbox(filename) {
+  // List root of app folder (single folder access roots here automatically)
+  const listResp = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${CONFIG.DROPBOX_TOKEN}`,
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({ path: '', recursive: false }),
+  });
+
+  if (!listResp.ok) {
+    const t = await listResp.text();
+    console.warn(`list_folder ${listResp.status}: ${t.slice(0,200)}`);
     return null;
   }
+
+  const listing = await listResp.json();
+  const entry = (listing.entries || []).find(e =>
+    e['.tag'] === 'file' && e.name === filename
+  );
+
+  if (!entry) return null;
+
+  // Download the file using its path_lower
+  const dlResp = await fetch('https://content.dropboxapi.com/2/files/download', {
+    method: 'POST',
+    headers: {
+      'Authorization':   `Bearer ${CONFIG.DROPBOX_TOKEN}`,
+      'Dropbox-API-Arg': JSON.stringify({ path: entry.path_lower }),
+    },
+  });
+
+  if (!dlResp.ok) {
+    const t = await dlResp.text();
+    console.warn(`download ${dlResp.status}: ${t.slice(0,200)}`);
+    return null;
+  }
+
+  return dlResp.json();
+}
+
+async function downloadFromDropbox(path) {
+  const resp = await fetch('https://content.dropboxapi.com/2/files/download', {
+    method: 'POST',
+    headers: {
+      'Authorization':   `Bearer ${CONFIG.DROPBOX_TOKEN}`,
+      'Dropbox-API-Arg': JSON.stringify({ path }),
+    },
+  });
+  if (!resp.ok) return null;
+  return resp.json();
 }
 
 // ── Populate live data fields ─────────────────────────────────────────────────
