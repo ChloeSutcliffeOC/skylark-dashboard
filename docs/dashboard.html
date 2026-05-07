@@ -799,25 +799,26 @@ async function downloadFromDropbox(path) {
 
 // ── Populate live data fields ─────────────────────────────────────────────────
 function populateLiveData(d) {
-  setText('d-sunrise', d.sunrise || '—');
-  setText('d-sunset',  d.sunset  || '—');
-  setText('d-wind',    d.wind_dir && d.wind_surface ? `${d.wind_dir} ${d.wind_surface}kt` : '—');
-  setText('d-cloud',   d.cloud_cover   || '—');
-  setText('d-precip',  d.precipitation || '—');
-  setText('d-temp',    d.temp          || '—');
-  setText('d-space',   d.space_weather || '—');
-  setText('d-aero',    d.nearest_aerodrome || '—');
-  setText('d-metar',   d.metar || '—');
-  setText('d-taf',     d.taf   || '—');
+  // Fields use _ prefix in the JSON (e.g. _sunrise, _metar)
+  setText('d-sunrise', d._sunrise || '—');
+  setText('d-sunset',  d._sunset  || '—');
+  setText('d-wind',    d._wind_dir && d._wind_surface_kt ? `${d._wind_dir} ${d._wind_surface_kt}kt` : '—');
+  setText('d-cloud',   d._cloud_cover   || '—');
+  setText('d-precip',  d._precipitation || '—');
+  setText('d-temp',    d._temp          || '—');
+  setText('d-space',   d._space_weather_kp || '—');
+  setText('d-aero',    d['Name of Nearest Aerodrome'] || '—');
+  setText('d-metar',   d._metar || '—');
+  setText('d-taf',     d._taf   || '—');
 
   document.getElementById('data-timestamp').textContent =
-    `fetched ${new Date(d.generated_at).toLocaleTimeString('en-GB')}`;
+    `fetched ${new Date(d._generated_at).toLocaleTimeString('en-GB')}`;
   document.getElementById('live-dot').className = 'dot ok';
 
   // NOTAMs
   const list = document.getElementById('notam-list');
   list.innerHTML = '';
-  const notams = d.notams || [];
+  const notams = d._notams_list || [];
   document.getElementById('notam-count').textContent =
     notams.length ? `${notams.length} active` : '';
   document.getElementById('notam-dot').className =
