@@ -337,11 +337,11 @@
 
   /* ── Estate info ── */
   .estate-info-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: flex-start;
+    columns: 2;
+    column-gap: 10px;
   }
+
+  @media (max-width: 560px) { .estate-info-grid { columns: 1; } }
 
   .info-cell {
     background: var(--surface);
@@ -351,8 +351,9 @@
     display: flex;
     flex-direction: column;
     gap: 5px;
-    flex: 0 1 auto;
-    min-width: 160px;
+    break-inside: avoid;
+    margin-bottom: 10px;
+    width: 100%;
   }
 
   /* Category colours */
@@ -1343,7 +1344,12 @@ function onEstateChange() {
   if (e.nearest_aerodrome) cells += infoHtml('Nearest Aerodrome', '✈️', e.nearest_aerodrome, 'ic-airspace');
   if (e.nearest_atc || e.atc_phone) cells += contactHtml('Nearest ATC', '📡', e.atc_phone, e.nearest_atc);
   if (e.police_contact) cells += contactHtml('Police', '🚔', e.police_contact.replace('Police Scotland — ','').replace('Devon & Cornwall Police — ',''), e.police_contact.includes('Scotland') ? 'Police Scotland' : 'Devon & Cornwall Police');
-  if (e.airspace_manager_contact) cells += contactHtml('Airspace Manager', '🛂', '', e.airspace_manager_contact);
+  if (e.airspace_manager_contact) {
+    // Extract phone number from airspace manager string e.g. "Spadeadam Range ATC: 01697-749486 / 749488"
+    const amPhone = (e.airspace_manager_contact.match(/[\d\-\/ ]{7,}/) || [''])[0].trim();
+    const amName  = e.airspace_manager_contact.split(':')[0].trim();
+    cells += contactHtml('Airspace Manager', '🛂', amPhone, amName);
+  }
 
   // Airspace
   if (e.other_airspace) cells += infoHtml('Other Airspace', '🗺️', e.other_airspace, 'ic-airspace');
