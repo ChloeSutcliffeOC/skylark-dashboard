@@ -1594,9 +1594,11 @@ function visStatus(visCat) {
 }
 
 function kpStatus(kp) {
-  if (!kp) return 'green';
-  if (kp === '5 or above') return 'red';
-  if (kp === '4')           return 'orange';
+  if (kp === '' || kp == null) return 'green';
+  const v = parseFloat(kp);
+  if (isNaN(v))  return 'green';
+  if (v >= 5)    return 'red';
+  if (v >= 4)    return 'orange';
   return 'green';
 }
 
@@ -1693,16 +1695,16 @@ function applyOnsiteFetchData(d) {
   }
 
   // ── Space weather ─────────────────────────────────────────────────────────
-  if (d.field_102) {
-    const kpLabels = {
-      '0 to 3':    'Kp 0–3 — Low (within limits)',
-      '4':         'Kp 4 — Moderate (monitor)',
-      '5 or above':'Kp 5+ — High (outside limits)',
-    };
+  if (d.field_102 !== undefined && d.field_102 !== '') {
+    const kp    = parseFloat(d.field_102);
+    const label = isNaN(kp) ? d.field_102
+      : kp >= 5 ? `Kp ${d.field_102} — High (outside limits)`
+      : kp >= 4 ? `Kp ${d.field_102} — Moderate (monitor)`
+      : `Kp ${d.field_102} — Low (within limits)`;
     const display = document.getElementById('f-space-display');
     const hidden  = document.getElementById('f-space-hidden');
     if (display) {
-      display.value = kpLabels[d.field_102] || d.field_102;
+      display.value = label;
       const ks = kpStatus(d.field_102);
       setAutoFieldColor(display, ks);
       allStatuses.push(ks);
