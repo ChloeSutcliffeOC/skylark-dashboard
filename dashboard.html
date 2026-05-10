@@ -374,7 +374,7 @@
     </div>
     <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
       <p style="font-size:13px;color:var(--muted);line-height:1.6">
-        These are stored only in this browser — they are never sent anywhere except directly to GitHub and Dropbox.
+        These are stored only in this browser — they are never sent anywhere except directly to GitHub.
         You only need to do this once per device.
       </p>
       <div>
@@ -388,10 +388,6 @@
       <div>
         <label for="setup-gh-repo">GitHub repo name</label>
         <input type="text" id="setup-gh-repo" placeholder="skylark" value="skylark">
-      </div>
-      <div>
-        <label for="setup-db-token">Dropbox Access Token (sl.u...)</label>
-        <input type="password" id="setup-db-token" placeholder="sl.u.xxxxxxxxxxxx">
       </div>
       <button onclick="saveSetup()" style="background:var(--accent);color:#0d1117;border:none;border-radius:8px;padding:12px;font-family:var(--mono);font-size:13px;font-weight:500;cursor:pointer">
         Save and continue
@@ -409,7 +405,6 @@
         GITHUB_TOKEN:  localStorage.getItem('SKY_GH_TOKEN')  || '',
         GITHUB_OWNER:  localStorage.getItem('SKY_GH_OWNER')  || '',
         GITHUB_REPO:   localStorage.getItem('SKY_GH_REPO')   || 'skylark',
-        DROPBOX_TOKEN: localStorage.getItem('SKY_DB_TOKEN')  || '',
         ESTATES: [
           "Blackburn & Hartsgarth",
           "Invergeldie",
@@ -608,7 +603,7 @@
     </div>
     <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
       <div id="submit-info" class="info-bar"></div>
-      <button id="submit-btn" onclick="submitRecord()" disabled>Save pre-flight record to Dropbox</button>
+      <button id="submit-btn" onclick="submitRecord()" disabled>Save pre-flight record</button>
     </div>
   </div>
 
@@ -625,25 +620,23 @@ function saveSetup() {
   const gh_token = document.getElementById('setup-gh-token').value.trim();
   const gh_owner = document.getElementById('setup-gh-owner').value.trim();
   const gh_repo  = document.getElementById('setup-gh-repo').value.trim();
-  const db_token = document.getElementById('setup-db-token').value.trim();
   const err      = document.getElementById('setup-error');
 
-  if (!gh_token || !gh_owner || !db_token) {
-    err.textContent = 'GitHub token, username and Dropbox token are all required.';
+  if (!gh_token || !gh_owner) {
+    err.textContent = 'GitHub token and username are required.';
     err.style.display = 'block';
     return;
   }
   localStorage.setItem('SKY_GH_TOKEN',  gh_token);
   localStorage.setItem('SKY_GH_OWNER',  gh_owner);
   localStorage.setItem('SKY_GH_REPO',   gh_repo || 'skylark');
-  localStorage.setItem('SKY_DB_TOKEN',  db_token);
   CONFIG = loadConfig();
   document.getElementById('setup-card').style.display = 'none';
   document.getElementById('main-content').style.display = '';
 }
 
 function checkSetup() {
-  const ready = CONFIG.GITHUB_TOKEN && CONFIG.GITHUB_OWNER && CONFIG.DROPBOX_TOKEN;
+  const ready = CONFIG.GITHUB_TOKEN && CONFIG.GITHUB_OWNER;
   if (!ready) {
     document.getElementById('setup-card').style.display = 'block';
     document.getElementById('main-content').style.display = 'none';
@@ -729,13 +722,23 @@ async function triggerGithubWorkflow(estateName, runId) {
 async function pollDropbox(runId, timeoutSecs, intervalMs) {
   const deadline = Date.now() + timeoutSecs * 1000;
   const filename = `preflight_${runId}.json`;
+  const url = `https://api.github.com/repos/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/contents/preflight_results/${filename}`;
 
   while (Date.now() < deadline) {
     await sleep(intervalMs);
     try {
-      // List the app folder and find the file by name
-      const data = await findInDropbox(filename);
-      if (data) return data;
+      const resp = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${CONFIG.GITHUB_TOKEN}`,
+          'Accept':        'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      });
+      if (resp.status === 404) continue;
+      if (!resp.ok) { console.warn(`GitHub poll ${resp.status}`); continue; }
+      const meta = await resp.json();
+      const decoded = atob(meta.content.replace(/\n/g, ''));
+      return JSON.parse(decoded);
     } catch (err) {
       console.warn(`Poll attempt failed: ${err.message}`);
     }
@@ -743,167 +746,7 @@ async function pollDropbox(runId, timeoutSecs, intervalMs) {
   throw new Error('Timed out waiting for Skylark result. Check GitHub Actions for errors.');
 }
 
-async function findInDropbox(filename) {
-  // List root of app folder (single folder access roots here automatically)
-  const listResp = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${CONFIG.DROPBOX_TOKEN}`,
-      'Content-Type':  'application/json',
-    },
-    body: JSON.stringify({ path: '', recursive: false }),
-  });
 
-  if (!listResp.ok) {
-    const t = await listResp.text();
-    console.warn(`list_folder ${listResp.status}: ${t.slice(0,200)}`);
-    return null;
-  }
-
-  const listing = await listResp.json();
-  const entry = (listing.entries || []).find(e =>
-    e['.tag'] === 'file' && e.name === filename
-  );
-
-  if (!entry) return null;
-
-  // Download the file using its path_lower
-  const dlResp = await fetch('https://content.dropboxapi.com/2/files/download', {
-    method: 'POST',
-    headers: {
-      'Authorization':   `Bearer ${CONFIG.DROPBOX_TOKEN}`,
-      'Dropbox-API-Arg': JSON.stringify({ path: entry.path_lower }),
-    },
-  });
-
-  if (!dlResp.ok) {
-    const t = await dlResp.text();
-    console.warn(`download ${dlResp.status}: ${t.slice(0,200)}`);
-    return null;
-  }
-
-  return dlResp.json();
-}
-
-async function downloadFromDropbox(path) {
-  const resp = await fetch('https://content.dropboxapi.com/2/files/download', {
-    method: 'POST',
-    headers: {
-      'Authorization':   `Bearer ${CONFIG.DROPBOX_TOKEN}`,
-      'Dropbox-API-Arg': JSON.stringify({ path }),
-    },
-  });
-  if (!resp.ok) return null;
-  return resp.json();
-}
-
-// ── Populate live data fields ─────────────────────────────────────────────────
-function populateLiveData(d) {
-  // Fields use _ prefix in the JSON (e.g. _sunrise, _metar)
-  setText('d-sunrise', d._sunrise || '—');
-  setText('d-sunset',  d._sunset  || '—');
-  setText('d-wind',    d._wind_dir && d._wind_surface_kt ? `${d._wind_dir} ${d._wind_surface_kt}kt` : '—');
-  setText('d-cloud',   d._cloud_cover   || '—');
-  setText('d-precip',  d._precipitation || '—');
-  setText('d-temp',    d._temp          || '—');
-  setText('d-space',   d._space_weather_kp || '—');
-  setText('d-aero',    d['Name of Nearest Aerodrome'] || '—');
-  setText('d-metar',   d._metar || '—');
-  setText('d-taf',     d._taf   || '—');
-
-  document.getElementById('data-timestamp').textContent =
-    `fetched ${new Date(d._generated_at).toLocaleTimeString('en-GB')}`;
-  document.getElementById('live-dot').className = 'dot ok';
-
-  // NOTAMs
-  const list = document.getElementById('notam-list');
-  list.innerHTML = '';
-  const notams = d._notams_list || [];
-  document.getElementById('notam-count').textContent =
-    notams.length ? `${notams.length} active` : '';
-  document.getElementById('notam-dot').className =
-    `dot ${notams.length ? 'warn' : 'ok'}`;
-
-  if (notams.length === 0) {
-    list.innerHTML = '<div class="notam-item none">No NOTAMs within operational area</div>';
-  } else {
-    notams.forEach(n => {
-      const el = document.createElement('div');
-      el.className = 'notam-item';
-      el.textContent = n;
-      list.appendChild(el);
-    });
-  }
-}
-
-// ── IMSAFE ────────────────────────────────────────────────────────────────────
-function updateImsafe() {
-  const boxes   = document.querySelectorAll('#imsafe-grid input[type=checkbox]');
-  const checked = [...boxes].filter(b => b.checked).length;
-  const status  = document.getElementById('imsafe-status');
-  const dot     = document.getElementById('imsafe-dot');
-  status.textContent = `${checked} / 6 confirmed`;
-  dot.className = checked === 6 ? 'dot ok' : checked > 0 ? 'dot warn' : 'dot';
-}
-
-// ── Submit record ─────────────────────────────────────────────────────────────
-async function submitRecord() {
-  if (!skylarkData) {
-    showSubmitInfo('Run Skylark first to load live data.', 'error');
-    return;
-  }
-
-  const imsafeBoxes = document.querySelectorAll('#imsafe-grid input[type=checkbox]');
-  const imsafeAll   = [...imsafeBoxes].every(b => b.checked);
-  if (!imsafeAll) {
-    showSubmitInfo('Complete all 6 IMSAFE items before saving.', 'error');
-    return;
-  }
-
-  document.getElementById('submit-btn').disabled = true;
-  showSubmitInfo('Saving to Dropbox…', '');
-
-  const record = {
-    ...skylarkData,
-    pilot:               document.getElementById('f-pilot').value,
-    payload_operator:    document.getElementById('f-payload-op').value,
-    takeoff_time:        document.getElementById('f-takeoff-time').value,
-    finish_time:         document.getElementById('f-finish-time').value,
-    tola_lat:            document.getElementById('f-tola-lat').value,
-    tola_lon:            document.getElementById('f-tola-lon').value,
-    visual_observer:     document.getElementById('f-vo').value,
-    safety_marshal:      document.getElementById('f-marshal').value,
-    wind_at_altitude:    document.getElementById('f-wind-alt').value,
-    hazard_brief:        document.getElementById('f-hazards-brief').value,
-    emergency_procedure: document.getElementById('f-emergency').value,
-    ra_result:           document.getElementById('f-ra-result').value,
-    mobile_signal:       document.getElementById('f-mobile').value,
-    fit_to_fly:          document.getElementById('f-fit').value,
-    imsafe_complete:     true,
-    submitted_at:        new Date().toISOString(),
-  };
-
-  const filename = `completed_${runId || Date.now()}.json`;
-  const path     = `/completed/${filename}`;
-
-  try {
-    const resp = await fetch('https://content.dropboxapi.com/2/files/upload', {
-      method: 'POST',
-      headers: {
-        'Authorization':   `Bearer ${CONFIG.DROPBOX_TOKEN}`,
-        'Content-Type':    'application/octet-stream',
-        'Dropbox-API-Arg': JSON.stringify({ path, mode: 'overwrite' }),
-      },
-      body: JSON.stringify(record, null, 2),
-    });
-    if (!resp.ok) throw new Error(`Dropbox upload failed: ${resp.status}`);
-    showSubmitInfo(`Saved as ${filename}`, 'ok');
-    document.getElementById('submit-dot').className = 'dot ok';
-  } catch (err) {
-    showSubmitInfo(`Save failed: ${err.message}`, 'error');
-    document.getElementById('submit-btn').disabled = false;
-  }
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function setText(id, val) {
