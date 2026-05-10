@@ -443,6 +443,30 @@
 
   .hidden { display: none !important; }
 
+  /* Auto-filled fields — clearly distinct from manual inputs */
+  .auto-field {
+    background: #e8f0e8 !important;
+    border-color: #4caf70 !important;
+    color: #166a2a !important;
+    font-style: italic;
+  }
+  .auto-field::placeholder { color: #7ec8a0; font-style: italic; }
+  /* Small "auto" badge shown via label */
+  .auto-label::after {
+    content: ' AUTO';
+    font-size: 9px;
+    font-family: var(--mono);
+    color: #166a2a;
+    background: #c8ecd1;
+    border: 1px solid #4caf70;
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 6px;
+    vertical-align: middle;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+  }
+
   #status-badge.running { color:#e8a838!important; border-color:#e8a838!important; animation:pulse 1.4s infinite; }
   #status-badge.ok      { color:#3fb950!important; border-color:#3fb950!important; }
   #status-badge.error   { color:#f85149!important; border-color:#f85149!important; }
@@ -579,7 +603,8 @@
         </div>
         <div>
           <div class="field-label">Mission ID</div>
-          <input type="text" id="f-mission-id" placeholder="e.g. OC_CS_BH_25_05">
+          <input type="text" id="f-mission-id" placeholder="">
+          <div style="font-size:11px;color:var(--faint);font-family:var(--mono);margin-top:5px">e.g. OC_CS_BH_26_05</div>
         </div>
       </div>
       <div>
@@ -587,7 +612,7 @@
         <input type="datetime-local" id="f-datetime">
       </div>
       <div>
-        <div class="field-label">Location of Operation</div>
+        <div class="field-label auto-label">Location of Operation</div>
         <input type="text" id="f-location" readonly style="background:var(--surface2);color:var(--muted)" placeholder="Auto-filled from estate coordinates on selection">
       </div>
     </div>
@@ -771,12 +796,12 @@
     <div class="card-body">
       <div class="two-col">
         <div>
-          <div class="field-label">Wind Strength (kt)</div>
-          <input type="number" id="f-wind-strength" placeholder="e.g. 12" min="0" max="100">
+          <div class="field-label auto-label">Wind Strength (m/s)</div>
+          <input type="number" id="f-wind-strength" placeholder="" step="0.1" class="auto-field" readonly>
         </div>
         <div>
-          <div class="field-label">Wind Direction</div>
-          <input type="text" id="f-wind-dir" placeholder="e.g. NW">
+          <div class="field-label auto-label">Wind Direction</div>
+          <input type="text" id="f-wind-dir" placeholder="" class="auto-field" readonly>
         </div>
       </div>
       <div>
@@ -796,17 +821,17 @@
       </div>
       <div class="two-col">
         <div>
-          <div class="field-label">Precipitation</div>
-          <input type="text" id="f-precip" placeholder="e.g. None / Light rain">
+          <div class="field-label auto-label">Precipitation</div>
+          <input type="text" id="f-precip" placeholder="" class="auto-field" readonly>
         </div>
         <div>
-          <div class="field-label">Temperature (°C)</div>
-          <input type="number" id="f-temp" placeholder="e.g. 12" step="0.1">
+          <div class="field-label auto-label">Temperature (°C)</div>
+          <input type="number" id="f-temp" placeholder="" step="0.1" class="auto-field" readonly>
         </div>
       </div>
       <div>
-        <div class="field-label">Visibility</div>
-        <select id="f-visibility">
+        <div class="field-label auto-label">Visibility</div>
+        <select id="f-visibility" class="auto-field">
           <option value="">— Select —</option>
           <option value="Excellent (>10 km) – unrestrict">Excellent (&gt;10 km) — unrestricted VLOS</option>
           <option value="Good (5–10 km) – clear VLOS">Good (5–10 km) — clear VLOS</option>
@@ -816,12 +841,9 @@
         </select>
       </div>
       <div>
-        <div class="field-label">Space Weather (Kp Index)</div>
-        <div class="toggle-group">
-          <button class="toggle-btn" onclick="setKp('0 to 3',this)">0 – 3</button>
-          <button class="toggle-btn" onclick="setKp('4',this)">4</button>
-          <button class="toggle-btn" onclick="setKp('5 or above',this)">5 or above</button>
-        </div>
+        <div class="field-label auto-label">Space Weather (Kp Index)</div>
+        <input type="text" id="f-space-display" class="auto-field" readonly placeholder="">
+        <input type="hidden" id="f-space-hidden">
       </div>
       <div>
         <div class="field-label">Are All Conditions Within Limits?</div>
@@ -859,15 +881,13 @@
         </div>
       </div>
       <div>
-        <div class="field-label">Are Any NOTAMs Published for This Location?</div>
-        <div class="toggle-group">
-          <button class="toggle-btn" onclick="setToggle('f-notams','Yes',this)">Yes</button>
-          <button class="toggle-btn" onclick="setToggle('f-notams','No',this)">No</button>
-        </div>
+        <div class="field-label auto-label">Are Any NOTAMs Published for This Location?</div>
+        <input type="text" id="f-notams-display" class="auto-field" readonly placeholder="">
+        <input type="hidden" id="f-notams-hidden">
       </div>
       <div>
-        <div class="field-label">NOTAM Details Affecting UAS Operation</div>
-        <textarea id="f-notam-details" placeholder="Summarise relevant NOTAMs or write N/A"></textarea>
+        <div class="field-label auto-label">NOTAM Details Affecting UAS Operation</div>
+        <textarea id="f-notam-details" class="auto-field" readonly placeholder="Auto-filled when estate selected"></textarea>
       </div>
       <div>
         <div class="field-label">Is the Airspace Clear?</div>
@@ -1438,7 +1458,7 @@ async function fetchMetOfficeDirect(lat, lon) {
 
   const precipPct = best.probOfPrecipitation ?? 0;
   return {
-    wind_strength:  toKt(best.windSpeed10m),
+    wind_strength:  best.windSpeed10m != null ? String(Math.round(best.windSpeed10m * 10) / 10) : '',
     wind_direction: toCompass(best.windDirectionFrom10m),
     wind_gust_kt:   toKt(best.windGustSpeed10m),
     temperature:    best.screenTemperature != null ? String(Math.round(best.screenTemperature * 10) / 10) : '',
@@ -1560,22 +1580,15 @@ function applyOnsiteFetchData(d) {
     evalConditionsGate();
   }
 
-  // Space weather — click the right Kp button
+  // Space weather — auto-fill display + hidden field
   if (d.field_102) {
-    const kpMap = { '0 to 3': 0, '4': 1, '5 or above': 2 };
-    const idx   = kpMap[d.field_102];
-    const btns  = document.querySelectorAll('#card-conditions .toggle-group button');
-    // Find the Kp group (space weather buttons are 0-3, 4, 5 or above)
-    const kpGroup = Array.from(document.querySelectorAll('.toggle-group')).find(g =>
-      g.textContent.includes('0 – 3') && g.textContent.includes('5 or above')
-    );
-    if (kpGroup) {
-      const kpBtns = kpGroup.querySelectorAll('.toggle-btn');
-      const kpValues = ['0 to 3', '4', '5 or above'];
-      kpBtns.forEach((btn, i) => {
-        if (kpValues[i] === d.field_102) setKp(kpValues[i], btn);
-      });
-    }
+    const kpLabels = { '0 to 3': 'Kp 0–3 (Low — within limits)', '4': 'Kp 4 (Moderate — monitor)', '5 or above': 'Kp 5+ (High — outside limits)' };
+    const display = document.getElementById('f-space-display');
+    const hidden  = document.getElementById('f-space-hidden');
+    if (display) display.value = kpLabels[d.field_102] || d.field_102;
+    if (hidden)  hidden.value  = d.field_102;
+    toggleState['f-space'] = d.field_102;
+    evalConditionsGate();
   }
 
   // NOTAMs
@@ -1584,20 +1597,19 @@ function applyOnsiteFetchData(d) {
     notamEl.value = d.notam_details_that_affect_the_u;
   }
 
-  // Are NOTAMs published — click Yes/No button
+  // Are NOTAMs published — auto-fill display + hidden field
   if (d.are_any_notams_published_for_th) {
-    const notamsGroup = Array.from(document.querySelectorAll('.toggle-group')).find(g => {
-      const parent = g.closest('.card-body');
-      return parent && parent.textContent.includes('Are Any NOTAMs Published');
-    });
-    if (notamsGroup) {
-      const btns = notamsGroup.querySelectorAll('.toggle-btn');
-      btns.forEach(btn => {
-        if (btn.textContent.trim() === d.are_any_notams_published_for_th) {
-          setToggle('f-notams', d.are_any_notams_published_for_th, btn);
-        }
-      });
-    }
+    const display = document.getElementById('f-notams-display');
+    const hidden  = document.getElementById('f-notams-hidden');
+    if (display) display.value = d.are_any_notams_published_for_th;
+    if (hidden)  hidden.value  = d.are_any_notams_published_for_th;
+    toggleState['f-notams'] = d.are_any_notams_published_for_th;
+  }
+
+  // NOTAM details
+  if (d.notam_details_that_affect_the_u !== undefined) {
+    const el = document.getElementById('f-notam-details');
+    if (el) el.value = d.notam_details_that_affect_the_u || 'No NOTAMs affecting this operation';
   }
 
   // NOTAM required flag — show in a dedicated info cell if it exists
@@ -1811,7 +1823,7 @@ function evalCrewGate() {
 
 function evalConditionsGate() {
   // All condition fields must be answered
-  const space  = getToggle('f-space');
+  const space  = document.getElementById('f-space-hidden')?.value || getToggle('f-space');
   const within = getToggle('f-within-limits');
   const vis    = document.getElementById('f-visibility').value;
   if (!space || !within || !vis) { renderGate('gate-conditions',null); return; }
@@ -1948,12 +1960,12 @@ function buildOnsiteRecord() {
     field_28:                document.getElementById('f-precip').value.trim(),
     temperature:             document.getElementById('f-temp').value,
     field_101:               document.getElementById('f-visibility').value,
-    field_102:               getToggle('f-space'),
+    field_102:               document.getElementById('f-space-hidden')?.value || getToggle('f-space'),
     are_all_conditions_within_limit: getToggle('f-within-limits'),
     field_33:                areaGate('conditions'),
     have_all_notifications_been_iss: getToggle('f-notif'),
     have_all_permissions_been_obtai: getToggle('f-perms'),
-    are_any_notams_published_for_th: getToggle('f-notams'),
+    are_any_notams_published_for_th: document.getElementById('f-notams-hidden')?.value || getToggle('f-notams'),
     notam_details_that_affect_the_u: document.getElementById('f-notam-details').value.trim(),
     is_the_airspace_clear:           getToggle('f-airspace-clear'),
     field_39:                document.getElementById('gate-airspace').classList.contains('gate-go') ? 'GO' : 'NO GO',
