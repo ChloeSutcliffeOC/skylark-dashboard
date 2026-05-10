@@ -1349,7 +1349,7 @@ function onEstateChange() {
   const cardDefs = [];
   if (e.nearest_aerodrome) cardDefs.push(infoHtml('Nearest Aerodrome', '✈️', e.nearest_aerodrome, 'ic-airspace'));
   if (e.nearest_atc || e.atc_phone) cardDefs.push(contactHtml('Nearest ATC', '📡', e.atc_phone, e.nearest_atc));
-  if (e.police_contact) cardDefs.push(contactHtml('Police', '🚔', e.police_contact.replace('Police Scotland — ','').replace('Devon & Cornwall Police — ',''), e.police_contact.includes('Scotland') ? 'Police Scotland' : 'Devon & Cornwall Police'));
+
   if (e.airspace_manager_contact) {
     const amPhone = (e.airspace_manager_contact.match(/[\d\-\/ ]{7,}/) || [''])[0].trim();
     const amName  = e.airspace_manager_contact.split(':')[0].trim();
@@ -1861,20 +1861,23 @@ function applyOnsiteFetchData(d) {
 
   // ── NOTAM required flag ───────────────────────────────────────────────────
   if (d.notam_required) {
-    const grid = document.getElementById('estate-info-grid');
-    if (grid) {
+    // Inject into first column of the estate info grid, not the grid root
+    const col = document.querySelector('.estate-info-col');
+    if (col) {
       let cell = document.getElementById('notam-required-cell');
       if (!cell) {
         cell = document.createElement('div');
         cell.id = 'notam-required-cell';
-        cell.className = 'info-cell';
-        grid.appendChild(cell);
+        col.insertBefore(cell, col.firstChild); // Put it first — most important
       }
       const isRequired = d.notam_required.startsWith('Yes');
-      cell.style.borderColor = isRequired ? 'var(--danger)' : 'var(--ok)';
+      cell.className = `info-cell ${isRequired ? 'ic-notam' : 'ic-airspace'}`;
       cell.innerHTML = `
-        <div class="ic-label">NOTAM Required?</div>
-        <div class="ic-value" style="color:${isRequired?'var(--danger)':'var(--ok)'};font-weight:700">${d.notam_required}</div>
+        <div class="ic-header">
+          <span class="ic-icon">${isRequired ? '🔴' : '🟢'}</span>
+          <span class="ic-label">NOTAM Required?</span>
+        </div>
+        <div class="ic-value" style="font-weight:600">${d.notam_required}</div>
       `;
     }
   }
