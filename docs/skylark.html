@@ -737,7 +737,8 @@ async function pollDropbox(runId, timeoutSecs, intervalMs) {
       if (resp.status === 404) continue;
       if (!resp.ok) { console.warn(`GitHub poll ${resp.status}`); continue; }
       const meta = await resp.json();
-      const decoded = atob(meta.content.replace(/\n/g, ''));
+      const base64 = meta.content.replace(/\n/g, '');
+      const decoded = decodeURIComponent(Array.from(atob(base64), c => '%' + c.charCodeAt(0).toString(16).padStart(2,'0')).join(''));
       return JSON.parse(decoded);
     } catch (err) {
       console.warn(`Poll attempt failed: ${err.message}`);
