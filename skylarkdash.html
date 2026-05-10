@@ -1503,14 +1503,9 @@ async function triggerOnsiteFetch(estateName) {
   showFetchStatus('⏳ Fetching live weather…', 'warn');
 
   // Launch both fetches simultaneously — don't await each other
-  const weatherPromise = Promise.all([
-    fetchMetOfficeDirect(lat, lon),
-    fetchKpDirect(),
-  ]).then(([met, kp]) => {
-    if (kp !== null) met.field_102 = String(kp);
+  const weatherPromise = fetchMetOfficeDirect(lat, lon).then(met => {
     applyOnsiteFetchData(met);
-    const kpMsg = kp !== null ? ' and space weather' : '';
-    showFetchStatus(`✓ Weather${kpMsg} loaded. Fetching NOTAMs (~60s)…`, 'ok');
+    showFetchStatus('✓ Weather loaded. Fetching NOTAMs and space weather (~60s)…', 'ok');
   }).catch(err => {
     showFetchStatus(`⚠ Weather fetch failed: ${err.message}. Fetching NOTAMs…`, 'warn');
   });
@@ -1540,8 +1535,6 @@ async function triggerOnsiteFetch(estateName) {
     await weatherPromise;
     const data = await pollOnsiteFetch(estateName, 120, 5000);
     if (data._status === 'error') throw new Error(data._error || 'Fetch failed');
-    // Don't overwrite space weather — already fetched live from NOAA
-    delete data.field_102;
     applyOnsiteFetchData(data);
     showFetchStatus('✓ All live data loaded — weather, NOTAMs and space weather.', 'ok');
   }).catch(err => {
@@ -1720,24 +1713,39 @@ function applyOnsiteFetchData(d) {
   }
 
   // ── Space weather ─────────────────────────────────────────────────────────
-  if (d.field_102 != null && String(d.field_102).trim() !== '') {
-    const kpRaw = String(d.field_102).trim();
-    const kp    = parseFloat(kpRaw);
-    const label = isNaN(kp) ? kpRaw
-      : kp >= 5 ? `Kp ${kpRaw} — High (outside limits)`
-      : kp >= 4 ? `Kp ${kpRaw} — Moderate (monitor)`
-      : `Kp ${kpRaw} — Low (within limits)`;
+  {
+    const kpRaw   = d.field_102 != null ? String(d.field_102).trim() : '';
     const display = document.getElementById('f-space-display');
     const hidden  = document.getElementById('f-space-hidden');
     if (display) {
-      display.value = label;
-      const ks = kpStatus(kpRaw);
-      setAutoFieldColor(display, ks);
-      allStatuses.push(ks);
+      if (kpRaw === '' || kpRaw === '0') {
+        // 0 could be genuine or a fetch failure — flag it
+        if (kpRaw === '0') {
+          display.value = 'Kp 0 — Low (within limits)';
+          setAutoFieldColor(display, 'green');
+          allStatuses.push('green');
+          if (hidden) hidden.value = '0';
+          toggleState['f-space'] = '0';
+        } else {
+          display.value = 'Unable to fetch — check manually';
+          setAutoFieldColor(display, 'red');
+          allStatuses.push('red');
+        }
+      } else {
+        const kp    = parseFloat(kpRaw);
+        const label = isNaN(kp) ? kpRaw
+          : kp >= 5 ? `Kp ${kpRaw} — High (outside limits)`
+          : kp >= 4 ? `Kp ${kpRaw} — Moderate (monitor)`
+          : `Kp ${kpRaw} — Low (within limits)`;
+        display.value = label;
+        const ks = kpStatus(kpRaw);
+        setAutoFieldColor(display, ks);
+        allStatuses.push(ks);
+        if (hidden) hidden.value = kpRaw;
+        toggleState['f-space'] = kpRaw;
+      }
+      evalConditionsGate();
     }
-    if (hidden) hidden.value = kpRaw;
-    toggleState['f-space'] = kpRaw;
-    evalConditionsGate();
   }
 
   // ── NOTAMs published ──────────────────────────────────────────────────────
