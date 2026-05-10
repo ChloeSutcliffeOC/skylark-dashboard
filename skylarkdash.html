@@ -445,7 +445,7 @@
 
   /* Auto-filled fields — clearly distinct from manual inputs */
   .auto-field {
-    background: #e8f0e8 !important;
+    background: #f0f7f0 !important;
     border-color: #4caf70 !important;
     color: #166a2a !important;
     font-style: italic;
@@ -1462,7 +1462,8 @@ async function fetchMetOfficeDirect(lat, lon) {
     wind_direction: toCompass(best.windDirectionFrom10m),
     wind_gust_kt:   toKt(best.windGustSpeed10m),
     temperature:    best.screenTemperature != null ? String(Math.round(best.screenTemperature * 10) / 10) : '',
-    precipitation:  precipPct < 20 ? 'None' : `Possible (${precipPct}% prob)`,
+    precipitation:  precipPct === 0 ? 'None' : `Possible (${precipPct}% prob)`,
+    precip_prob:    precipPct,
     visibility_cat: toVisCat(best.visibility),
     visibility_m:   String(best.visibility ?? ''),
     met_time:       best.time,
@@ -1555,68 +1556,194 @@ async function pollOnsiteFetch(estateName, timeoutSecs, intervalMs) {
   throw new Error('Timed out waiting for NOTAMs. Check GitHub Actions.');
 }
 
+// ── Traffic light thresholds ──────────────────────────────────────────────────
+// Returns 'green', 'orange', or 'red'
+function windStatus(ms) {
+  const v = parseFloat(ms);
+  if (isNaN(v))  return 'green';
+  if (v > 12)    return 'red';
+  if (v >= 10)   return 'orange';
+  return 'green';
+}
+
+function precipStatus(precipStr) {
+  // precipStr is "None" or "Possible (XX% prob)"
+  const match = precipStr && precipStr.match(/(\d+)%/);
+  const pct   = match ? parseInt(match[1]) : 0;
+  if (pct === 0 || precipStr === 'None') return 'green';
+  if (pct <= 50) return 'orange';
+  return 'red';
+}
+
+function tempStatus(c) {
+  const v = parseFloat(c);
+  if (isNaN(v))      return 'green';
+  // DJI M350T: -20°C to 50°C operating range
+  // Orange: <0°C or >40°C (getting close to limits)
+  // Red: outside operating range
+  if (v < -20 || v > 50) return 'red';
+  if (v < 0   || v > 40) return 'orange';
+  return 'green';
+}
+
+function visStatus(visCat) {
+  if (!visCat) return 'green';
+  if (visCat.includes('Very poor')) return 'red';
+  if (visCat.includes('Poor'))      return 'orange';
+  return 'green';
+}
+
+function kpStatus(kp) {
+  if (!kp) return 'green';
+  if (kp === '5 or above') return 'red';
+  if (kp === '4')           return 'orange';
+  return 'green';
+}
+
+function notamStatus(hasNotams) {
+  if (!hasNotams) return 'green';
+  return hasNotams === 'Yes' ? 'orange' : 'green';
+}
+
+// Apply traffic light colour to an auto-field element
+function setAutoFieldColor(el, status) {
+  if (!el) return;
+  const styles = {
+    green:  { bg: '#e8f5e9', border: '#4caf70', color: '#166a2a' },
+    orange: { bg: '#fff3e0', border: '#b45309', color: '#7c3a06' },
+    red:    { bg: '#fde8e8', border: '#991b1b', color: '#6b1212' },
+  };
+  const s = styles[status] || styles.green;
+  el.style.background   = s.bg;
+  el.style.borderColor  = s.border;
+  el.style.color        = s.color;
+}
+
+// Derive overall "within limits" from all statuses
+function deriveWithinLimits(statuses) {
+  if (statuses.includes('red'))    return 'No';
+  if (statuses.includes('orange')) return 'Borderline';
+  return 'Yes';
+}
+
+// Auto-click the correct "within limits" button
+function autoSetWithinLimits(value) {
+  const map = { 'Yes': 'f-within-limits-yes', 'Borderline': 'f-within-limits-borderline', 'No': 'f-within-limits-no' };
+  // Find the toggle group for within limits
+  const groups = document.querySelectorAll('.toggle-group');
+  groups.forEach(group => {
+    const btns = Array.from(group.querySelectorAll('.toggle-btn'));
+    const labels = btns.map(b => b.textContent.trim());
+    if (labels.includes('Yes') && labels.includes('Borderline') && labels.includes('No')) {
+      btns.forEach(btn => {
+        if (btn.textContent.trim() === value) {
+          setToggle('f-within-limits', value, btn);
+          evalConditionsGate();
+        }
+      });
+    }
+  });
+}
+
 function applyOnsiteFetchData(d) {
-  // Wind
+  const allStatuses = [];
+
+  // ── Wind ──────────────────────────────────────────────────────────────────
   const windEl = document.getElementById('f-wind-strength');
-  if (windEl && d.wind_strength) windEl.value = d.wind_strength;
+  if (windEl && d.wind_strength !== undefined && d.wind_strength !== '') {
+    windEl.value = d.wind_strength;
+    const ws = windStatus(d.wind_strength);
+    setAutoFieldColor(windEl, ws);
+    allStatuses.push(ws);
+  }
   const windDirEl = document.getElementById('f-wind-dir');
-  if (windDirEl && d.wind_direction) windDirEl.value = d.wind_direction;
+  if (windDirEl && d.wind_direction) {
+    windDirEl.value = d.wind_direction;
+    setAutoFieldColor(windDirEl, 'green');
+  }
 
-  // Temperature
+  // ── Temperature ───────────────────────────────────────────────────────────
   const tempEl = document.getElementById('f-temp');
-  if (tempEl && d.temperature) tempEl.value = d.temperature;
+  if (tempEl && d.temperature !== undefined && d.temperature !== '') {
+    tempEl.value = d.temperature;
+    const ts = tempStatus(d.temperature);
+    setAutoFieldColor(tempEl, ts);
+    allStatuses.push(ts);
+  }
 
-  // Precipitation
+  // ── Precipitation ─────────────────────────────────────────────────────────
   const precipEl = document.getElementById('f-precip');
-  if (precipEl && d.precipitation) precipEl.value = d.precipitation;
+  if (precipEl && d.precipitation) {
+    precipEl.value = d.precipitation;
+    const ps = precipStatus(d.precipitation);
+    setAutoFieldColor(precipEl, ps);
+    allStatuses.push(ps);
+  }
 
-  // Visibility — set the dropdown
+  // ── Visibility ────────────────────────────────────────────────────────────
   const visEl = document.getElementById('f-visibility');
   if (visEl && d.visibility_cat) {
-    // Find matching option
     Array.from(visEl.options).forEach(opt => {
       if (opt.value === d.visibility_cat) visEl.value = opt.value;
     });
+    const vs = visStatus(d.visibility_cat);
+    setAutoFieldColor(visEl, vs);
+    allStatuses.push(vs);
     evalConditionsGate();
   }
 
-  // Space weather — auto-fill display + hidden field
+  // ── Space weather ─────────────────────────────────────────────────────────
   if (d.field_102) {
-    const kpLabels = { '0 to 3': 'Kp 0–3 (Low — within limits)', '4': 'Kp 4 (Moderate — monitor)', '5 or above': 'Kp 5+ (High — outside limits)' };
+    const kpLabels = {
+      '0 to 3':    'Kp 0–3 — Low (within limits)',
+      '4':         'Kp 4 — Moderate (monitor)',
+      '5 or above':'Kp 5+ — High (outside limits)',
+    };
     const display = document.getElementById('f-space-display');
     const hidden  = document.getElementById('f-space-hidden');
-    if (display) display.value = kpLabels[d.field_102] || d.field_102;
-    if (hidden)  hidden.value  = d.field_102;
+    if (display) {
+      display.value = kpLabels[d.field_102] || d.field_102;
+      const ks = kpStatus(d.field_102);
+      setAutoFieldColor(display, ks);
+      allStatuses.push(ks);
+    }
+    if (hidden) hidden.value = d.field_102;
     toggleState['f-space'] = d.field_102;
     evalConditionsGate();
   }
 
-  // NOTAMs
-  const notamEl = document.getElementById('f-notam-details');
-  if (notamEl && d.notam_details_that_affect_the_u) {
-    notamEl.value = d.notam_details_that_affect_the_u;
-  }
-
-  // Are NOTAMs published — auto-fill display + hidden field
+  // ── NOTAMs published ──────────────────────────────────────────────────────
   if (d.are_any_notams_published_for_th) {
     const display = document.getElementById('f-notams-display');
     const hidden  = document.getElementById('f-notams-hidden');
-    if (display) display.value = d.are_any_notams_published_for_th;
-    if (hidden)  hidden.value  = d.are_any_notams_published_for_th;
+    const ns = notamStatus(d.are_any_notams_published_for_th);
+    if (display) {
+      display.value = d.are_any_notams_published_for_th;
+      setAutoFieldColor(display, ns);
+    }
+    if (hidden) hidden.value = d.are_any_notams_published_for_th;
     toggleState['f-notams'] = d.are_any_notams_published_for_th;
   }
 
-  // NOTAM details
+  // ── NOTAM details ─────────────────────────────────────────────────────────
   if (d.notam_details_that_affect_the_u !== undefined) {
     const el = document.getElementById('f-notam-details');
-    if (el) el.value = d.notam_details_that_affect_the_u || 'No NOTAMs affecting this operation';
+    if (el) {
+      el.value = d.notam_details_that_affect_the_u || 'No NOTAMs affecting this operation';
+      setAutoFieldColor(el, notamStatus(d.are_any_notams_published_for_th));
+    }
   }
 
-  // NOTAM required flag — show in a dedicated info cell if it exists
+  // ── Auto-set "are all conditions within limits" ───────────────────────────
+  if (allStatuses.length > 0) {
+    const withinLimits = deriveWithinLimits(allStatuses);
+    autoSetWithinLimits(withinLimits);
+  }
+
+  // ── NOTAM required flag ───────────────────────────────────────────────────
   if (d.notam_required) {
     const grid = document.getElementById('estate-info-grid');
     if (grid) {
-      // Add or update notam-required cell
       let cell = document.getElementById('notam-required-cell');
       if (!cell) {
         cell = document.createElement('div');
