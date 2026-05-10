@@ -338,33 +338,69 @@
   /* ── Estate info ── */
   .estate-info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
   }
 
   .info-cell {
-    background: var(--surface2);
+    background: var(--surface);
     border: 2px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 14px;
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* Category tints */
+  .info-cell.ic-contact  { border-left: 4px solid #1a2b4a; background: #f8f9fc; }
+  .info-cell.ic-hazard   { border-left: 4px solid #b45309; background: #fdf9f3; }
+  .info-cell.ic-airspace { border-left: 4px solid #1a6fa8; background: #f5f9fd; }
+  .info-cell.ic-notam    { border-left: 4px solid #991b1b; background: #fdf5f5; }
+  .info-cell.ic-default  { border-left: 4px solid var(--border-strong); }
+
+  .info-cell .ic-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+  }
+
+  .info-cell .ic-icon {
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
   }
 
   .info-cell .ic-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--faint);
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 5px;
+    letter-spacing: 0.06em;
   }
 
   .info-cell .ic-value {
     font-size: 14px;
-    font-weight: 500;
-    color: var(--text);
-    line-height: 1.4;
+    font-weight: 400;
+    color: var(--muted);
+    line-height: 1.5;
   }
+
+  /* Phone numbers — large and tappable */
+  .info-cell .ic-phone {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a2b4a;
+    font-family: var(--mono);
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+    text-decoration: none;
+    display: block;
+  }
+
+  .info-cell .ic-phone:hover { text-decoration: underline; }
 
   /* ── Hazard detail box ── */
   .hazard-detail-box {
@@ -1282,20 +1318,39 @@ function onEstateChange() {
     ? `${parseFloat(e.lat).toFixed(4)}N, ${Math.abs(parseFloat(e.lon)).toFixed(4)}${parseFloat(e.lon)<0?'W':'E'}`
     : name;
   if (e.estate_contact) document.getElementById('f-phone').value = e.estate_contact;
-  const fields = [
-    ['Nearest Aerodrome', e.nearest_aerodrome],
-    ['Nearest ATC',       e.nearest_atc],
-    ['ATC Phone',         e.atc_phone],
-    ['Other Airspace',    e.other_airspace],
-    ['Airspace Hazards',  e.airspace_hazards],
-    ['Airspace Manager',  e.airspace_manager_contact],
-    ['Police Contact',    e.police_contact],
-    ['Known Hazards',     e.known_hazards],
-    ['Areas to Avoid',    e.areas_to_avoid],
-  ];
-  grid.innerHTML = fields.filter(([,v])=>v).map(([l,v])=>
-    `<div class="info-cell"><div class="ic-label">${l}</div><div class="ic-value">${v}</div></div>`
-  ).join('');
+  // Build styled estate reference cards
+  const contactHtml = (label, icon, phone, extra) => {
+    const num = phone ? phone.replace(/[^0-9+ ]/g,'').trim() : '';
+    return `<div class="info-cell ic-contact">
+      <div class="ic-header"><span class="ic-icon">${icon}</span><span class="ic-label">${label}</span></div>
+      ${num ? `<a class="ic-phone" href="tel:${num.replace(/ /g,'')}">${num}</a>` : ''}
+      ${extra ? `<div class="ic-value">${extra}</div>` : ''}
+    </div>`;
+  };
+
+  const infoHtml = (label, icon, value, cls) =>
+    `<div class="info-cell ${cls}">
+      <div class="ic-header"><span class="ic-icon">${icon}</span><span class="ic-label">${label}</span></div>
+      <div class="ic-value">${value}</div>
+    </div>`;
+
+  let cells = '';
+
+  // Contacts — most important, shown first
+  if (e.nearest_aerodrome) cells += infoHtml('Nearest Aerodrome', '✈️', e.nearest_aerodrome, 'ic-airspace');
+  if (e.nearest_atc || e.atc_phone) cells += contactHtml('Nearest ATC', '📡', e.atc_phone, e.nearest_atc);
+  if (e.police_contact) cells += contactHtml('Police', '🚔', e.police_contact.replace('Police Scotland — ','').replace('Devon & Cornwall Police — ',''), e.police_contact.includes('Scotland') ? 'Police Scotland' : 'Devon & Cornwall Police');
+  if (e.airspace_manager_contact) cells += contactHtml('Airspace Manager', '🛂', '', e.airspace_manager_contact);
+
+  // Airspace
+  if (e.other_airspace) cells += infoHtml('Other Airspace', '🗺️', e.other_airspace, 'ic-airspace');
+  if (e.airspace_hazards) cells += infoHtml('Airspace Hazards', '⚠️', e.airspace_hazards, 'ic-hazard');
+
+  // Ground hazards
+  if (e.known_hazards) cells += infoHtml('Known Hazards', '⚡', e.known_hazards, 'ic-hazard');
+  if (e.areas_to_avoid) cells += infoHtml('Areas to Avoid', '🚫', e.areas_to_avoid, 'ic-hazard');
+
+  grid.innerHTML = cells;
   card.style.display='';
   // Trigger live data fetch (weather, NOTAMs, space weather)
   triggerOnsiteFetch(name);
