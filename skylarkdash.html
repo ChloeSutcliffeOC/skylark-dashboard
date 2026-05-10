@@ -1695,22 +1695,23 @@ function applyOnsiteFetchData(d) {
   }
 
   // ── Space weather ─────────────────────────────────────────────────────────
-  if (d.field_102 !== undefined && d.field_102 !== '') {
-    const kp    = parseFloat(d.field_102);
-    const label = isNaN(kp) ? d.field_102
-      : kp >= 5 ? `Kp ${d.field_102} — High (outside limits)`
-      : kp >= 4 ? `Kp ${d.field_102} — Moderate (monitor)`
-      : `Kp ${d.field_102} — Low (within limits)`;
+  if (d.field_102 != null && String(d.field_102).trim() !== '') {
+    const kpRaw = String(d.field_102).trim();
+    const kp    = parseFloat(kpRaw);
+    const label = isNaN(kp) ? kpRaw
+      : kp >= 5 ? `Kp ${kpRaw} — High (outside limits)`
+      : kp >= 4 ? `Kp ${kpRaw} — Moderate (monitor)`
+      : `Kp ${kpRaw} — Low (within limits)`;
     const display = document.getElementById('f-space-display');
     const hidden  = document.getElementById('f-space-hidden');
     if (display) {
       display.value = label;
-      const ks = kpStatus(d.field_102);
+      const ks = kpStatus(kpRaw);
       setAutoFieldColor(display, ks);
       allStatuses.push(ks);
     }
-    if (hidden) hidden.value = d.field_102;
-    toggleState['f-space'] = d.field_102;
+    if (hidden) hidden.value = kpRaw;
+    toggleState['f-space'] = kpRaw;
     evalConditionsGate();
   }
 
