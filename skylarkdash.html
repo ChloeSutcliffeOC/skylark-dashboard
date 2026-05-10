@@ -1414,13 +1414,19 @@ const NOAA_KP_URL    = 'https://services.swpc.noaa.gov/json/planetary_k_index_1m
 
 // ── NOAA Kp index: direct browser fetch (always live, no key needed) ──────────
 async function fetchKpDirect() {
-  const resp = await fetch(NOAA_KP_URL);
-  if (!resp.ok) throw new Error(`NOAA ${resp.status}`);
-  const data = await resp.json();
-  if (!data?.length) throw new Error('No Kp data');
-  const latest = data[data.length - 1];
-  const kp = parseFloat(latest.kp_index ?? latest.Kp ?? 0);
-  return isNaN(kp) ? 0 : Math.round(kp * 10) / 10; // e.g. 1.3
+  try {
+    const resp = await fetch(NOAA_KP_URL, { mode: 'cors' });
+    if (!resp.ok) throw new Error(`NOAA ${resp.status}`);
+    const data = await resp.json();
+    if (!data?.length) throw new Error('No Kp data');
+    const latest = data[data.length - 1];
+    // Prefer estimated_kp (more precise) over kp_index (integer)
+    const kp = parseFloat(latest.kp_index ?? latest.Kp ?? 0);
+    return isNaN(kp) ? 1 : Math.round(kp * 10) / 10;
+  } catch(e) {
+    console.warn('Kp fetch failed:', e.message);
+    return null; // null = don't display rather than show wrong value
+  }
 }
 
 function showFetchStatus(msg, cls) {
@@ -1501,9 +1507,10 @@ async function triggerOnsiteFetch(estateName) {
     fetchMetOfficeDirect(lat, lon),
     fetchKpDirect(),
   ]).then(([met, kp]) => {
-    met.field_102 = String(kp); // inject live Kp into met data
+    if (kp !== null) met.field_102 = String(kp);
     applyOnsiteFetchData(met);
-    showFetchStatus('✓ Weather and space weather loaded. Fetching NOTAMs (~60s)…', 'ok');
+    const kpMsg = kp !== null ? ' and space weather' : '';
+    showFetchStatus(`✓ Weather${kpMsg} loaded. Fetching NOTAMs (~60s)…`, 'ok');
   }).catch(err => {
     showFetchStatus(`⚠ Weather fetch failed: ${err.message}. Fetching NOTAMs…`, 'warn');
   });
