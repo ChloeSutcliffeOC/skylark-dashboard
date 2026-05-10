@@ -337,55 +337,59 @@
 
   /* ── Estate info ── */
   .estate-info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-start;
   }
 
   .info-cell {
     background: var(--surface);
     border: 2px solid var(--border);
     border-radius: 10px;
-    padding: 14px 16px;
+    padding: 12px 14px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
+    flex: 0 1 auto;
+    min-width: 160px;
   }
 
-  /* Category tints */
-  .info-cell.ic-contact  { border-left: 4px solid #1a2b4a; background: #f8f9fc; }
-  .info-cell.ic-hazard   { border-left: 4px solid #b45309; background: #fdf9f3; }
-  .info-cell.ic-airspace { border-left: 4px solid #1a6fa8; background: #f5f9fd; }
-  .info-cell.ic-notam    { border-left: 4px solid #991b1b; background: #fdf5f5; }
+  /* Category colours */
+  .info-cell.ic-contact  { border-left: 4px solid #1a2b4a; background: #f5f6fa; }
+  .info-cell.ic-airspace { border-left: 4px solid #1a6fa8; background: #f4f8fc; }
+  .info-cell.ic-hazard   { border-left: 4px solid var(--danger); background: var(--danger-bg); }
+  .info-cell.ic-notam    { border-left: 4px solid var(--danger); background: var(--danger-bg); }
   .info-cell.ic-default  { border-left: 4px solid var(--border-strong); }
 
   .info-cell .ic-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 2px;
+    gap: 7px;
   }
 
-  .info-cell .ic-icon {
-    font-size: 18px;
-    line-height: 1;
-    flex-shrink: 0;
-  }
+  .info-cell .ic-icon  { font-size: 16px; line-height: 1; flex-shrink: 0; }
 
   .info-cell .ic-label {
     font-family: var(--sans);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--text);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
   }
 
+  .info-cell.ic-hazard .ic-label { color: var(--danger); }
+  .info-cell.ic-notam  .ic-label { color: var(--danger); }
+  .info-cell.ic-contact .ic-label { color: #1a2b4a; }
+  .info-cell.ic-airspace .ic-label { color: #1a6fa8; }
+
   .info-cell .ic-value {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 400;
     color: var(--muted);
     line-height: 1.5;
+    max-width: 320px;
   }
 
   /* Phone numbers — large and tappable */
@@ -399,7 +403,6 @@
     text-decoration: none;
     display: block;
   }
-
   .info-cell .ic-phone:hover { text-decoration: underline; }
 
   /* ── Hazard detail box ── */
