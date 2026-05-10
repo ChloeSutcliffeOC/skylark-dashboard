@@ -1550,8 +1550,22 @@ async function pollOnsiteFetch(estateName, timeoutSecs, intervalMs) {
   const safeEstate = estateName.toLowerCase().replace(/[^a-z0-9]/g, '_');
   const today      = new Date().toISOString().slice(0, 10);
   const url = `https://api.github.com/repos/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/contents/onsite_fetch/onsite_fetch_${safeEstate}_${today}.json`;
-  // Track the last SHA seen so we always get fresh data
-  let lastSha = '';
+
+  // First: record the SHA of any existing file so we know when it's been updated
+  let initialSha = null;
+  try {
+    const initResp = await fetch(url, { headers: {
+      'Authorization':        `Bearer ${CONFIG.GITHUB_TOKEN}`,
+      'Accept':               'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    }});
+    if (initResp.ok) {
+      const initMeta = await initResp.json();
+      initialSha = initMeta.sha;
+    }
+  } catch {}
+
+  // Now poll until we see a new SHA (meaning Action has committed fresh data)
   while (Date.now() < deadline) {
     await sleep(intervalMs);
     try {
@@ -1563,9 +1577,8 @@ async function pollOnsiteFetch(estateName, timeoutSecs, intervalMs) {
       if (resp.status === 404) continue;
       if (!resp.ok) continue;
       const meta = await resp.json();
-      // Only process if we have a new commit (fresh data)
-      if (meta.sha === lastSha) continue;
-      lastSha = meta.sha;
+      // Skip if same SHA as when we started — not yet updated
+      if (meta.sha === initialSha) continue;
       const raw = decodeURIComponent(Array.from(atob(meta.content.replace(/\n/g,'')),
                     c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0')).join(''));
       return JSON.parse(raw);
