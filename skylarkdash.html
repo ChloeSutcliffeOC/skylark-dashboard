@@ -1410,6 +1410,18 @@ function showOnsiteCarriedData(r) {
 
 let onsiteFetchRunId = null;
 const MET_HOURLY_URL = 'https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/hourly';
+const NOAA_KP_URL    = 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json';
+
+// ── NOAA Kp index: direct browser fetch (always live, no key needed) ──────────
+async function fetchKpDirect() {
+  const resp = await fetch(NOAA_KP_URL);
+  if (!resp.ok) throw new Error(`NOAA ${resp.status}`);
+  const data = await resp.json();
+  if (!data?.length) throw new Error('No Kp data');
+  const latest = data[data.length - 1];
+  const kp = parseFloat(latest.kp_index ?? latest.Kp ?? 0);
+  return isNaN(kp) ? 0 : Math.round(kp * 10) / 10; // e.g. 1.3
+}
 
 function showFetchStatus(msg, cls) {
   let bar = document.getElementById('onsite-fetch-bar');
@@ -1485,9 +1497,13 @@ async function triggerOnsiteFetch(estateName) {
   showFetchStatus('⏳ Fetching live weather…', 'warn');
 
   // Launch both fetches simultaneously — don't await each other
-  const weatherPromise = fetchMetOfficeDirect(lat, lon).then(met => {
+  const weatherPromise = Promise.all([
+    fetchMetOfficeDirect(lat, lon),
+    fetchKpDirect(),
+  ]).then(([met, kp]) => {
+    met.field_102 = String(kp); // inject live Kp into met data
     applyOnsiteFetchData(met);
-    showFetchStatus('✓ Weather loaded. Fetching NOTAMs and space weather (this takes ~60s)…', 'ok');
+    showFetchStatus('✓ Weather and space weather loaded. Fetching NOTAMs (~60s)…', 'ok');
   }).catch(err => {
     showFetchStatus(`⚠ Weather fetch failed: ${err.message}. Fetching NOTAMs…`, 'warn');
   });
@@ -1517,6 +1533,8 @@ async function triggerOnsiteFetch(estateName) {
     await weatherPromise;
     const data = await pollOnsiteFetch(estateName, 120, 5000);
     if (data._status === 'error') throw new Error(data._error || 'Fetch failed');
+    // Don't overwrite space weather — already fetched live from NOAA
+    delete data.field_102;
     applyOnsiteFetchData(data);
     showFetchStatus('✓ All live data loaded — weather, NOTAMs and space weather.', 'ok');
   }).catch(err => {
