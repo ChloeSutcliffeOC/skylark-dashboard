@@ -1720,9 +1720,9 @@ function setAutoFieldColor(el, status) {
     red:    { bg: '#fde8e8', border: '#991b1b', color: '#6b1212' },
   };
   const s = styles[status] || styles.green;
-  el.style.background   = s.bg;
-  el.style.borderColor  = s.border;
-  el.style.color        = s.color;
+  el.style.setProperty('background',   s.bg,     'important');
+  el.style.setProperty('border-color', s.border, 'important');
+  el.style.setProperty('color',        s.color,  'important');
 }
 
 // Derive overall "within limits" from all statuses
