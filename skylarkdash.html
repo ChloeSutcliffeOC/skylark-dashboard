@@ -1370,6 +1370,14 @@ function onEstateChange() {
 
   grid.innerHTML = cells;
   card.style.display='';
+  // Pre-set space weather to scanning state while Action runs
+  const spaceDisplay = document.getElementById('f-space-display');
+  if (spaceDisplay) {
+    spaceDisplay.value = 'Scanning for solar activity...';
+    spaceDisplay.style.setProperty('background',   '#fff3e0', 'important');
+    spaceDisplay.style.setProperty('border-color', '#b45309', 'important');
+    spaceDisplay.style.setProperty('color',        '#7c3a06', 'important');
+  }
   // Trigger live data fetch (weather, NOTAMs, space weather)
   triggerOnsiteFetch(name);
 }
@@ -1832,24 +1840,20 @@ function applyOnsiteFetchData(d) {
   }
 
   // ── Space weather ─────────────────────────────────────────────────────────
-  {
-    const kpRaw   = d.field_102 != null ? String(d.field_102).trim() : '';
+  // Only update if this call contains space weather data (Action result)
+  // Met Office direct fetch won't have field_102 so skip it
+  if (d.field_102 !== undefined) {
+    const kpRaw   = String(d.field_102).trim();
     const display = document.getElementById('f-space-display');
     const hidden  = document.getElementById('f-space-hidden');
     if (display) {
-      if (kpRaw === '' || kpRaw === '0') {
-        // 0 could be genuine or a fetch failure — flag it
-        if (kpRaw === '0') {
-          display.value = 'Kp 0 — Low (within limits)';
-          setAutoFieldColor(display, 'green');
-          allStatuses.push('green');
-          if (hidden) hidden.value = '0';
-          toggleState['f-space'] = '0';
-        } else {
-          display.value = 'Unable to fetch — check manually';
-          setAutoFieldColor(display, 'red');
-          allStatuses.push('red');
-        }
+      if (kpRaw === '') {
+        // Action completed but no Kp data — show error
+        display.value = 'Solar data unavailable — check manually';
+        display.style.setProperty('background',   '#fde8e8', 'important');
+        display.style.setProperty('border-color', '#991b1b', 'important');
+        display.style.setProperty('color',        '#6b1212', 'important');
+        allStatuses.push('red');
       } else {
         const kp    = parseFloat(kpRaw);
         const label = isNaN(kp) ? kpRaw
