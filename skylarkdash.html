@@ -597,8 +597,8 @@
 
 <header>
   <div class="logo-block">
-    <div class="logo-main">Oxygen Conservation</div>
-    <div class="logo-sub">Skylark // Field Operations v2</div>
+    <div class="logo-main">Skylark</div>
+    <div class="logo-sub">Oxygen Conservation // UAS Operations</div>
   </div>
   <div style="display:flex;align-items:center;gap:12px">
     <div id="header-estate">—</div>
@@ -1734,19 +1734,26 @@ function deriveWithinLimits(statuses) {
 
 // Auto-click the correct "within limits" button
 function autoSetWithinLimits(value) {
-  const map = { 'Yes': 'f-within-limits-yes', 'Borderline': 'f-within-limits-borderline', 'No': 'f-within-limits-no' };
-  // Find the toggle group for within limits
-  const groups = document.querySelectorAll('.toggle-group');
+  // Find the Yes/Borderline/No toggle group in the conditions card
+  const condCard = document.getElementById('card-conditions');
+  if (!condCard) return;
+  const groups = condCard.querySelectorAll('.toggle-group');
   groups.forEach(group => {
-    const btns = Array.from(group.querySelectorAll('.toggle-btn'));
+    const btns  = Array.from(group.querySelectorAll('.toggle-btn'));
     const labels = btns.map(b => b.textContent.trim());
     if (labels.includes('Yes') && labels.includes('Borderline') && labels.includes('No')) {
+      // Clear all first
+      btns.forEach(b => b.classList.remove('sel-yes','sel-no','sel-borderline'));
+      // Apply correct class
       btns.forEach(btn => {
         if (btn.textContent.trim() === value) {
-          setToggle('f-within-limits', value, btn);
-          evalConditionsGate();
+          if (value === 'Yes')        btn.classList.add('sel-yes');
+          else if (value === 'No')    btn.classList.add('sel-no');
+          else if (value === 'Borderline') btn.classList.add('sel-borderline');
+          toggleState['f-within-limits'] = value;
         }
       });
+      evalConditionsGate();
     }
   });
 }
