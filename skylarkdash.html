@@ -844,11 +844,11 @@
       <div class="two-col">
         <div>
           <div class="field-label auto-label">Wind Strength (m/s)</div>
-          <input type="number" id="f-wind-strength" placeholder="" step="0.1" class="auto-field" readonly>
+          <input type="number" id="f-wind-strength" placeholder="" step="0.1" class="auto-field" oninput="onWindChange()">
         </div>
         <div>
           <div class="field-label auto-label">Wind Direction</div>
-          <input type="text" id="f-wind-dir" placeholder="" class="auto-field" readonly>
+          <input type="text" id="f-wind-dir" placeholder="" class="auto-field">
         </div>
       </div>
       <div>
@@ -869,16 +869,16 @@
       <div class="two-col">
         <div>
           <div class="field-label auto-label">Precipitation</div>
-          <input type="text" id="f-precip" placeholder="" class="auto-field" readonly>
+          <input type="text" id="f-precip" placeholder="" class="auto-field" oninput="onPrecipChange()">
         </div>
         <div>
           <div class="field-label auto-label">Temperature (°C)</div>
-          <input type="number" id="f-temp" placeholder="" step="0.1" class="auto-field" readonly>
+          <input type="number" id="f-temp" placeholder="" step="0.1" class="auto-field" oninput="onTempChange()">
         </div>
       </div>
       <div>
         <div class="field-label auto-label">Visibility</div>
-        <select id="f-visibility" class="auto-field">
+        <select id="f-visibility" class="auto-field" onchange="setAutoFieldColor(this,visStatus(this.value));reEvalWithinLimits();evalConditionsGate()">
           <option value="">— Select —</option>
           <option value="Excellent (>10 km) – unrestrict">Excellent (&gt;10 km) — unrestricted VLOS</option>
           <option value="Good (5–10 km) – clear VLOS">Good (5–10 km) — clear VLOS</option>
@@ -889,7 +889,7 @@
       </div>
       <div>
         <div class="field-label auto-label">Space Weather (Kp Index)</div>
-        <input type="text" id="f-space-display" class="auto-field" readonly placeholder="">
+        <input type="text" id="f-space-display" class="auto-field" oninput="onKpChange()" placeholder="">
         <input type="hidden" id="f-space-hidden">
       </div>
       <div>
@@ -929,12 +929,12 @@
       </div>
       <div>
         <div class="field-label auto-label">Are Any NOTAMs Published for This Location?</div>
-        <input type="text" id="f-notams-display" class="auto-field" readonly placeholder="">
+        <input type="text" id="f-notams-display" class="auto-field" placeholder="">
         <input type="hidden" id="f-notams-hidden">
       </div>
       <div>
         <div class="field-label auto-label">NOTAM Details Affecting UAS Operation</div>
-        <textarea id="f-notam-details" class="auto-field" readonly placeholder="Auto-filled when estate selected"></textarea>
+        <textarea id="f-notam-details" class="auto-field" placeholder="Auto-filled when estate selected"></textarea>
       </div>
       <div>
         <div class="field-label">Is the Airspace Clear?</div>
@@ -1348,15 +1348,15 @@ function onEstateChange() {
   let cells = '';
 
   // Build two balanced columns — NOTAM placeholder always reserved in col1
+  // Contact numbers first (top of each column), then info cards below
   const cardDefs = [];
-  if (e.nearest_aerodrome) cardDefs.push(infoHtml('Nearest Aerodrome', '✈️', e.nearest_aerodrome, 'ic-airspace'));
   if (e.nearest_atc || e.atc_phone) cardDefs.push(contactHtml('Nearest ATC', '📡', e.atc_phone, e.nearest_atc));
-
   if (e.airspace_manager_contact) {
     const amPhone = (e.airspace_manager_contact.match(/[\d\-\/ ]{7,}/) || [''])[0].trim();
     const amName  = e.airspace_manager_contact.split(':')[0].trim();
     cardDefs.push(contactHtml('Airspace Manager', '🛂', amPhone, amName));
   }
+  if (e.nearest_aerodrome) cardDefs.push(infoHtml('Nearest Aerodrome', '✈️', e.nearest_aerodrome, 'ic-airspace'));
   if (e.other_airspace)    cardDefs.push(infoHtml('Other Airspace',    '🗺️', e.other_airspace,    'ic-airspace'));
   if (e.airspace_hazards)  cardDefs.push(infoHtml('Airspace Hazards',  '⚠️', e.airspace_hazards,  'ic-hazard'));
   if (e.known_hazards)     cardDefs.push(infoHtml('Known Hazards',     '⚡', e.known_hazards,     'ic-hazard'));
@@ -1374,7 +1374,7 @@ function onEstateChange() {
   const spaceDisplay = document.getElementById('f-space-display');
   if (spaceDisplay) {
     spaceDisplay.value = 'Scanning for solar activity...';
-    spaceDisplay.style.setProperty('background',   '#fff3e0', 'important');
+    spaceDisplay.style.setProperty('background',   '#fde4b0', 'important');
     spaceDisplay.style.setProperty('border-color', '#b45309', 'important');
     spaceDisplay.style.setProperty('color',        '#7c3a06', 'important');
   }
@@ -1616,7 +1616,19 @@ async function triggerOnsiteFetch(estateName) {
     await weatherPromise;
     const data = await pollOnsiteFetch(estateName, 120, 5000);
     if (data._status === 'error') throw new Error(data._error || 'Fetch failed');
-    applyOnsiteFetchData(data);
+    // Only apply NOTAM and space weather from Action result
+    // Strip Met Office weather fields — already loaded fresh from browser
+    const actionOnly = {
+      field_102:                       data.field_102,
+      _space_weather_raw:              data._space_weather_raw,
+      _sw_time_tag:                    data._sw_time_tag,
+      are_any_notams_published_for_th: data.are_any_notams_published_for_th,
+      notam_details_that_affect_the_u: data.notam_details_that_affect_the_u,
+      notam_required:                  data.notam_required,
+      met_source:                      data.met_source,
+      met_time:                        data.met_time,
+    };
+    applyOnsiteFetchData(actionOnly);
     showFetchStatus('✓ All live data loaded — weather, NOTAMs and space weather.', 'ok');
   }).catch(err => {
     showFetchStatus(`⚠ NOTAMs/space weather unavailable: ${err.message}`, 'warn');
@@ -1724,7 +1736,7 @@ function setAutoFieldColor(el, status) {
   if (!el) return;
   const styles = {
     green:  { bg: '#e8f5e9', border: '#4caf70', color: '#166a2a' },
-    orange: { bg: '#fff3e0', border: '#b45309', color: '#7c3a06' },
+    orange: { bg: '#fde4b0', border: '#b45309', color: '#7c3a06' },
     red:    { bg: '#fde8e8', border: '#991b1b', color: '#6b1212' },
   };
   const s = styles[status] || styles.green;
@@ -1915,6 +1927,64 @@ function applyOnsiteFetchData(d) {
       cell.style.display = '';
     }
   }
+}
+
+// ── Real-time weather field validation ───────────────────────────────────────
+function onWindChange() {
+  const el = document.getElementById('f-wind-strength');
+  if (!el) return;
+  const ws = windStatus(el.value);
+  setAutoFieldColor(el, ws);
+  reEvalWithinLimits();
+}
+
+function onTempChange() {
+  const el = document.getElementById('f-temp');
+  if (!el) return;
+  setAutoFieldColor(el, tempStatus(el.value));
+  reEvalWithinLimits();
+}
+
+function onPrecipChange() {
+  const el = document.getElementById('f-precip');
+  if (!el) return;
+  // For manual entry treat non-empty non-"None" as possible precip
+  const val = el.value.trim().toLowerCase();
+  const status = val === '' || val === 'none' || val === '0' ? 'green'
+    : val.includes('heavy') || val.includes('rain') || val.includes('snow') ? 'red'
+    : 'orange';
+  setAutoFieldColor(el, status);
+  reEvalWithinLimits();
+}
+
+function onKpChange() {
+  const el = document.getElementById('f-space-display');
+  if (!el) return;
+  // Extract number from whatever pilot types e.g. "3", "Kp 3", "3 low"
+  const match = el.value.match(/\d+/);
+  const kp = match ? match[0] : '';
+  setAutoFieldColor(el, kpStatus(kp));
+  toggleState['f-space'] = kp;
+  reEvalWithinLimits();
+}
+
+function reEvalWithinLimits() {
+  // Re-derive within limits from current field colours
+  const fields = [
+    document.getElementById('f-wind-strength'),
+    document.getElementById('f-temp'),
+    document.getElementById('f-precip'),
+    document.getElementById('f-visibility'),
+    document.getElementById('f-space-display'),
+  ];
+  const statuses = fields.map(el => {
+    if (!el) return 'green';
+    const bg = el.style.getPropertyValue('background');
+    if (bg.includes('#fde8e8') || bg.includes('#f5c6c6')) return 'red';
+    if (bg.includes('#fde4b0') || bg.includes('#fff3e0')) return 'orange';
+    return 'green';
+  });
+  autoSetWithinLimits(deriveWithinLimits(statuses));
 }
 
 // ── Bird loop animation ──────────────────────────────────────────────────────
