@@ -839,6 +839,8 @@
   <div class="card" id="card-conditions">
     <div class="card-header"><h2>Actual Flight Conditions</h2></div>
     <div class="card-body">
+      <!-- Data source banner — populated when data loads -->
+      <div id="conditions-source-banner" style="display:none;background:#f0f7f0;border:1.5px solid #4caf70;border-radius:7px;padding:9px 13px;font-family:var(--mono);font-size:11px;color:#166a2a;line-height:1.6"></div>
       <div class="two-col">
         <div>
           <div class="field-label auto-label">Wind Strength (m/s)</div>
@@ -1345,7 +1347,7 @@ function onEstateChange() {
 
   let cells = '';
 
-  // Build two balanced columns — distribute cards alternately for puzzle fit
+  // Build two balanced columns — NOTAM placeholder always reserved in col1
   const cardDefs = [];
   if (e.nearest_aerodrome) cardDefs.push(infoHtml('Nearest Aerodrome', '✈️', e.nearest_aerodrome, 'ic-airspace'));
   if (e.nearest_atc || e.atc_phone) cardDefs.push(contactHtml('Nearest ATC', '📡', e.atc_phone, e.nearest_atc));
@@ -1363,7 +1365,8 @@ function onEstateChange() {
   // Split into two columns alternately
   const col1 = cardDefs.filter((_,i) => i % 2 === 0).join('');
   const col2 = cardDefs.filter((_,i) => i % 2 !== 0).join('');
-  cells = `<div class="estate-info-col">${col1}</div><div class="estate-info-col">${col2}</div>`;
+  // NOTAM placeholder sits at top of col1, hidden until data arrives
+  cells = `<div class="estate-info-col"><div class="info-cell ic-notam" id="notam-required-cell" style="display:none"></div>${col1}</div><div class="estate-info-col">${col2}</div>`;
 
   grid.innerHTML = cells;
   card.style.display='';
@@ -1751,6 +1754,32 @@ function autoSetWithinLimits(value) {
 function applyOnsiteFetchData(d) {
   const allStatuses = [];
 
+  // ── Source banner ─────────────────────────────────────────────────────────
+  const banner = document.getElementById('conditions-source-banner');
+  if (banner) {
+    const lines = [];
+    if (d.met_source && d.met_time) {
+      // Format met_time e.g. "2026-05-10T19:00Z" → "10 May 2026 19:00 UTC"
+      const mt = new Date(d.met_time);
+      const metTimeStr = isNaN(mt) ? d.met_time :
+        mt.toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', timeZone:'UTC' }) + ' UTC';
+      lines.push(`🌤 Weather: ${d.met_source} — forecast valid ${metTimeStr}`);
+    } else if (d.met_source) {
+      lines.push(`🌤 Weather: ${d.met_source} — fetched ${new Date().toLocaleTimeString('en-GB')}`);
+    }
+    if (d._space_weather_raw !== undefined && d._space_weather_raw !== '') {
+      // Space weather comes with a time tag from the Action result
+      const swTime = d._sw_time_tag
+        ? new Date(d._sw_time_tag).toLocaleString('en-GB', { hour:'2-digit', minute:'2-digit', day:'numeric', month:'short', timeZone:'UTC' }) + ' UTC'
+        : new Date().toLocaleTimeString('en-GB');
+      lines.push(`☀️ Space weather: NOAA Planetary K-index — ${swTime}`);
+    }
+    if (lines.length) {
+      banner.innerHTML = lines.join('<br>');
+      banner.style.display = '';
+    }
+  }
+
   // ── Wind ──────────────────────────────────────────────────────────────────
   const windEl = document.getElementById('f-wind-strength');
   if (windEl && d.wind_strength !== undefined && d.wind_strength !== '') {
@@ -1861,15 +1890,8 @@ function applyOnsiteFetchData(d) {
 
   // ── NOTAM required flag ───────────────────────────────────────────────────
   if (d.notam_required) {
-    // Inject into first column of the estate info grid, not the grid root
-    const col = document.querySelector('.estate-info-col');
-    if (col) {
-      let cell = document.getElementById('notam-required-cell');
-      if (!cell) {
-        cell = document.createElement('div');
-        cell.id = 'notam-required-cell';
-        col.insertBefore(cell, col.firstChild); // Put it first — most important
-      }
+    const cell = document.getElementById('notam-required-cell');
+    if (cell) {
       const isRequired = d.notam_required.startsWith('Yes');
       cell.className = `info-cell ${isRequired ? 'ic-notam' : 'ic-airspace'}`;
       cell.innerHTML = `
@@ -1879,6 +1901,7 @@ function applyOnsiteFetchData(d) {
         </div>
         <div class="ic-value" style="font-weight:600">${d.notam_required}</div>
       `;
+      cell.style.display = '';
     }
   }
 }
