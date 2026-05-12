@@ -690,7 +690,7 @@
 
   <!-- UAS -->
   <div class="card">
-    <div class="card-header"><h2>UAS for Operation</h2></div>
+    <div class="card-header"><h2>Drone (UAS) for Operation</h2></div>
     <div class="card-body">
       <div>
         <div class="field-label">Task</div>
@@ -700,7 +700,7 @@
         </div>
       </div>
       <div>
-        <div class="field-label">UAS</div>
+        <div class="field-label">Drone (UAS)</div>
         <div class="toggle-group">
           <button class="toggle-btn" onclick="setToggle('f-uas','DJI_Matrice_350_RTK',this);document.getElementById('f-uas-other-wrap').classList.add('hidden')">DJI Matrice 350 RTK</button>
           <button class="toggle-btn" onclick="setToggle('f-uas','DJI_Matrice_30T',this);document.getElementById('f-uas-other-wrap').classList.add('hidden')">DJI Matrice 30T</button>
@@ -708,7 +708,7 @@
         </div>
       </div>
       <div id="f-uas-other-wrap" class="hidden">
-        <div class="field-label">UAS (Specify)</div>
+        <div class="field-label">Drone (Specify Make and Model)</div>
         <input type="text" id="f-uas-other" placeholder="Make and model">
       </div>
       <div>
@@ -719,7 +719,7 @@
         </div>
       </div>
       <div>
-        <div class="field-label">Command Unit</div>
+        <div class="field-label">Command Unit (Remote Controller)</div>
         <input type="text" id="f-command-unit" value="DJI RC Plus">
       </div>
       <div>
@@ -754,7 +754,7 @@
       </div>
 
       <div class="crew-block">
-        <div class="crew-role-label">Visual Observer <small>Leave "Not Present" if no VO</small></div>
+        <div class="crew-role-label">Visual Observer <small>Leave "Not Present" if no visual observer</small></div>
         <div>
           <div class="field-label">Present?</div>
           <div class="toggle-group">
@@ -839,11 +839,12 @@
   <div class="card" id="card-conditions">
     <div class="card-header"><h2>Actual Flight Conditions</h2></div>
     <div class="card-body">
+      <p style="font-size:12px;color:var(--faint);line-height:1.5;margin-bottom:4px"><span style="color:var(--ok);font-weight:600">Green</span> — comfortably within limits &nbsp;·&nbsp; <span style="color:var(--warn);font-weight:600">Orange</span> — close to threshold, use caution &nbsp;·&nbsp; <span style="color:var(--danger);font-weight:600">Red</span> — outside limits, do not fly</p>
       <!-- Data source banner — populated when data loads -->
       <div id="conditions-source-banner" style="display:none;background:#f0f7f0;border:1.5px solid #4caf70;border-radius:7px;padding:9px 13px;font-family:var(--mono);font-size:11px;color:#166a2a;line-height:1.6"></div>
       <div class="two-col">
         <div>
-          <div class="field-label auto-label">Wind Strength (m/s)</div>
+          <div class="field-label auto-label">Wind Speed (m/s)</div>
           <input type="number" id="f-wind-strength" placeholder="" step="0.1" class="auto-field" oninput="onWindChange()">
         </div>
         <div>
@@ -880,15 +881,15 @@
         <div class="field-label auto-label">Visibility</div>
         <select id="f-visibility" class="auto-field" onchange="setAutoFieldColor(this,visStatus(this.value));reEvalWithinLimits();evalConditionsGate()">
           <option value="">— Select —</option>
-          <option value="Excellent (>10 km) – unrestrict">Excellent (&gt;10 km) — unrestricted VLOS</option>
-          <option value="Good (5–10 km) – clear VLOS">Good (5–10 km) — clear VLOS</option>
+          <option value="Excellent (>10 km) – unrestrict">Excellent (&gt;10 km) — unrestricted visual line of sight</option>
+          <option value="Good (5–10 km) – clear VLOS">Good (5–10 km) — clear visual line of sight</option>
           <option value="Moderate (2–5 km) – reduced cla">Moderate (2–5 km) — reduced clarity</option>
-          <option value="Poor (1–2 km) – marginal VLOS">Poor (1–2 km) — marginal VLOS</option>
-          <option value="Very poor (<1 km) – VLOS not ac">Very poor (&lt;1 km) — VLOS not achievable</option>
+          <option value="Poor (1–2 km) – marginal VLOS">Poor (1–2 km) — marginal visual line of sight</option>
+          <option value="Very poor (<1 km) – VLOS not ac">Very poor (&lt;1 km) — visual line of sight not achievable</option>
         </select>
       </div>
       <div>
-        <div class="field-label auto-label">Space Weather (Kp Index)</div>
+        <div class="field-label auto-label">Space Weather (Kp Index) <span style="font-weight:400;font-size:11px;color:var(--faint)">— measures geomagnetic storm activity on a 0–9 scale; high values can disrupt GPS and compass accuracy</span></div>
         <input type="text" id="f-space-display" class="auto-field" oninput="onKpChange()" placeholder="">
         <input type="hidden" id="f-space-hidden">
       </div>
@@ -928,12 +929,12 @@
         </div>
       </div>
       <div>
-        <div class="field-label auto-label">Are Any NOTAMs Published for This Location?</div>
+        <div class="field-label auto-label">Are Any NOTAMs Published for This Location? <span style="font-size:10px;font-weight:400;color:var(--faint)">Notices to Airmen</span></div>
         <input type="text" id="f-notams-display" class="auto-field" placeholder="">
         <input type="hidden" id="f-notams-hidden">
       </div>
       <div>
-        <div class="field-label auto-label">NOTAM Details Affecting UAS Operation</div>
+        <div class="field-label auto-label">NOTAM Details Affecting Drone Operation</div>
         <textarea id="f-notam-details" class="auto-field" placeholder="Auto-filled when estate selected"></textarea>
       </div>
       <div>
@@ -952,7 +953,7 @@
 
   <!-- TOLA Landowner -->
   <div class="card" id="card-landowner">
-    <div class="card-header"><h2>TOLA Landowner</h2></div>
+    <div class="card-header"><h2>Take-Off and Landing Area (TOLA) — Landowner</h2></div>
     <div class="card-body">
       <div>
         <div class="field-label">Have All Permissions Been Obtained?</div>
@@ -1130,7 +1131,7 @@ const AREA_SECTIONS = [
     id: 'tola', label: 'Take-Off &amp; Landing Areas (TOLAs)',
     hasFod: true,
     fields: [
-      {key:'f-tola-fod', label:'Free of FOD?'},
+      {key:'f-tola-fod', label:'Free of FOD?', sub:'Foreign Object Debris'},
       {key:'f-tola-obs', label:'Free of Obstructions?'},
       {key:'f-tola-air', label:'Airspace Clear?'},
       {key:'f-tola-ppl', label:'Devoid of Uninvolved People?'},
@@ -1138,7 +1139,7 @@ const AREA_SECTIONS = [
     gateKeys: ['f-tola-fod','f-tola-obs','f-tola-air','f-tola-ppl'],
   },
   {
-    id: 'opvol', label: 'Operational &amp; Contingency Volume',
+    id: 'opvol', label: 'Operational &amp; Contingency Volume — the airspace the drone will fly within, plus a buffer for emergencies',
     hasFod: false,
     fields: [
       {key:'f-opvol-obs', label:'Free of Obstructions?'},
@@ -1158,10 +1159,10 @@ const AREA_SECTIONS = [
     gateKeys: ['f-hold-obs','f-hold-air','f-hold-ppl'],
   },
   {
-    id: 'ela', label: 'Emergency Landing Area',
+    id: 'ela', label: 'Emergency Landing Area (ELA) — a pre-identified safe area to land if something goes wrong',
     hasFod: true,
     fields: [
-      {key:'f-ela-fod', label:'Free of FOD?'},
+      {key:'f-ela-fod', label:'Free of FOD?', sub:'Foreign Object Debris'},
       {key:'f-ela-obs', label:'Free of Obstructions?'},
       {key:'f-ela-air', label:'Airspace Clear?'},
       {key:'f-ela-ppl', label:'Devoid of Uninvolved People?'},
@@ -1172,16 +1173,16 @@ const AREA_SECTIONS = [
 
 // ── Hazard definitions ─────────────────────────────────────────────────────
 const HAZARDS = [
-  {key:'f-uninvolved',   label:'Uninvolved People',      dbKey:'uninvolved'},
-  {key:'f-assemblies',   label:'Assemblies of People',   dbKey:'assemblies'},
-  {key:'f-pap',          label:'Public Access Points',   dbKey:'pap'},
-  {key:'f-unanticipated',label:'Unanticipated Hazards',  dbKey:'unanticipated'},
-  {key:'f-obstructions', label:'Obstructions',           dbKey:'obstructions'},
-  {key:'f-vlos',         label:'VLOS Limitations',       dbKey:'vlos'},
-  {key:'f-rlos',         label:'RLOS Limitations',       dbKey:'rlos'},
-  {key:'f-emi',          label:'EMI Sources',            dbKey:'emi'},
-  {key:'f-livestock',    label:'Livestock',              dbKey:'livestock'},
-  {key:'f-birds',        label:'Birds',                  dbKey:'birds'},
+  {key:'f-uninvolved',   label:'Uninvolved People',      sub:null,                                          dbKey:'uninvolved'},
+  {key:'f-assemblies',   label:'Assemblies of People',   sub:null,                                          dbKey:'assemblies'},
+  {key:'f-pap',          label:'Public Access Points',   sub:null,                                          dbKey:'pap'},
+  {key:'f-unanticipated',label:'Unanticipated Hazards',  sub:null,                                          dbKey:'unanticipated'},
+  {key:'f-obstructions', label:'Obstructions',           sub:null,                                          dbKey:'obstructions'},
+  {key:'f-vlos',         label:'VLOS Limitations',       sub:'Visual Line of Sight', dbKey:'vlos'},
+  {key:'f-rlos',         label:'RLOS Limitations',       sub:'Radio Line of Sight',           dbKey:'rlos'},
+  {key:'f-emi',          label:'EMI Sources',            sub:'Electromagnetic Interference', dbKey:'emi'},
+  {key:'f-livestock',    label:'Livestock',              sub:null,                                          dbKey:'livestock'},
+  {key:'f-birds',        label:'Birds',                  sub:null,                                          dbKey:'birds'},
 ];
 
 // ── Build hazard grid ──────────────────────────────────────────────────────
@@ -1189,7 +1190,7 @@ function buildHazardGrid() {
   const grid = document.getElementById('hazard-grid');
   grid.innerHTML = HAZARDS.map(h => `
     <div>
-      <div class="field-label">${h.label}</div>
+      <div class="field-label">${h.label}${h.sub ? ` <span style="font-size:10px;font-weight:400;color:var(--faint)">${h.sub}</span>` : ''}</div>
       <div class="toggle-group">
         <button class="toggle-btn" onclick="setHazardToggle('${h.key}','Yes',this,'${h.dbKey}')">Yes</button>
         <button class="toggle-btn" onclick="setHazardToggle('${h.key}','No',this,'${h.dbKey}')">No</button>
@@ -1212,7 +1213,7 @@ function buildAreaCards() {
         <div class="two-col">
           ${s.fields.map(f => `
             <div>
-              <div class="field-label">${f.label}</div>
+              <div class="field-label">${f.label}${f.sub ? ` <span style="font-size:10px;font-weight:400;color:var(--faint)">${f.sub}</span>` : ''}</div>
               <div class="toggle-group">
                 <button class="toggle-btn" onclick="setToggle('${f.key}','Yes',this);evalAreaGate('${s.id}')">Yes</button>
                 <button class="toggle-btn" onclick="setToggle('${f.key}','No',this);evalAreaGate('${s.id}')">No</button>
@@ -1350,7 +1351,7 @@ function onEstateChange() {
   // Build two balanced columns — NOTAM placeholder always reserved in col1
   // Contact numbers first (top of each column), then info cards below
   const cardDefs = [];
-  if (e.nearest_atc || e.atc_phone) cardDefs.push(contactHtml('Nearest ATC', '📡', e.atc_phone, e.nearest_atc));
+  if (e.nearest_atc || e.atc_phone) cardDefs.push(contactHtml('Nearest ATC (Air Traffic Control)', '📡', e.atc_phone, e.nearest_atc));
   if (e.airspace_manager_contact) {
     const amPhone = (e.airspace_manager_contact.match(/[\d\-\/ ]{7,}/) || [''])[0].trim();
     const amName  = e.airspace_manager_contact.split(':')[0].trim();
@@ -1869,9 +1870,9 @@ function applyOnsiteFetchData(d) {
       } else {
         const kp    = parseFloat(kpRaw);
         const label = isNaN(kp) ? kpRaw
-          : kp >= 5 ? `Kp ${kpRaw} — High (outside limits)`
-          : kp >= 4 ? `Kp ${kpRaw} — Moderate (monitor)`
-          : `Kp ${kpRaw} — Low (within limits)`;
+          : kp >= 5 ? `Kp ${kpRaw} — High geomagnetic activity (outside limits — GPS may be unreliable)`
+          : kp >= 4 ? `Kp ${kpRaw} — Moderate geomagnetic activity (monitor — possible GPS degradation)`
+          : `Kp ${kpRaw} — Low geomagnetic activity (within limits — GPS unaffected)`;
         display.value = label;
         const ks = kpStatus(kpRaw);
         setAutoFieldColor(display, ks);
@@ -1920,7 +1921,7 @@ function applyOnsiteFetchData(d) {
       cell.innerHTML = `
         <div class="ic-header">
           <span class="ic-icon">${isRequired ? '🔴' : '🟢'}</span>
-          <span class="ic-label">NOTAM Required?</span>
+          <span class="ic-label">NOTAM Required? (Notice to Airmen — airspace restriction notice)</span>
         </div>
         <div class="ic-value" style="font-weight:600">${d.notam_required}</div>
       `;
