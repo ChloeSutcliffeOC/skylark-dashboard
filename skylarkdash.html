@@ -2604,7 +2604,7 @@ async function triggerOnsiteFetch(estateName) {
     if (!resp.ok) throw new Error(`GitHub ${resp.status}`);
     // Wait for weather to finish first before updating status
     await weatherPromise;
-    const data = await pollOnsiteFetch(estateName, 120, 5000);
+    const data = await pollOnsiteFetch(onsiteFetchRunId, 120, 5000);
     if (data._status === 'error') throw new Error(data._error || 'Fetch failed');
     // Only apply NOTAM and space weather from Action result
     // Strip Met Office weather fields — already loaded fresh from browser
@@ -2631,27 +2631,11 @@ async function triggerOnsiteFetch(estateName) {
   Promise.allSettled([weatherPromise, actionPromise]);
 }
 
-async function pollOnsiteFetch(estateName, timeoutSecs, intervalMs) {
-  const deadline   = Date.now() + timeoutSecs * 1000;
-  const safeEstate = estateName.toLowerCase().replace(/[^a-z0-9]/g, '_');
-  const today      = new Date().toISOString().slice(0, 10);
-  const url = `https://api.github.com/repos/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/contents/onsite_fetch/onsite_fetch_${safeEstate}_${today}.json`;
+async function pollOnsiteFetch(runId, timeoutSecs, intervalMs) {
+  const deadline = Date.now() + timeoutSecs * 1000;
+  // Poll for the exact file the Action commits: onsite_fetch/onsite_fetch_${run_id}.json
+  const url = `https://api.github.com/repos/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/contents/onsite_fetch/onsite_fetch_${runId}.json`;
 
-  // First: record the SHA of any existing file so we know when it's been updated
-  let initialSha = null;
-  try {
-    const initResp = await fetch(url, { headers: {
-      'Authorization':        `Bearer ${CONFIG.GITHUB_TOKEN}`,
-      'Accept':               'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-    }});
-    if (initResp.ok) {
-      const initMeta = await initResp.json();
-      initialSha = initMeta.sha;
-    }
-  } catch {}
-
-  // Now poll until we see a new SHA (meaning Action has committed fresh data)
   while (Date.now() < deadline) {
     await sleep(intervalMs);
     try {
@@ -2660,17 +2644,15 @@ async function pollOnsiteFetch(estateName, timeoutSecs, intervalMs) {
         'Accept':               'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
       }});
-      if (resp.status === 404) continue;
+      if (resp.status === 404) continue; // Not committed yet — keep polling
       if (!resp.ok) continue;
       const meta = await resp.json();
-      // Skip if same SHA as when we started — not yet updated
-      if (meta.sha === initialSha) continue;
       const raw = decodeURIComponent(Array.from(atob(meta.content.replace(/\n/g,'')),
                     c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0')).join(''));
       return JSON.parse(raw);
     } catch {}
   }
-  throw new Error('Timed out waiting for NOTAMs. Check GitHub Actions.');
+  throw new Error('Timed out waiting for weather data. Check GitHub Actions.');
 }
 
 // ── Traffic light thresholds ──────────────────────────────────────────────────
@@ -3557,6 +3539,8 @@ function initAccordion() {
       if (lastRun) {
         document.getElementById('preflight-meta').textContent = 'Last run: ' + lastRun;
       }
+      // Always re-fetch fresh weather on load — never rely on stale saved data
+      if (rec._estate) triggerOnsiteFetch(rec._estate);
     } catch(e) {
       // Corrupted — open onsite by default
       openPanel('onsite');
