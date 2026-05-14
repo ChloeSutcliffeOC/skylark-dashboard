@@ -630,6 +630,16 @@
   .notam-list { display:flex; flex-direction:column; gap:8px; }
   .notam-item { background:var(--surface2); border:2px solid var(--border); border-left:4px solid var(--warn); border-radius:0 8px 8px 0; padding:12px 14px; font-size:13px; line-height:1.6; font-family:var(--mono); white-space:pre-wrap; word-break:break-word; }
   .notam-item.none { border-left-color:var(--ok); color:var(--ok); font-family:var(--sans); }
+  /* Upcoming NOTAMs card inside the Estate Reference section */
+  .upcoming-notam-card { background:var(--surface); border:1px solid var(--border); border-left:4px solid #7c5cfc; border-radius:8px; padding:14px 16px; margin-bottom:14px; }
+  .upcoming-notam-card .unc-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .upcoming-notam-card .unc-icon { font-size:16px; }
+  .upcoming-notam-card .unc-title { font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:#7c5cfc; }
+  .upcoming-notam-card .unc-subtitle { font-size:11px; color:var(--muted); margin-left:auto; }
+  .upcoming-notam-card .unc-list { display:flex; flex-direction:column; gap:8px; }
+  .upcoming-notam-card .unc-item { background:var(--surface2); border:1px solid var(--border); border-left:3px solid #7c5cfc; border-radius:0 6px 6px 0; padding:10px 12px; font-size:12px; font-family:var(--mono); line-height:1.6; white-space:pre-wrap; word-break:break-word; }
+  .upcoming-notam-card .unc-item.none { border-left-color:var(--ok); color:var(--ok); font-family:var(--sans); font-size:12px; }
+  .upcoming-notam-card .unc-item.loading { color:var(--muted); font-family:var(--sans); font-style:italic; }
   .imsafe-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
   @media(max-width:480px){.imsafe-grid{grid-template-columns:repeat(2,1fr)}}
   .imsafe-item { background:var(--surface2); border:2px solid var(--border); border-radius:8px; padding:14px; cursor:pointer; transition:border-color 0.15s,background 0.15s; -webkit-tap-highlight-color:transparent; user-select:none; }
@@ -800,6 +810,17 @@
   <div class="card" id="estate-info-card" style="display:none">
     <div class="card-header"><h2>Estate — Airspace &amp; Contact Reference</h2></div>
     <div class="card-body">
+      <!-- Upcoming NOTAMs awareness card — populated from Action result -->
+      <div class="upcoming-notam-card" id="upcoming-notam-card" style="display:none">
+        <div class="unc-header">
+          <span class="unc-icon">🔮</span>
+          <span class="unc-title">Upcoming NOTAMs — Next 7 Days</span>
+          <span class="unc-subtitle" id="upcoming-notam-subtitle">For awareness only — not yet active</span>
+        </div>
+        <div class="unc-list" id="upcoming-notam-list">
+          <div class="unc-item loading">Checking for upcoming NOTAMs…</div>
+        </div>
+      </div>
       <div class="estate-info-grid" id="estate-info-grid"></div>
     </div>
   </div>
@@ -2304,6 +2325,13 @@ function onEstateChange() {
 
   grid.innerHTML = cells;
   card.style.display='';
+  // Show upcoming NOTAM card in loading state immediately
+  const upcomingCard = document.getElementById('upcoming-notam-card');
+  const upcomingList = document.getElementById('upcoming-notam-list');
+  if (upcomingCard && upcomingList) {
+    upcomingList.innerHTML = '<div class="unc-item loading">Checking for upcoming NOTAMs…</div>';
+    upcomingCard.style.display = '';
+  }
   // Pre-set space weather to scanning state while Action runs
   const spaceDisplay = document.getElementById('f-space-display');
   if (spaceDisplay) {
@@ -2560,6 +2588,8 @@ async function triggerOnsiteFetch(estateName) {
       are_any_notams_published_for_th: data.are_any_notams_published_for_th,
       notam_details_that_affect_the_u: data.notam_details_that_affect_the_u,
       notam_required:                  data.notam_required,
+      _notams_list:                    data._notams_list,
+      _upcoming_notams_list:           data._upcoming_notams_list,
       met_source:                      data.met_source,
       met_time:                        data.met_time,
     };
@@ -4019,6 +4049,28 @@ function populateActionData(d) {
   const typeEl  = document.getElementById('pf-airspace-type');
   if (classEl && !classEl.value) classEl.value = airspaceClass;
   if (typeEl  && !typeEl.value)  typeEl.value  = airspaceType;
+
+  // ── Upcoming NOTAMs (next 7 days, not yet active) ─────────────────────────
+  const upcomingCard = document.getElementById('upcoming-notam-card');
+  const upcomingList = document.getElementById('upcoming-notam-list');
+  const upcomingSubtitle = document.getElementById('upcoming-notam-subtitle');
+  if (upcomingCard && upcomingList) {
+    const upcoming = d._upcoming_notams_list || [];
+    upcomingList.innerHTML = '';
+    if (!upcoming.length) {
+      upcomingList.innerHTML = '<div class="unc-item none">No upcoming NOTAMs in the next 7 days</div>';
+      if (upcomingSubtitle) upcomingSubtitle.textContent = 'None — skies clear ahead';
+    } else {
+      if (upcomingSubtitle) upcomingSubtitle.textContent = `${upcoming.length} NOTAM${upcoming.length > 1 ? 's' : ''} — for awareness only, not yet active`;
+      upcoming.forEach(n => {
+        const el = document.createElement('div');
+        el.className = 'unc-item';
+        el.textContent = n;
+        upcomingList.appendChild(el);
+      });
+    }
+    upcomingCard.style.display = '';
+  }
 }
 
 // ── Legacy wrapper — kept so any remaining internal calls don't break ──
