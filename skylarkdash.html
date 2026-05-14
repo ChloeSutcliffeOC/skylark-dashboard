@@ -1477,6 +1477,33 @@
         <div class="airspace-source" id="pf-airspace-source"></div>
       </div>
 
+      <!-- Permissions & Notifications — inline with airspace context -->
+      <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:16px">
+        <div class="field-label" style="margin-bottom:12px">Permissions &amp; Notifications <span class="card-tick" id="tick-perms" style="display:none">✓</span></div>
+        <div>
+          <div class="field-label">Landowner</div>
+          <input type="text" id="pf-landowner" value="Oxygen Conservation">
+        </div>
+        <div class="two-col" style="margin-top:14px">
+          <div>
+            <div class="field-label auto-label">Police</div>
+            <div class="toggle-group">
+              <button class="toggle-btn" id="pf-police-informed" onclick="setPfToggleGreen('pf-police','Informed',this)">Informed</button>
+              <button class="toggle-btn" id="pf-police-nr" onclick="setPfToggleGreen('pf-police','Not Required',this)">Not Required</button>
+            </div>
+            <div id="pf-police-contact-hint" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:6px;display:none"></div>
+          </div>
+          <div>
+            <div class="field-label auto-label">Airspace Managers / ATC</div>
+            <div class="toggle-group">
+              <button class="toggle-btn" id="pf-atc-notif-informed" onclick="setPfToggleGreen('pf-atc-notif','Informed',this)">Informed</button>
+              <button class="toggle-btn" id="pf-atc-notif-nr" onclick="setPfToggleGreen('pf-atc-notif','Not Required',this)">Not Required</button>
+            </div>
+            <div id="pf-atc-contact-hint" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:6px;display:none"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1916,39 +1943,6 @@
             <li><span class="ep-num ep-num-warn">6</span><span>UAS will automatically land and shut motors off</span></li>
           </ol>
           <button class="ep-brief-btn" onclick="epBriefed('ep-wind',this)">Briefed and understood by all crew</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- 10. Permissions and Notifications -->
-  <div class="card">
-    <div class="card-header">
-      <h2>Permissions &amp; Notifications <span class="card-tick" id="tick-perms" style="display:none">✓</span></h2>
-    </div>
-    <div class="card-body">
-
-      <div>
-        <div class="field-label">Landowner</div>
-        <input type="text" id="pf-landowner" value="Oxygen Conservation">
-      </div>
-
-      <div class="two-col">
-        <div>
-          <div class="field-label auto-label">Police</div>
-          <div class="toggle-group">
-            <button class="toggle-btn" id="pf-police-informed" onclick="setPfToggleGreen('pf-police','Informed',this)">Informed</button>
-            <button class="toggle-btn" id="pf-police-nr" onclick="setPfToggleGreen('pf-police','Not Required',this)">Not Required</button>
-          </div>
-        </div>
-        <div>
-          <div class="field-label auto-label">Airspace Managers / ATC</div>
-          <div id="pf-atc-contact-hint" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:6px;display:none"></div>
-          <div class="toggle-group">
-            <button class="toggle-btn" id="pf-atc-notif-informed" onclick="setPfToggleGreen('pf-atc-notif','Informed',this)">Informed</button>
-            <button class="toggle-btn" id="pf-atc-notif-nr" onclick="setPfToggleGreen('pf-atc-notif','Not Required',this)">Not Required</button>
-          </div>
         </div>
       </div>
 
@@ -2583,6 +2577,9 @@ async function triggerOnsiteFetch(estateName) {
       are_any_notams_published_for_th: data.are_any_notams_published_for_th,
       notam_details_that_affect_the_u: data.notam_details_that_affect_the_u,
       notam_required:                  data.notam_required,
+      _notam_required_bool:            data._notam_required_bool,
+      _notam_time_dependent:           data._notam_time_dependent,
+      _notam_refs:                     data._notam_refs,
       met_source:                      data.met_source,
       met_time:                        data.met_time,
     };
@@ -2869,20 +2866,40 @@ function applyOnsiteFetchData(d) {
     autoSetWithinLimits(withinLimits);
   }
 
-  // ── NOTAM required flag ───────────────────────────────────────────────────
+  // ── NOTAM / airspace notification requirement ─────────────────────────────
   if (d.notam_required) {
     const cell = document.getElementById('notam-required-cell');
     if (cell) {
-      const isRequired = d.notam_required.startsWith('Yes');
+      const isRequired     = d._notam_required_bool === true || d._notam_required_bool === 'true'
+                             || d.notam_required.startsWith('Yes');
+      const isTimeDependent = d._notam_time_dependent === true || d._notam_time_dependent === 'true';
       cell.className = `info-cell ${isRequired ? 'ic-notam' : 'ic-airspace'}`;
       cell.innerHTML = `
         <div class="ic-header">
           <span class="ic-icon">${isRequired ? '🔴' : '🟢'}</span>
-          <span class="ic-label">NOTAM Required? (Notice to Airmen — airspace restriction notice)</span>
+          <span class="ic-label">Airspace Manager Notification Required?</span>
+          ${isTimeDependent ? '<span style="font-family:var(--mono);font-size:10px;background:#fde4b0;color:#7c3a06;border:1px solid #b45309;border-radius:4px;padding:1px 6px;margin-left:auto">TIME-DEPENDENT</span>' : ''}
         </div>
         <div class="ic-value" style="font-weight:600">${d.notam_required}</div>
       `;
       cell.style.display = '';
+    }
+
+    // ── Auto-set preflight ATC toggle based on requirement ──────────────
+    // Only set if pilot hasn't already manually answered it
+    const atcBtn = document.getElementById(
+      d._notam_required_bool === true || d._notam_required_bool === 'true' || d.notam_required.startsWith('Yes')
+        ? 'pf-atc-notif-informed'
+        : 'pf-atc-notif-nr'
+    );
+    if (atcBtn && !pfToggleState['pf-atc-notif']) {
+      const value = d.notam_required.startsWith('Yes') ? 'Informed' : 'Not Required';
+      pfToggleState['pf-atc-notif'] = value;
+      // Clear any existing selection first
+      document.querySelectorAll('#pf-atc-notif-informed, #pf-atc-notif-nr')
+        .forEach(b => b.classList.remove('sel-green'));
+      atcBtn.classList.add('sel-green');
+      checkAllCardTicks();
     }
   }
 }
@@ -3984,14 +4001,15 @@ function detectAirspaceForEstate(estateName, notams) {
 }
 
 // ── Populate estate-based airspace fields ─────────────────────────────────
-function renderAirspaceAreas(airspace, estate) {
+function renderAirspaceAreas(airspace, estate, notamRefs) {
   const wrap   = document.getElementById('pf-airspace-areas-wrap');
   const list   = document.getElementById('pf-airspace-areas');
   const source = document.getElementById('pf-airspace-source');
   if (!wrap || !list) return;
 
-  const areas = airspace.areas || [];
+  const areas       = airspace.areas || [];
   const constraints = airspace.additional_constraints || [];
+  const refs        = notamRefs || {};  // designator → NOTAM ID
 
   if (!areas.length && !constraints.length) {
     wrap.style.display = 'none';
@@ -4005,7 +4023,8 @@ function renderAirspaceAreas(airspace, estate) {
     if (u.includes('DANGER') || u.includes('TDA')) return 'aa-danger';
     return 'aa-clear';
   };
-  const typeBadge = t => {
+  const typeBadge = (t, disabled) => {
+    if (disabled) return `<span class="airspace-area-badge" style="background:#e5e7eb;color:#6b7280;border:1px solid #d1d5db;text-decoration:line-through">${t || 'Area'}</span><span class="airspace-area-badge" style="background:#dcfce7;color:#166a2a;border:1px solid #4caf70;margin-left:4px">DISABLED BY NOTAM</span>`;
     if (!t) return '<span class="airspace-area-badge badge-clear">Clear</span>';
     const u = t.toUpperCase();
     if (u.includes('RESTRICTED') || u.includes('PROHIBITED') || u.includes('FRZ'))
@@ -4015,12 +4034,21 @@ function renderAirspaceAreas(airspace, estate) {
     return `<span class="airspace-area-badge badge-clear">${t}</span>`;
   };
 
-  list.innerHTML = areas.map(a => `
-    <div class="airspace-area ${typeClass(a.type)}">
+  list.innerHTML = areas.map(a => {
+    const desig        = (a.designator || '').toUpperCase();
+    const notamId      = refs[desig] || refs[a.designator] || null;
+    const isDisabled   = !!notamId;
+    const disabledNote = isDisabled
+      ? `<div style="margin-top:6px;padding:6px 10px;background:#dcfce7;border:1px solid #4caf70;border-radius:5px;font-size:11px;font-family:var(--mono);color:#166a2a">
+           ✓ Disabled by NOTAM ${notamId !== 'NOTAM' ? notamId : ''} — see active NOTAMs above for full details
+         </div>`
+      : '';
+    return `
+    <div class="airspace-area ${isDisabled ? 'aa-clear' : typeClass(a.type)}" style="${isDisabled ? 'opacity:0.7' : ''}">
       <div class="airspace-area-head">
         <span class="airspace-area-desig">${a.designator || ''}</span>
         <span class="airspace-area-name">${a.name || ''}</span>
-        ${typeBadge(a.type)}
+        ${typeBadge(a.type, isDisabled)}
       </div>
       <div class="airspace-area-meta">
         ${a.lower && a.upper ? `<strong>Vertical:</strong> ${a.lower} – ${a.upper}${a.upper_notam ? ` (up to ${a.upper_notam} by NOTAM)` : ''} &nbsp;·&nbsp; ` : ''}
@@ -4029,10 +4057,10 @@ function renderAirspaceAreas(airspace, estate) {
         ${a.frequency ? ` &nbsp;·&nbsp; <strong>Freq:</strong> ${a.frequency}` : ''}
         ${a.notes ? `<br>${a.notes}` : ''}
       </div>
+      ${disabledNote}
     </div>
-  `).join('');
+  `}).join('');
 
-  // Additional constraints as simple tags
   if (constraints.length) {
     list.innerHTML += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
       ${constraints.map(c => `<span class="airspace-area-badge badge-danger">${c}</span>`).join('')}
@@ -4066,12 +4094,19 @@ function populateAirspaceFromEstate(estateName) {
   }
   const aaEl = document.getElementById('pf-areas-avoid');
   if (aaEl) aaEl.value = e.areas_to_avoid || '— not specified in estate data —';
-  // ATC contact hint in permissions card
+  // ATC contact hint — now below buttons, not above
   const atcHint = document.getElementById('pf-atc-contact-hint');
   if (atcHint) {
     const contact = e.airspace_manager_contact || (e.nearest_atc ? [e.nearest_atc, e.atc_phone].filter(Boolean).join(' · ') : '');
     if (contact) { atcHint.textContent = contact; atcHint.style.display = ''; }
     else { atcHint.style.display = 'none'; }
+  }
+  // Police contact hint
+  const policeHint = document.getElementById('pf-police-contact-hint');
+  if (policeHint) {
+    const pc = e.police_contact || '';
+    if (pc) { policeHint.textContent = pc; policeHint.style.display = ''; }
+    else { policeHint.style.display = 'none'; }
   }
 
   // ── Airspace class and type from static data ──────────────────────────────
@@ -4083,7 +4118,7 @@ function populateAirspaceFromEstate(estateName) {
   if (typeEl)  typeEl.value  = airspace.base_type || 'Clear';
 
   // ── Render airspace areas detail card ─────────────────────────────────────
-  renderAirspaceAreas(airspace, e);
+  renderAirspaceAreas(airspace, e, {});
 
   checkAllCardTicks();
 }
@@ -4127,6 +4162,14 @@ function populateActionData(d) {
     list.innerHTML = '<div class="notam-item none">No NOTAMs within operational area</div>';
   } else {
     notams.forEach(n => { const el = document.createElement('div'); el.className = 'notam-item'; el.textContent = n; list.appendChild(el); });
+  }
+
+  // ── Re-render airspace areas with NOTAM disable refs if present ──────────
+  if (d._notam_refs && Object.keys(d._notam_refs).length > 0) {
+    const estateName = document.getElementById('pf-estate-select')?.value || '';
+    const e = estatesData[estateName] || {};
+    const airspace = e.airspace || {};
+    renderAirspaceAreas(airspace, e, d._notam_refs);
   }
 
   // Auto-detect airspace class and type — static data first, NOTAMs upgrade only
