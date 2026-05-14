@@ -627,19 +627,25 @@
   .cell-value.mono { font-family:var(--mono); font-size:13px; }
   .cell-value.ok   { color:var(--ok); }
   .cell-value.warn { color:var(--warn); }
+  /* Airspace areas detail */
+  .airspace-areas { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+  .airspace-area { background:var(--surface2); border:1px solid var(--border); border-left:4px solid #1a6fa8; border-radius:0 8px 8px 0; padding:10px 14px; }
+  .airspace-area.aa-danger     { border-left-color: var(--warn); }
+  .airspace-area.aa-restricted { border-left-color: var(--danger); }
+  .airspace-area.aa-clear      { border-left-color: var(--ok); }
+  .airspace-area-head { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .airspace-area-desig { font-family:var(--mono); font-size:13px; font-weight:700; color:var(--text); }
+  .airspace-area-name  { font-size:12px; color:var(--muted); }
+  .airspace-area-badge { font-family:var(--mono); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:2px 7px; border-radius:4px; margin-left:auto; flex-shrink:0; }
+  .badge-danger     { background:var(--warn-bg);   color:var(--warn);   border:1px solid var(--warn); }
+  .badge-restricted { background:var(--danger-bg); color:var(--danger); border:1px solid var(--danger); }
+  .badge-clear      { background:var(--ok-bg);     color:var(--ok);     border:1px solid var(--ok); }
+  .airspace-area-meta { font-size:12px; color:var(--muted); margin-top:5px; line-height:1.6; }
+  .airspace-area-meta strong { color:var(--text); font-weight:600; }
+  .airspace-source { font-family:var(--mono); font-size:10px; color:var(--faint); margin-top:8px; font-style:italic; }
   .notam-list { display:flex; flex-direction:column; gap:8px; }
   .notam-item { background:var(--surface2); border:2px solid var(--border); border-left:4px solid var(--warn); border-radius:0 8px 8px 0; padding:12px 14px; font-size:13px; line-height:1.6; font-family:var(--mono); white-space:pre-wrap; word-break:break-word; }
   .notam-item.none { border-left-color:var(--ok); color:var(--ok); font-family:var(--sans); }
-  /* Upcoming NOTAMs card inside the Estate Reference section */
-  .upcoming-notam-card { background:var(--surface); border:1px solid var(--border); border-left:4px solid #7c5cfc; border-radius:8px; padding:14px 16px; margin-bottom:14px; }
-  .upcoming-notam-card .unc-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-  .upcoming-notam-card .unc-icon { font-size:16px; }
-  .upcoming-notam-card .unc-title { font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:#7c5cfc; }
-  .upcoming-notam-card .unc-subtitle { font-size:11px; color:var(--muted); margin-left:auto; }
-  .upcoming-notam-card .unc-list { display:flex; flex-direction:column; gap:8px; }
-  .upcoming-notam-card .unc-item { background:var(--surface2); border:1px solid var(--border); border-left:3px solid #7c5cfc; border-radius:0 6px 6px 0; padding:10px 12px; font-size:12px; font-family:var(--mono); line-height:1.6; white-space:pre-wrap; word-break:break-word; }
-  .upcoming-notam-card .unc-item.none { border-left-color:var(--ok); color:var(--ok); font-family:var(--sans); font-size:12px; }
-  .upcoming-notam-card .unc-item.loading { color:var(--muted); font-family:var(--sans); font-style:italic; }
   .imsafe-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
   @media(max-width:480px){.imsafe-grid{grid-template-columns:repeat(2,1fr)}}
   .imsafe-item { background:var(--surface2); border:2px solid var(--border); border-radius:8px; padding:14px; cursor:pointer; transition:border-color 0.15s,background 0.15s; -webkit-tap-highlight-color:transparent; user-select:none; }
@@ -810,17 +816,6 @@
   <div class="card" id="estate-info-card" style="display:none">
     <div class="card-header"><h2>Estate — Airspace &amp; Contact Reference</h2></div>
     <div class="card-body">
-      <!-- Upcoming NOTAMs awareness card — populated from Action result -->
-      <div class="upcoming-notam-card" id="upcoming-notam-card" style="display:none">
-        <div class="unc-header">
-          <span class="unc-icon">🔮</span>
-          <span class="unc-title">Upcoming NOTAMs — Next 7 Days</span>
-          <span class="unc-subtitle" id="upcoming-notam-subtitle">For awareness only — not yet active</span>
-        </div>
-        <div class="unc-list" id="upcoming-notam-list">
-          <div class="unc-item loading">Checking for upcoming NOTAMs…</div>
-        </div>
-      </div>
       <div class="estate-info-grid" id="estate-info-grid"></div>
     </div>
   </div>
@@ -1473,6 +1468,13 @@
           <div class="cell-label auto-label">ATC / Airspace Manager Contact <span style="font-size:10px;font-weight:400;color:var(--faint);text-transform:none;letter-spacing:0">within flyaway radius</span></div>
           <div class="cell-value" id="pf-atc-contact" style="margin-top:4px;white-space:pre-wrap">—</div>
         </div>
+      </div>
+
+      <!-- Airspace areas from static data — rendered by renderAirspaceAreas() -->
+      <div id="pf-airspace-areas-wrap" style="display:none;margin-top:4px">
+        <div class="field-label auto-label">Airspace Areas <span style="font-size:10px;font-weight:400;color:var(--faint)">from estate data — verify against current AIRAC</span></div>
+        <div class="airspace-areas" id="pf-airspace-areas"></div>
+        <div class="airspace-source" id="pf-airspace-source"></div>
       </div>
 
     </div>
@@ -2325,13 +2327,6 @@ function onEstateChange() {
 
   grid.innerHTML = cells;
   card.style.display='';
-  // Show upcoming NOTAM card in loading state immediately
-  const upcomingCard = document.getElementById('upcoming-notam-card');
-  const upcomingList = document.getElementById('upcoming-notam-list');
-  if (upcomingCard && upcomingList) {
-    upcomingList.innerHTML = '<div class="unc-item loading">Checking for upcoming NOTAMs…</div>';
-    upcomingCard.style.display = '';
-  }
   // Pre-set space weather to scanning state while Action runs
   const spaceDisplay = document.getElementById('f-space-display');
   if (spaceDisplay) {
@@ -2588,8 +2583,6 @@ async function triggerOnsiteFetch(estateName) {
       are_any_notams_published_for_th: data.are_any_notams_published_for_th,
       notam_details_that_affect_the_u: data.notam_details_that_affect_the_u,
       notam_required:                  data.notam_required,
-      _notams_list:                    data._notams_list,
-      _upcoming_notams_list:           data._upcoming_notams_list,
       met_source:                      data.met_source,
       met_time:                        data.met_time,
     };
@@ -3946,29 +3939,110 @@ function onTolaCoordChange() {
   }
 }
 
-// ── Airspace class/type detection from NOTAM text ─────────────────────────
-function detectAirspaceFromNotams(notams) {
+// ── Airspace type severity ranking (NOTAMs can only upgrade, never downgrade) ──
+const AIRSPACE_TYPE_RANK = {
+  'Clear':            0,
+  'Danger Area':      1,
+  'TDA':              2,
+  'Restricted Area':  3,
+  'Prohibited Area':  4,
+  'FRZ':              5,
+};
+
+function upgradeAirspaceType(current, candidate) {
+  const currentRank   = AIRSPACE_TYPE_RANK[current]   ?? 0;
+  const candidateRank = AIRSPACE_TYPE_RANK[candidate] ?? 0;
+  return candidateRank > currentRank ? candidate : current;
+}
+
+function detectAirspaceForEstate(estateName, notams) {
+  const e = estatesData[estateName] || {};
+  const airspace = e.airspace || {};
+
+  // ── Base class and type from static data ──────────────────────────────────
+  let airspaceClass = airspace.class || 'G';
+  let airspaceType  = airspace.base_type || 'Clear';
+
+  // ── NOTAM scan — can only upgrade the type, never replace class ───────────
+  // NOTAMs can activate TDAs or add temporary restrictions over static airspace
   const text = notams.join(' ').toUpperCase();
 
-  // Class — scan for explicit CLASS keyword, default G
-  let airspaceClass = 'G';
+  // Class upgrade: only if NOTAM explicitly declares a controlled class
   if      (/CLASS\s*A\b/.test(text)) airspaceClass = 'A';
   else if (/CLASS\s*C\b/.test(text)) airspaceClass = 'C';
   else if (/CLASS\s*D\b/.test(text)) airspaceClass = 'D';
   else if (/CLASS\s*E\b/.test(text)) airspaceClass = 'E';
 
-  // Type — ordered by severity
-  let airspaceType = 'Clear';
-  if      (/\bFRZ\b|FLIGHT RESTRICTION ZONE/.test(text))                         airspaceType = 'FRZ';
-  else if (/\bPROHIBITED\b|EG\s*P\d+/.test(text))                               airspaceType = 'Prohibited Area';
-  else if (/\bRESTRICTED\b|EG\s*R\d+/.test(text))                               airspaceType = 'Restricted Area';
-  else if (/\bTDA\b|TEMPORARY DANGER/.test(text))                                airspaceType = 'TDA';
-  else if (/\bDANGER\s*AREA\b|EG\s*D\d+/.test(text))                            airspaceType = 'Danger Area';
+  // Type upgrade: most severe wins
+  if (/\bFRZ\b|FLIGHT RESTRICTION ZONE/.test(text))          airspaceType = upgradeAirspaceType(airspaceType, 'FRZ');
+  if (/\bPROHIBITED\b|EG\s*P\d+/.test(text))                airspaceType = upgradeAirspaceType(airspaceType, 'Prohibited Area');
+  if (/\bRESTRICTED\b|EG\s*R\d+/.test(text))                airspaceType = upgradeAirspaceType(airspaceType, 'Restricted Area');
+  if (/\bTDA\b|TEMPORARY DANGER/.test(text))                 airspaceType = upgradeAirspaceType(airspaceType, 'TDA');
+  if (/\bDANGER\s*AREA\b|EG\s*D\d+/.test(text))             airspaceType = upgradeAirspaceType(airspaceType, 'Danger Area');
 
   return { airspaceClass, airspaceType };
 }
 
 // ── Populate estate-based airspace fields ─────────────────────────────────
+function renderAirspaceAreas(airspace, estate) {
+  const wrap   = document.getElementById('pf-airspace-areas-wrap');
+  const list   = document.getElementById('pf-airspace-areas');
+  const source = document.getElementById('pf-airspace-source');
+  if (!wrap || !list) return;
+
+  const areas = airspace.areas || [];
+  const constraints = airspace.additional_constraints || [];
+
+  if (!areas.length && !constraints.length) {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  const typeClass = t => {
+    if (!t) return 'aa-clear';
+    const u = t.toUpperCase();
+    if (u.includes('RESTRICTED') || u.includes('PROHIBITED') || u.includes('FRZ')) return 'aa-restricted';
+    if (u.includes('DANGER') || u.includes('TDA')) return 'aa-danger';
+    return 'aa-clear';
+  };
+  const typeBadge = t => {
+    if (!t) return '<span class="airspace-area-badge badge-clear">Clear</span>';
+    const u = t.toUpperCase();
+    if (u.includes('RESTRICTED') || u.includes('PROHIBITED') || u.includes('FRZ'))
+      return `<span class="airspace-area-badge badge-restricted">${t}</span>`;
+    if (u.includes('DANGER') || u.includes('TDA'))
+      return `<span class="airspace-area-badge badge-danger">${t}</span>`;
+    return `<span class="airspace-area-badge badge-clear">${t}</span>`;
+  };
+
+  list.innerHTML = areas.map(a => `
+    <div class="airspace-area ${typeClass(a.type)}">
+      <div class="airspace-area-head">
+        <span class="airspace-area-desig">${a.designator || ''}</span>
+        <span class="airspace-area-name">${a.name || ''}</span>
+        ${typeBadge(a.type)}
+      </div>
+      <div class="airspace-area-meta">
+        ${a.lower && a.upper ? `<strong>Vertical:</strong> ${a.lower} – ${a.upper}${a.upper_notam ? ` (up to ${a.upper_notam} by NOTAM)` : ''} &nbsp;·&nbsp; ` : ''}
+        ${a.hours ? `<strong>Hours:</strong> ${a.hours}` : ''}
+        ${a.booking_required ? ` &nbsp;·&nbsp; <strong>Booking required:</strong> ${a.booking_contact || ''}` : ''}
+        ${a.frequency ? ` &nbsp;·&nbsp; <strong>Freq:</strong> ${a.frequency}` : ''}
+        ${a.notes ? `<br>${a.notes}` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  // Additional constraints as simple tags
+  if (constraints.length) {
+    list.innerHTML += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+      ${constraints.map(c => `<span class="airspace-area-badge badge-danger">${c}</span>`).join('')}
+    </div>`;
+  }
+
+  if (source) source.textContent = airspace.source || '';
+  wrap.style.display = '';
+}
+
 function populateAirspaceFromEstate(estateName) {
   const e = estatesData[estateName] || {};
   setText('pf-nearest-aerodrome', e.nearest_aerodrome || '—');
@@ -3999,6 +4073,18 @@ function populateAirspaceFromEstate(estateName) {
     if (contact) { atcHint.textContent = contact; atcHint.style.display = ''; }
     else { atcHint.style.display = 'none'; }
   }
+
+  // ── Airspace class and type from static data ──────────────────────────────
+  // Set immediately on estate select — Action result can only upgrade type, not replace
+  const airspace = e.airspace || {};
+  const classEl = document.getElementById('pf-airspace-class');
+  const typeEl  = document.getElementById('pf-airspace-type');
+  if (classEl) classEl.value = airspace.class    || 'G';
+  if (typeEl)  typeEl.value  = airspace.base_type || 'Clear';
+
+  // ── Render airspace areas detail card ─────────────────────────────────────
+  renderAirspaceAreas(airspace, e);
+
   checkAllCardTicks();
 }
 
@@ -4043,34 +4129,13 @@ function populateActionData(d) {
     notams.forEach(n => { const el = document.createElement('div'); el.className = 'notam-item'; el.textContent = n; list.appendChild(el); });
   }
 
-  // Auto-detect airspace class and type from NOTAM text
-  const { airspaceClass, airspaceType } = detectAirspaceFromNotams(notams);
+  // Auto-detect airspace class and type — static data first, NOTAMs upgrade only
+  const currentEstate = document.getElementById('pf-estate-select')?.value || '';
+  const { airspaceClass, airspaceType } = detectAirspaceForEstate(currentEstate, notams);
   const classEl = document.getElementById('pf-airspace-class');
   const typeEl  = document.getElementById('pf-airspace-type');
-  if (classEl && !classEl.value) classEl.value = airspaceClass;
-  if (typeEl  && !typeEl.value)  typeEl.value  = airspaceType;
-
-  // ── Upcoming NOTAMs (next 7 days, not yet active) ─────────────────────────
-  const upcomingCard = document.getElementById('upcoming-notam-card');
-  const upcomingList = document.getElementById('upcoming-notam-list');
-  const upcomingSubtitle = document.getElementById('upcoming-notam-subtitle');
-  if (upcomingCard && upcomingList) {
-    const upcoming = d._upcoming_notams_list || [];
-    upcomingList.innerHTML = '';
-    if (!upcoming.length) {
-      upcomingList.innerHTML = '<div class="unc-item none">No upcoming NOTAMs in the next 7 days</div>';
-      if (upcomingSubtitle) upcomingSubtitle.textContent = 'None — skies clear ahead';
-    } else {
-      if (upcomingSubtitle) upcomingSubtitle.textContent = `${upcoming.length} NOTAM${upcoming.length > 1 ? 's' : ''} — for awareness only, not yet active`;
-      upcoming.forEach(n => {
-        const el = document.createElement('div');
-        el.className = 'unc-item';
-        el.textContent = n;
-        upcomingList.appendChild(el);
-      });
-    }
-    upcomingCard.style.display = '';
-  }
+  if (classEl) classEl.value = airspaceClass;
+  if (typeEl)  typeEl.value  = airspaceType;
 }
 
 // ── Legacy wrapper — kept so any remaining internal calls don't break ──
