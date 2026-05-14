@@ -2510,6 +2510,35 @@ async function fetchMetOfficeDirect(lat, lon) {
   };
 
   const precipPct = best.probOfPrecipitation ?? 0;
+  const cloudOktas = best.totalCloudCover;  // 0–8 oktas, may be undefined
+  const sigWx      = best.significantWeatherCode;  // numeric code
+
+  // Map significantWeatherCode to a short readable label
+  const sigWxLabel = code => {
+    const map = {
+      0:'Clear', 1:'Trace cloud', 2:'Partly cloudy', 3:'Partly cloudy',
+      5:'Mist', 6:'Fog', 7:'Fog',
+      8:'Overcast', 9:'Overcast',
+      10:'Light rain', 11:'Drizzle', 12:'Drizzle',
+      15:'Heavy rain', 16:'Sleet', 17:'Sleet',
+      20:'Hail', 21:'Hail',
+      25:'Light snow', 26:'Snow', 27:'Heavy snow',
+      28:'Thunder shower', 29:'Thunder', 30:'Thunder',
+    };
+    if (code == null) return '';
+    // Find nearest key
+    return map[code] || (code <= 3 ? 'Clear' : code <= 9 ? 'Cloudy' : code <= 17 ? 'Rain' : code <= 27 ? 'Snow' : 'Storm');
+  };
+
+  const cloudLabel = (() => {
+    const wx = sigWxLabel(sigWx);
+    if (cloudOktas != null) {
+      return wx ? `${wx} · ${cloudOktas}/8 oktas` : `${cloudOktas}/8 oktas`;
+    }
+    if (wx) return wx;
+    return '';
+  })();
+
   return {
     wind_strength:  best.windSpeed10m != null ? String(Math.round(best.windSpeed10m * 10) / 10) : '',
     wind_direction: toCompass(best.windDirectionFrom10m),
@@ -2520,6 +2549,8 @@ async function fetchMetOfficeDirect(lat, lon) {
     precip_prob:    precipPct,
     visibility_cat: toVisCat(best.visibility),
     visibility_m:   String(best.visibility ?? ''),
+    cloud_label:    cloudLabel,
+    cloud_oktas:    cloudOktas != null ? String(cloudOktas) : '',
     met_time:       best.time,
     met_source:     'Met Office DataHub Global Spot',
   };
@@ -2704,6 +2735,20 @@ function setAutoFieldColor(el, status) {
 }
 
 // Derive overall "within limits" from all statuses
+// Colour-code a data-cell value div by traffic light status
+function setDataCellColor(id, status) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const styles = {
+    green:  { color: 'var(--ok)',     fontWeight: '600' },
+    orange: { color: 'var(--warn)',   fontWeight: '700' },
+    red:    { color: 'var(--danger)', fontWeight: '700' },
+  };
+  const s = styles[status] || { color: 'var(--text)', fontWeight: '500' };
+  el.style.color      = s.color;
+  el.style.fontWeight = s.fontWeight;
+}
+
 function deriveWithinLimits(statuses) {
   if (statuses.includes('red'))    return 'No';
   if (statuses.includes('orange')) return 'Borderline';
@@ -3759,20 +3804,31 @@ async function pollForResult(runId, timeoutSecs, intervalMs) {
 
 // ── Browser-direct met: all weather fields — called instantly on estate select ──
 function populateMetFromBrowser(met) {
-  // Wind: convert m/s to kt for display consistency, show direction + speed
+  // Wind
   const windStr = met.wind_direction && met.wind_strength
     ? `${met.wind_direction} ${met.wind_strength} m/s`
     : (met.wind_strength ? `${met.wind_strength} m/s` : '—');
-  setText('d-wind',      windStr);
-  setText('d-cloud',     '—');  // cloud not in browser fetch — Action fills this
+  setText('d-wind', windStr);
+  setDataCellColor('d-wind', windStatus(met.wind_strength));
+
+  // Cloud — from Met Office totalCloudCover + significantWeatherCode
+  if (met.cloud_label) {
+    setText('d-cloud', met.cloud_label);
+    setDataCellColor('d-cloud', 'green');  // cloud is informational, not a go/no-go threshold
+  }
+
+  // Precipitation
   setText('d-precip-pf', met.precipitation || '—');
-  setText('d-temp-pf',   met.temperature   ? met.temperature + '°C' : '—');
-  setText('d-dewpoint',  met.dew_point     ? met.dew_point   + '°C' : '—');
+  setDataCellColor('d-precip-pf', precipStatus(met.precipitation));
 
-  // Sunrise/sunset from estate data (static per estate, not from met)
-  // Left as '—' until Action result arrives — these come from the Action
+  // Temperature
+  setText('d-temp-pf', met.temperature ? met.temperature + '°C' : '—');
+  setDataCellColor('d-temp-pf', tempStatus(met.temperature));
 
-  // Source banner — browser-direct weather
+  // Dew point — informational
+  setText('d-dewpoint', met.dew_point ? met.dew_point + '°C' : '—');
+
+  // Source banner
   const pfBanner = document.getElementById('pf-conditions-source-banner');
   if (pfBanner) {
     const mt = met.met_time ? new Date(met.met_time) : null;
@@ -4128,16 +4184,25 @@ function populateAirspaceFromEstate(estateName) {
 
 // ── Action result: NOTAMs, Kp, METAR, TAF, sunrise/sunset — never touches met fields ──
 function populateActionData(d) {
-  // Sunrise / sunset come from Action (computed server-side per estate)
+  // Sunrise / sunset
   setText('d-sunrise', d._sunrise || '—');
   setText('d-sunset',  d._sunset  || '—');
-  // Cloud cover comes from Action
-  setText('d-cloud',   d._cloud_cover || '—');
-  // Kp index
-  setText('d-space',   d._space_weather_kp || '—');
+
+  // Cloud cover — owned by browser fetch (Met Office totalCloudCover + sigWx)
+  // Action result does not override d-cloud
+
+  // Kp index — exact number with colour coding
+  if (d._space_weather_kp !== undefined && d._space_weather_kp !== '') {
+    const kpNum = parseFloat(d._space_weather_kp);
+    setText('d-space', isNaN(kpNum) ? d._space_weather_kp : `Kp ${kpNum}`);
+    setDataCellColor('d-space', kpStatus(d._space_weather_kp));
+  } else {
+    setText('d-space', '—');
+  }
+
   // METAR / TAF
-  setText('d-metar',   d._metar || '—');
-  setText('d-taf',     d._taf   || '—');
+  setText('d-metar', d._metar || '—');
+  setText('d-taf',   d._taf   || '—');
 
   // Update source banner to add Kp line
   const pfBanner = document.getElementById('pf-conditions-source-banner');
