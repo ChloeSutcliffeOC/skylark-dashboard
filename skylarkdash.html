@@ -2735,18 +2735,40 @@ function setAutoFieldColor(el, status) {
 }
 
 // Derive overall "within limits" from all statuses
-// Colour-code a data-cell value div by traffic light status
-function setDataCellColor(id, status) {
-  const el = document.getElementById(id);
-  if (!el) return;
+// Colour-code an entire data-cell card by traffic light status (matches onsite auto-field style)
+function setDataCellStyle(id, status) {
+  const valueEl = document.getElementById(id);
+  if (!valueEl) return;
+  const card = valueEl.closest('.data-cell');
+  if (!card) return;
   const styles = {
-    green:  { color: 'var(--ok)',     fontWeight: '600' },
-    orange: { color: 'var(--warn)',   fontWeight: '700' },
-    red:    { color: 'var(--danger)', fontWeight: '700' },
+    green:  { bg: '#e8f5e9', border: '#4caf70', labelColor: '#166a2a', valueColor: '#0f4a1e', weight: '600' },
+    orange: { bg: '#fde4b0', border: '#b45309', labelColor: '#92400e', valueColor: '#7c3a06', weight: '700' },
+    red:    { bg: '#fde8e8', border: '#991b1b', labelColor: '#991b1b', valueColor: '#6b1212', weight: '700' },
   };
-  const s = styles[status] || { color: 'var(--text)', fontWeight: '500' };
-  el.style.color      = s.color;
-  el.style.fontWeight = s.fontWeight;
+  const s = styles[status];
+  if (!s) return;
+  card.style.background   = s.bg;
+  card.style.border       = `2px solid ${s.border}`;
+  card.style.borderRadius = '8px';
+  valueEl.style.color      = s.valueColor;
+  valueEl.style.fontWeight = s.weight;
+  const labelEl = card.querySelector('.cell-label');
+  if (labelEl) labelEl.style.color = s.labelColor;
+}
+
+// Reset a data-cell card to default styling
+function resetDataCellStyle(id) {
+  const valueEl = document.getElementById(id);
+  if (!valueEl) return;
+  const card = valueEl.closest('.data-cell');
+  if (!card) return;
+  card.style.background = '';
+  card.style.border     = '';
+  valueEl.style.color      = '';
+  valueEl.style.fontWeight = '';
+  const labelEl = card.querySelector('.cell-label');
+  if (labelEl) labelEl.style.color = '';
 }
 
 function deriveWithinLimits(statuses) {
@@ -3689,6 +3711,7 @@ function populatePreflightFromOnsite(rec) {
   }
 
   // Permissions — police and ATC from onsite
+  // Police toggle — from onsite answer
   const policeVal = rec.have_the_police_been_informed;
   if (policeVal) {
     const isNR = policeVal === 'Not required' || policeVal === 'Not Required';
@@ -3696,13 +3719,10 @@ function populatePreflightFromOnsite(rec) {
     const btn = document.getElementById(btnId);
     if (btn) { pfToggleState['pf-police'] = isNR ? 'Not Required' : 'Informed'; btn.classList.add('sel-green'); }
   }
-  const atcVal = rec.have_all_notifications_been_iss;
-  if (atcVal) {
-    const isNR = atcVal === 'Not required' || atcVal === 'Not Required';
-    const btnId = isNR ? 'pf-atc-notif-nr' : 'pf-atc-notif-informed';
-    const btn = document.getElementById(btnId);
-    if (btn) { pfToggleState['pf-atc-notif'] = isNR ? 'Not Required' : 'Informed'; btn.classList.add('sel-green'); }
-  }
+  // ATC / Airspace Managers toggle — NOT pre-filled from onsite answer.
+  // Always derived fresh from airspace static data + active NOTAMs when the
+  // Action result arrives via populateActionData. Pre-filling from the onsite
+  // answer blocks that update (guard: !pfToggleState['pf-atc-notif']).
 
   // Auto-select estate in preflight if it matches
   const pfEstate = document.getElementById('pf-estate-select');
@@ -3809,21 +3829,21 @@ function populateMetFromBrowser(met) {
     ? `${met.wind_direction} ${met.wind_strength} m/s`
     : (met.wind_strength ? `${met.wind_strength} m/s` : '—');
   setText('d-wind', windStr);
-  setDataCellColor('d-wind', windStatus(met.wind_strength));
+  setDataCellStyle('d-wind', windStatus(met.wind_strength));
 
   // Cloud — from Met Office totalCloudCover + significantWeatherCode
   if (met.cloud_label) {
     setText('d-cloud', met.cloud_label);
-    setDataCellColor('d-cloud', 'green');  // cloud is informational, not a go/no-go threshold
+    setDataCellStyle('d-cloud', 'green');  // cloud is informational, not a go/no-go threshold
   }
 
   // Precipitation
   setText('d-precip-pf', met.precipitation || '—');
-  setDataCellColor('d-precip-pf', precipStatus(met.precipitation));
+  setDataCellStyle('d-precip-pf', precipStatus(met.precipitation));
 
   // Temperature
   setText('d-temp-pf', met.temperature ? met.temperature + '°C' : '—');
-  setDataCellColor('d-temp-pf', tempStatus(met.temperature));
+  setDataCellStyle('d-temp-pf', tempStatus(met.temperature));
 
   // Dew point — informational
   setText('d-dewpoint', met.dew_point ? met.dew_point + '°C' : '—');
@@ -4195,7 +4215,7 @@ function populateActionData(d) {
   if (d._space_weather_kp !== undefined && d._space_weather_kp !== '') {
     const kpNum = parseFloat(d._space_weather_kp);
     setText('d-space', isNaN(kpNum) ? d._space_weather_kp : `Kp ${kpNum}`);
-    setDataCellColor('d-space', kpStatus(d._space_weather_kp));
+    setDataCellStyle('d-space', kpStatus(d._space_weather_kp));
   } else {
     setText('d-space', '—');
   }
