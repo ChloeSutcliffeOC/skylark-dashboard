@@ -1282,11 +1282,11 @@
       <div class="two-col">
         <div>
           <div class="field-label auto-label">Mission ID</div>
-          <input type="text" id="pf-mission-id" readonly style="background:var(--surface2);color:var(--muted)" placeholder="— complete onsite survey first —">
+          <input type="text" id="pf-mission-id" placeholder="— complete onsite survey first —">
         </div>
         <div>
           <div class="field-label auto-label">Task</div>
-          <input type="text" id="pf-task" readonly style="background:var(--surface2);color:var(--muted)" placeholder="—">
+          <input type="text" id="pf-task" placeholder="—">
         </div>
       </div>
       <div>
@@ -1392,8 +1392,11 @@
           </select>
         </div>
         <div style="margin-top:10px">
-          <div class="field-label">Wind Speed at Operating Altitude</div>
-          <input type="text" id="pf-wind-alt" placeholder="Auto-filled by calculator above" readonly class="auto-field" style="cursor:default">
+          <div id="wind-alt-badge" style="display:none;margin-top:12px;border-radius:8px;padding:14px 18px;text-align:center;border:2px solid var(--border);background:var(--surface2);transition:background 0.2s,border-color 0.2s">
+            <div style="font-family:var(--mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:4px">Wind at altitude</div>
+            <div id="pf-wind-alt-display" style="font-family:var(--mono);font-size:28px;font-weight:700;letter-spacing:0.02em;line-height:1"></div>
+          </div>
+          <input type="hidden" id="pf-wind-alt">
         </div>
       </div>
     </div>
@@ -1637,11 +1640,11 @@
       <div class="two-col">
         <div>
           <div class="field-label auto-label">Public Access Points</div>
-          <textarea id="pf-access-points" readonly style="background:var(--surface2);color:var(--muted)" placeholder="— select estate first —"></textarea>
+          <textarea id="pf-access-points" placeholder="— select estate first —"></textarea>
         </div>
         <div>
           <div class="field-label auto-label">Marshalling Points</div>
-          <textarea id="pf-marshal-points" readonly style="background:var(--surface2);color:var(--muted)" placeholder="— select estate first —"></textarea>
+          <textarea id="pf-marshal-points" placeholder="— select estate first —"></textarea>
         </div>
       </div>
 
@@ -4286,33 +4289,53 @@ async function submitPreflight() {
 // WIND PROFILE CALCULATOR (log wind law)
 // ══════════════════════════════════════════════════════
 function calcWindProfile() {
-  const vSurface  = parseFloat(document.getElementById('pf-wind-surface').value);
-  const zOp       = parseFloat(document.getElementById('pf-wind-altitude').value);
-  const z0        = parseFloat(document.getElementById('pf-roughness').value);
-  const altField  = document.getElementById('pf-wind-alt');
+  const vSurface = parseFloat(document.getElementById('pf-wind-surface').value);
+  const zOp      = parseFloat(document.getElementById('pf-wind-altitude').value);
+  const z0       = parseFloat(document.getElementById('pf-roughness').value);
+  const hidden   = document.getElementById('pf-wind-alt');
+  const badge    = document.getElementById('wind-alt-badge');
+  const display  = document.getElementById('pf-wind-alt-display');
 
   if (isNaN(vSurface) || isNaN(zOp) || isNaN(z0) || zOp <= 0 || vSurface < 0) {
-    altField.value = '';
-    altField.style.cssText = '';
+    if (hidden) hidden.value = '';
+    if (badge)  badge.style.display = 'none';
     return;
   }
 
   const zRef = 2;
   if (zOp <= z0) {
-    altField.value = '⚠ Operating altitude below roughness length — check inputs';
-    altField.style.color = 'var(--danger)';
-    altField.style.fontWeight = '600';
+    if (hidden) hidden.value = '';
+    if (badge && display) {
+      badge.style.display   = '';
+      badge.style.background    = '#fde8e8';
+      badge.style.borderColor   = '#991b1b';
+      display.style.fontSize    = '14px';
+      display.style.color       = '#991b1b';
+      display.textContent       = '⚠ Alt below roughness length';
+    }
     return;
   }
 
   const vAlt   = vSurface * Math.log(zOp / z0) / Math.log(zRef / z0);
   const vAltMs = Math.round(vAlt * 10) / 10;
 
-  altField.value = `${vAltMs} m/s`;
-  altField.style.fontWeight = '600';
-  if      (vAltMs < 10) setAutoFieldColor(altField, 'green');
-  else if (vAltMs <= 12) setAutoFieldColor(altField, 'orange');
-  else                   setAutoFieldColor(altField, 'red');
+  if (hidden) hidden.value = `${vAltMs} m/s`;
+
+  if (badge && display) {
+    const colours = {
+      green:  { bg: '#e8f5e9', border: '#4caf70', text: '#166a2a' },
+      orange: { bg: '#fde4b0', border: '#b45309', text: '#7c3a06' },
+      red:    { bg: '#fde8e8', border: '#991b1b', text: '#6b1212' },
+    };
+    const level = vAltMs < 10 ? 'green' : vAltMs <= 12 ? 'orange' : 'red';
+    const c = colours[level];
+    badge.style.display     = '';
+    badge.style.background  = c.bg;
+    badge.style.borderColor = c.border;
+    display.style.fontSize  = '28px';
+    display.style.color     = c.text;
+    display.textContent     = `${vAltMs} m/s`;
+  }
 }
 
 // IMSAFE
