@@ -1437,30 +1437,21 @@
       </div>
 
       <!-- Airspace reference cards — two natural-height columns, populated by JS -->
-      <!-- NOTAMs + Identified Airspace Hazards — info-cell cards above reference grid -->
-      <div class="estate-info-grid" style="margin-top:14px">
-        <div class="estate-info-col">
-          <div class="info-cell ic-notam" id="notam-card">
-            <div class="ic-header">
-              <span class="ic-icon">📋</span>
-              <span class="ic-label">NOTAMs</span>
-              <span id="notam-count" style="font-family:var(--mono);font-size:10px;color:var(--danger);font-weight:700;margin-left:auto"></span>
-            </div>
-            <div class="notam-list" id="notam-list" style="margin-top:8px">
-              <div class="notam-item none">Run Skylark to load NOTAMs</div>
-            </div>
+      <!-- NOTAMs card above reference grid -->
+      <div style="margin-top:14px">
+        <div class="info-cell ic-notam" id="notam-card">
+          <div class="ic-header">
+            <span class="ic-icon">📋</span>
+            <span class="ic-label">NOTAMs</span>
+            <span id="notam-count" style="font-family:var(--mono);font-size:10px;color:var(--danger);font-weight:700;margin-left:auto"></span>
           </div>
-        </div>
-        <div class="estate-info-col">
-          <div class="info-cell ic-hazard" id="airspace-hazards-card">
-            <div class="ic-header">
-              <span class="ic-icon">⚠️</span>
-              <span class="ic-label auto-label">Identified Airspace Hazards</span>
-            </div>
-            <textarea id="pf-hazards-onsite" style="margin-top:8px;background:transparent;border:none;padding:0;font-size:13px;color:var(--muted);width:100%;min-height:80px;resize:vertical;outline:none;line-height:1.5" placeholder="Auto-filled from active NOTAMs and restrictions when Skylark runs"></textarea>
+          <div class="notam-list" id="notam-list" style="margin-top:8px">
+            <div class="notam-item none">Run Skylark to load NOTAMs</div>
           </div>
         </div>
       </div>
+      <!-- Hidden field — airspace hazard text for record submission -->
+      <textarea id="pf-hazards-onsite" style="display:none"></textarea>
 
       <div class="estate-info-grid" id="pf-airspace-ref-grid" style="margin-top:10px"></div>
       <!-- Static ID anchors for record builder and tick checks — not visible -->
@@ -3908,12 +3899,10 @@ function checkAllCardTicks() {
       const typeOk    = !!pfVal('pf-airspace-type');
       const notamEl   = document.getElementById('notam-list');
       const notamsOk  = notamEl && !notamEl.textContent.includes('Run Skylark') && !notamEl.textContent.includes('load NOTAMs');
-      const hazardsEl = document.getElementById('pf-hazards-onsite');
-      const hazardsOk = hazardsEl && hazardsEl.value.trim() !== '' && !hazardsEl.value.includes('Skylark runs');
       const aeroOk    = (document.getElementById('pf-nearest-aerodrome')?.textContent || '').trim() !== '';
       const atcOk     = (document.getElementById('pf-nearest-atc')?.textContent || '').trim() !== '';
       const permsOk   = !!(pfToggleState['pf-police'] && pfToggleState['pf-atc-notif']);
-      return classOk && typeOk && notamsOk && hazardsOk && aeroOk && atcOk && permsOk;
+      return classOk && typeOk && notamsOk && aeroOk && atcOk && permsOk;
     })(),
     'tick-cordons': !!(pfVal('pf-opvol-dist') && pfVal('pf-opvol-height') && pfVal('pf-tola-desc') && pfVal('pf-contvol-dist') && pfVal('pf-contvol-height') && pfVal('pf-ela-direction') && pfVal('pf-access-points') && pfVal('pf-marshal-points')),
     'tick-comms':   ['pf-mobile-sig','pf-data-sig','pf-radios','pf-whistles','pf-comms-briefed'].every(k => pfToggleState[k]),
@@ -4424,41 +4413,21 @@ function populateActionData(d) {
     notams.forEach(n => { const el = document.createElement('div'); el.className = 'notam-item'; el.textContent = n; list.appendChild(el); });
   }
 
-  // ── Identified Airspace Hazards — derived from active restrictions + NOTAMs ──
+  // ── Airspace hazards — written to hidden field for record submission ─────
   const airspaceHazardsEl = document.getElementById('pf-hazards-onsite');
   if (airspaceHazardsEl) {
     const lines = [];
-    // Airspace notification requirement reason (e.g. "EGD510A active — booking required")
-    if (d._notam_required_reason && d._notam_required_reason !== 'No FRZ, active danger areas, or NOTAM restrictions identified. Phone-call coordination only if applicable.') {
+    if (d._notam_required_reason && !d._notam_required_reason.includes('Phone-call coordination only')) {
       lines.push(d._notam_required_reason);
     }
-    // Summarise active NOTAMs by ID only (full text is in the NOTAM list above)
     if (notams.length) {
-      const ids = notams.map(n => {
-        const m = n.match(/^([A-Z0-9][A-Z0-9\/\-]{2,})/);
-        return m ? m[1] : null;
-      }).filter(Boolean);
+      const ids = notams.map(n => { const m = n.match(/^([A-Z0-9][A-Z0-9\/\-]{2,})/); return m ? m[1] : null; }).filter(Boolean);
       if (ids.length) lines.push(`Active NOTAMs: ${ids.join(', ')}`);
     }
-    // NOTAM-disabled areas
     const refs = d._notam_refs || {};
     const disabledEntries = Object.entries(refs).map(([desig, nid]) => `${desig} disabled by NOTAM ${nid}`);
     if (disabledEntries.length) lines.push(disabledEntries.join('; '));
-
-    if (lines.length) {
-      airspaceHazardsEl.value = lines.join('\n');
-      setAutoFieldColor(airspaceHazardsEl, notams.length || d._notam_required_bool ? 'orange' : 'green');
-      const hazCard = document.getElementById('airspace-hazards-card');
-      if (hazCard) {
-        hazCard.style.borderLeftColor = notams.length || d._notam_required_bool ? 'var(--warn)' : 'var(--ok)';
-        hazCard.style.background      = notams.length || d._notam_required_bool ? 'var(--warn-bg)' : 'var(--ok-bg)';
-      }
-    } else if (!airspaceHazardsEl.value) {
-      airspaceHazardsEl.value = 'No active airspace restrictions or NOTAM hazards identified';
-      setAutoFieldColor(airspaceHazardsEl, 'green');
-      const hazCard = document.getElementById('airspace-hazards-card');
-      if (hazCard) { hazCard.style.borderLeftColor = 'var(--ok)'; hazCard.style.background = 'var(--ok-bg)'; }
-    }
+    airspaceHazardsEl.value = lines.join('\n');
   }
 
   // Auto-detect airspace class and type — static data first, NOTAMs upgrade only
