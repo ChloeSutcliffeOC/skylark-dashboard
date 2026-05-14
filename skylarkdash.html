@@ -1405,40 +1405,82 @@
   <!-- 5. Airspace -->
   <div class="card">
     <div class="card-header">
-      
       <h2>Airspace <span class="card-tick" id="tick-airspace" style="display:none">✓</span></h2>
     </div>
     <div class="card-body">
 
-      <!-- Class & Type -->
-      <div class="two-col">
-        <div>
-          <div class="field-label auto-label">Airspace Class</div>
-          <select id="pf-airspace-class">
-            <option value="">— Select —</option>
-            <option value="G">Class G — Uncontrolled</option>
-            <option value="D">Class D — Controlled (aerodrome)</option>
-            <option value="E">Class E — Controlled (partial)</option>
-            <option value="C">Class C — Controlled (high-level)</option>
-            <option value="A">Class A — Controlled (IFR only)</option>
-          </select>
+      <!-- Class & Type — colour-coded info cells, auto-set from static data -->
+      <div class="estate-info-grid" id="pf-airspace-class-grid">
+        <div class="estate-info-col">
+          <div class="info-cell ic-airspace" id="pf-airspace-class-cell">
+            <div class="ic-header"><span class="ic-icon">🛡</span><span class="ic-label">Airspace Class</span></div>
+            <div style="margin-top:8px">
+              <select id="pf-airspace-class" style="width:100%;background:transparent;border:none;padding:0;font-size:15px;font-weight:600;color:inherit;outline:none;cursor:pointer;appearance:auto;-webkit-appearance:auto">
+                <option value="">— Select —</option>
+                <option value="G">Class G — Uncontrolled</option>
+                <option value="D">Class D — Controlled (aerodrome)</option>
+                <option value="E">Class E — Controlled (partial)</option>
+                <option value="C">Class C — Controlled (high-level)</option>
+                <option value="A">Class A — Controlled (IFR only)</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <div>
-          <div class="field-label auto-label">Airspace Type</div>
-          <select id="pf-airspace-type">
-            <option value="">— Select —</option>
-            <option value="Clear">Clear — no restrictions</option>
-            <option value="FRZ">FRZ — Flight Restriction Zone</option>
-            <option value="Danger Area">Danger Area</option>
-            <option value="Restricted Area">Restricted Area</option>
-            <option value="Prohibited Area">Prohibited Area</option>
-            <option value="TDA">TDA — Temporary Danger Area</option>
-          </select>
+        <div class="estate-info-col">
+          <div class="info-cell ic-airspace" id="pf-airspace-type-cell">
+            <div class="ic-header"><span class="ic-icon">🗺️</span><span class="ic-label">Airspace Type</span></div>
+            <div style="margin-top:8px">
+              <select id="pf-airspace-type" style="width:100%;background:transparent;border:none;padding:0;font-size:15px;font-weight:600;color:inherit;outline:none;cursor:pointer;appearance:auto;-webkit-appearance:auto" onchange="updateAirspaceTypeCellStyle()">
+                <option value="">— Select —</option>
+                <option value="Clear">Clear — no restrictions</option>
+                <option value="FRZ">FRZ — Flight Restriction Zone</option>
+                <option value="Danger Area">Danger Area</option>
+                <option value="Restricted Area">Restricted Area</option>
+                <option value="Prohibited Area">Prohibited Area</option>
+                <option value="TDA">TDA — Temporary Danger Area</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
+      <!-- Aerodrome / ATC — contact cards -->
+      <div class="estate-info-grid" style="margin-top:10px">
+        <div class="estate-info-col">
+          <div class="info-cell ic-airspace">
+            <div class="ic-header"><span class="ic-icon">✈️</span><span class="ic-label auto-label">Nearest Aerodrome</span></div>
+            <div class="ic-value" id="pf-nearest-aerodrome" style="margin-top:4px">—</div>
+          </div>
+        </div>
+        <div class="estate-info-col">
+          <div class="info-cell ic-contact">
+            <div class="ic-header"><span class="ic-icon">📡</span><span class="ic-label auto-label">Nearest ATC</span></div>
+            <div class="ic-value" id="pf-nearest-atc" style="margin-top:4px">—</div>
+          </div>
+        </div>
+        <div class="estate-info-col" style="grid-column:1/-1">
+          <div class="info-cell ic-airspace">
+            <div class="ic-header"><span class="ic-icon">⚠️</span><span class="ic-label auto-label">Other Airspace Considerations</span></div>
+            <div class="ic-value" id="pf-other-airspace" style="margin-top:4px;white-space:pre-wrap">—</div>
+          </div>
+        </div>
+        <div class="estate-info-col" style="grid-column:1/-1">
+          <div class="info-cell ic-contact">
+            <div class="ic-header"><span class="ic-icon">📞</span><span class="ic-label auto-label">ATC / Airspace Manager Contact</span></div>
+            <div class="ic-value" id="pf-atc-contact" style="margin-top:4px;white-space:pre-wrap">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Airspace areas from static data -->
+      <div id="pf-airspace-areas-wrap" style="display:none;margin-top:10px">
+        <div class="field-label auto-label" style="margin-bottom:6px">Airspace Areas <span style="font-size:10px;font-weight:400;color:var(--faint)">from estate data — verify against current AIRAC</span></div>
+        <div class="airspace-areas" id="pf-airspace-areas"></div>
+        <div class="airspace-source" id="pf-airspace-source"></div>
+      </div>
+
       <!-- NOTAMs -->
-      <div style="margin-top:12px">
+      <div style="margin-top:10px">
         <div class="field-label auto-label">NOTAMs <span style="font-size:10px;font-weight:400;color:var(--faint)">Notices to Aviation</span>
           <span id="notam-count" style="font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:400;margin-left:8px"></span>
         </div>
@@ -1447,41 +1489,14 @@
         </div>
       </div>
 
-      <!-- Hazards from onsite -->
-      <div style="margin-top:12px">
+      <!-- NOTAM Hazards from onsite -->
+      <div style="margin-top:10px">
         <div class="field-label auto-label">NOTAM Hazards <span style="font-size:10px;font-weight:400;color:var(--faint)">— from today's onsite survey</span></div>
         <textarea id="pf-hazards-onsite" readonly style="background:var(--surface2);color:var(--muted);margin-top:6px" placeholder="— complete onsite survey first —"></textarea>
       </div>
 
-      <!-- Nearest aerodrome / ATC / other airspace — from estatesData -->
-      <div class="data-grid" style="margin-top:12px">
-        <div class="data-cell">
-          <div class="cell-label auto-label">Nearest Aerodrome</div>
-          <div class="cell-value" id="pf-nearest-aerodrome" style="margin-top:4px">—</div>
-        </div>
-        <div class="data-cell">
-          <div class="cell-label auto-label">Nearest ATC</div>
-          <div class="cell-value" id="pf-nearest-atc" style="margin-top:4px">—</div>
-        </div>
-        <div class="data-cell" style="grid-column:1/-1">
-          <div class="cell-label auto-label">Other Airspace Considerations <span style="font-size:10px;font-weight:400;color:var(--faint);text-transform:none;letter-spacing:0">Danger Areas, Restricted Areas, FRZs etc.</span></div>
-          <div class="cell-value" id="pf-other-airspace" style="margin-top:4px;white-space:pre-wrap">—</div>
-        </div>
-        <div class="data-cell" style="grid-column:1/-1">
-          <div class="cell-label auto-label">ATC / Airspace Manager Contact <span style="font-size:10px;font-weight:400;color:var(--faint);text-transform:none;letter-spacing:0">within flyaway radius</span></div>
-          <div class="cell-value" id="pf-atc-contact" style="margin-top:4px;white-space:pre-wrap">—</div>
-        </div>
-      </div>
-
-      <!-- Airspace areas from static data — rendered by renderAirspaceAreas() -->
-      <div id="pf-airspace-areas-wrap" style="display:none;margin-top:4px">
-        <div class="field-label auto-label">Airspace Areas <span style="font-size:10px;font-weight:400;color:var(--faint)">from estate data — verify against current AIRAC</span></div>
-        <div class="airspace-areas" id="pf-airspace-areas"></div>
-        <div class="airspace-source" id="pf-airspace-source"></div>
-      </div>
-
-      <!-- Permissions & Notifications — inline with airspace context -->
-      <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:16px">
+      <!-- Permissions & Notifications -->
+      <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:16px">
         <div class="field-label" style="margin-bottom:12px">Permissions &amp; Notifications <span class="card-tick" id="tick-perms" style="display:none">✓</span></div>
         <div>
           <div class="field-label">Landowner</div>
@@ -2338,14 +2353,17 @@ function onEstateChange() {
 
 // ── Toggle helpers ─────────────────────────────────────────────────────────
 function setToggle(key, value, btn) {
+  // Tap again to deselect
+  const allSelClasses = ['sel-yes','sel-no','sel-nr','sel-borderline','sel-not-present','sel-hazard-yes','sel-hazard-no','sel-cord-yes','sel-cord-no','sel-kp-low','sel-kp-mid','sel-kp-high'];
+  if (btn.classList.contains('sel-yes') || btn.classList.contains('sel-no') || btn.classList.contains('sel-nr') || btn.classList.contains('sel-borderline')) {
+    toggleState[key] = '';
+    btn.classList.remove(...allSelClasses);
+    return;
+  }
   toggleState[key] = value;
   const group = btn.closest('.toggle-group');
   if (!group) return;
-  group.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove(
-    'sel-yes','sel-no','sel-nr','sel-borderline','sel-not-present',
-    'sel-hazard-yes','sel-hazard-no','sel-cord-yes','sel-cord-no',
-    'sel-kp-low','sel-kp-mid','sel-kp-high'
-  ));
+  group.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove(...allSelClasses));
   if      (value==='Yes'||value==='GO')                              btn.classList.add('sel-yes');
   else if (value==='No'||value==='NO GO')                            btn.classList.add('sel-no');
   else if (value==='Not required'||value==='Not applicable')         btn.classList.add('sel-nr');
@@ -2364,6 +2382,12 @@ function setCrewPresence(key, value, btn, role) {
 }
 
 function setFitToFly(key, value, btn) {
+  if (btn.classList.contains('sel-ftf-yes') || btn.classList.contains('sel-ftf-no')) {
+    toggleState[key] = '';
+    btn.classList.remove('sel-ftf-yes','sel-ftf-no');
+    evalCrewGate();
+    return;
+  }
   toggleState[key] = value;
   const group = btn.closest('.toggle-group');
   if (group) group.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('sel-ftf-yes','sel-ftf-no'));
@@ -2372,6 +2396,13 @@ function setFitToFly(key, value, btn) {
 }
 
 function setHazardToggle(key, value, btn, dbKey) {
+  if (btn.classList.contains('sel-hazard-yes') || btn.classList.contains('sel-hazard-no')) {
+    toggleState[key] = '';
+    btn.classList.remove('sel-yes','sel-no','sel-hazard-yes','sel-hazard-no');
+    hideHazardDetail(dbKey);
+    evalHazardsGate();
+    return;
+  }
   toggleState[key] = value;
   const group = btn.closest('.toggle-group');
   if (group) group.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove(
@@ -2396,6 +2427,14 @@ function setKp(value, btn) {
 }
 
 function setCordon(key, value, btn, section) {
+  if (btn.classList.contains('sel-cord-yes') || btn.classList.contains('sel-cord-no')) {
+    toggleState[key] = '';
+    btn.classList.remove('sel-cord-yes','sel-cord-no');
+    const detail = document.getElementById(`${section}-cordon-detail`);
+    if (detail) detail.classList.add('hidden');
+    evalAreaGate(section);
+    return;
+  }
   toggleState[key] = value;
   const group = btn.closest('.toggle-group');
   if (group) group.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove(
@@ -3966,6 +4005,12 @@ function epBriefed(key, btn) {
 // ── Preflight toggle helper ───────────────────────────────────────────────
 const pfToggleState = {};
 function setPfToggle(key, value, btn) {
+  if (btn.classList.contains('sel-yes') || btn.classList.contains('sel-no')) {
+    pfToggleState[key] = '';
+    btn.classList.remove('sel-yes','sel-no');
+    checkAllCardTicks();
+    return;
+  }
   pfToggleState[key] = value;
   const group = btn.closest('.toggle-group');
   if (!group) return;
@@ -3974,6 +4019,12 @@ function setPfToggle(key, value, btn) {
   checkAllCardTicks();
 }
 function setPfToggleGreen(key, value, btn) {
+  if (btn.classList.contains('sel-green')) {
+    pfToggleState[key] = '';
+    btn.classList.remove('sel-green');
+    checkAllCardTicks();
+    return;
+  }
   pfToggleState[key] = value;
   const group = btn.closest('.toggle-group');
   if (!group) return;
@@ -4080,6 +4131,22 @@ function detectAirspaceForEstate(estateName, notams) {
 }
 
 // ── Populate estate-based airspace fields ─────────────────────────────────
+// Colour the airspace type info-cell based on restriction severity
+function updateAirspaceTypeCellStyle() {
+  const sel  = document.getElementById('pf-airspace-type');
+  const cell = document.getElementById('pf-airspace-type-cell');
+  if (!cell || !sel) return;
+  const val = sel.value;
+  cell.className = 'info-cell';
+  if (!val || val === 'Clear') {
+    cell.classList.add('ic-airspace');
+  } else if (val === 'FRZ' || val === 'Prohibited Area' || val === 'Restricted Area') {
+    cell.classList.add('ic-notam');  // red — high severity
+  } else {
+    cell.classList.add('ic-hazard'); // orange — Danger Area / TDA
+  }
+}
+
 function renderAirspaceAreas(airspace, estate, notamRefs) {
   const wrap   = document.getElementById('pf-airspace-areas-wrap');
   const list   = document.getElementById('pf-airspace-areas');
@@ -4195,6 +4262,7 @@ function populateAirspaceFromEstate(estateName) {
   const typeEl  = document.getElementById('pf-airspace-type');
   if (classEl) classEl.value = airspace.class    || 'G';
   if (typeEl)  typeEl.value  = airspace.base_type || 'Clear';
+  updateAirspaceTypeCellStyle();
 
   // ── Render airspace areas detail card ─────────────────────────────────────
   renderAirspaceAreas(airspace, e, {});
@@ -4267,6 +4335,7 @@ function populateActionData(d) {
   const typeEl  = document.getElementById('pf-airspace-type');
   if (classEl) classEl.value = airspaceClass;
   if (typeEl)  typeEl.value  = airspaceType;
+  updateAirspaceTypeCellStyle();
 }
 
 // ── Legacy wrapper — kept so any remaining internal calls don't break ──
