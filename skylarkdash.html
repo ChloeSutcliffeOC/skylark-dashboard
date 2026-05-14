@@ -1409,78 +1409,43 @@
     </div>
     <div class="card-body">
 
-      <!-- Class & Type — colour-coded info cells, auto-set from static data -->
-      <div class="estate-info-grid" id="pf-airspace-class-grid">
-        <div class="estate-info-col">
-          <div class="info-cell ic-airspace" id="pf-airspace-class-cell">
-            <div class="ic-header"><span class="ic-icon">🛡</span><span class="ic-label">Airspace Class</span></div>
-            <div style="margin-top:8px">
-              <select id="pf-airspace-class" style="width:100%;background:transparent;border:none;padding:0;font-size:15px;font-weight:600;color:inherit;outline:none;cursor:pointer;appearance:auto;-webkit-appearance:auto">
-                <option value="">— Select —</option>
-                <option value="G">Class G — Uncontrolled</option>
-                <option value="D">Class D — Controlled (aerodrome)</option>
-                <option value="E">Class E — Controlled (partial)</option>
-                <option value="C">Class C — Controlled (high-level)</option>
-                <option value="A">Class A — Controlled (IFR only)</option>
-              </select>
-            </div>
-          </div>
+      <!-- Class & Type — plain manual inputs, same as rest of form -->
+      <div class="two-col">
+        <div>
+          <div class="field-label auto-label">Airspace Class</div>
+          <select id="pf-airspace-class">
+            <option value="">— Select —</option>
+            <option value="G">Class G — Uncontrolled</option>
+            <option value="D">Class D — Controlled (aerodrome)</option>
+            <option value="E">Class E — Controlled (partial)</option>
+            <option value="C">Class C — Controlled (high-level)</option>
+            <option value="A">Class A — Controlled (IFR only)</option>
+          </select>
         </div>
-        <div class="estate-info-col">
-          <div class="info-cell ic-airspace" id="pf-airspace-type-cell">
-            <div class="ic-header"><span class="ic-icon">🗺️</span><span class="ic-label">Airspace Type</span></div>
-            <div style="margin-top:8px">
-              <select id="pf-airspace-type" style="width:100%;background:transparent;border:none;padding:0;font-size:15px;font-weight:600;color:inherit;outline:none;cursor:pointer;appearance:auto;-webkit-appearance:auto" onchange="updateAirspaceTypeCellStyle()">
-                <option value="">— Select —</option>
-                <option value="Clear">Clear — no restrictions</option>
-                <option value="FRZ">FRZ — Flight Restriction Zone</option>
-                <option value="Danger Area">Danger Area</option>
-                <option value="Restricted Area">Restricted Area</option>
-                <option value="Prohibited Area">Prohibited Area</option>
-                <option value="TDA">TDA — Temporary Danger Area</option>
-              </select>
-            </div>
-          </div>
+        <div>
+          <div class="field-label auto-label">Airspace Type</div>
+          <select id="pf-airspace-type" onchange="updateAirspaceTypeInputStyle()">
+            <option value="">— Select —</option>
+            <option value="Clear">Clear — no restrictions</option>
+            <option value="FRZ">FRZ — Flight Restriction Zone</option>
+            <option value="Danger Area">Danger Area</option>
+            <option value="Restricted Area">Restricted Area</option>
+            <option value="Prohibited Area">Prohibited Area</option>
+            <option value="TDA">TDA — Temporary Danger Area</option>
+          </select>
         </div>
       </div>
 
-      <!-- Aerodrome / ATC — contact cards -->
-      <div class="estate-info-grid" style="margin-top:10px">
-        <div class="estate-info-col">
-          <div class="info-cell ic-airspace">
-            <div class="ic-header"><span class="ic-icon">✈️</span><span class="ic-label auto-label">Nearest Aerodrome</span></div>
-            <div class="ic-value" id="pf-nearest-aerodrome" style="margin-top:4px">—</div>
-          </div>
-        </div>
-        <div class="estate-info-col">
-          <div class="info-cell ic-contact">
-            <div class="ic-header"><span class="ic-icon">📡</span><span class="ic-label auto-label">Nearest ATC</span></div>
-            <div class="ic-value" id="pf-nearest-atc" style="margin-top:4px">—</div>
-          </div>
-        </div>
-        <div class="estate-info-col" style="grid-column:1/-1">
-          <div class="info-cell ic-airspace">
-            <div class="ic-header"><span class="ic-icon">⚠️</span><span class="ic-label auto-label">Other Airspace Considerations</span></div>
-            <div class="ic-value" id="pf-other-airspace" style="margin-top:4px;white-space:pre-wrap">—</div>
-          </div>
-        </div>
-        <div class="estate-info-col" style="grid-column:1/-1">
-          <div class="info-cell ic-contact">
-            <div class="ic-header"><span class="ic-icon">📞</span><span class="ic-label auto-label">ATC / Airspace Manager Contact</span></div>
-            <div class="ic-value" id="pf-atc-contact" style="margin-top:4px;white-space:pre-wrap">—</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Airspace areas from static data -->
-      <div id="pf-airspace-areas-wrap" style="display:none;margin-top:10px">
-        <div class="field-label auto-label" style="margin-bottom:6px">Airspace Areas <span style="font-size:10px;font-weight:400;color:var(--faint)">from estate data — verify against current AIRAC</span></div>
-        <div class="airspace-areas" id="pf-airspace-areas"></div>
-        <div class="airspace-source" id="pf-airspace-source"></div>
-      </div>
+      <!-- Airspace reference cards — two natural-height columns, populated by JS -->
+      <div class="estate-info-grid" id="pf-airspace-ref-grid" style="margin-top:14px"></div>
+      <!-- Static ID anchors for record builder and tick checks — not visible -->
+      <span id="pf-nearest-aerodrome" style="display:none"></span>
+      <span id="pf-nearest-atc" style="display:none"></span>
+      <span id="pf-other-airspace" style="display:none"></span>
+      <span id="pf-atc-contact" style="display:none"></span>
 
       <!-- NOTAMs -->
-      <div style="margin-top:10px">
+      <div style="margin-top:14px">
         <div class="field-label auto-label">NOTAMs <span style="font-size:10px;font-weight:400;color:var(--faint)">Notices to Aviation</span>
           <span id="notam-count" style="font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:400;margin-left:8px"></span>
         </div>
@@ -1489,10 +1454,10 @@
         </div>
       </div>
 
-      <!-- NOTAM Hazards from onsite -->
-      <div style="margin-top:10px">
-        <div class="field-label auto-label">NOTAM Hazards <span style="font-size:10px;font-weight:400;color:var(--faint)">— from today's onsite survey</span></div>
-        <textarea id="pf-hazards-onsite" readonly style="background:var(--surface2);color:var(--muted);margin-top:6px" placeholder="— complete onsite survey first —"></textarea>
+      <!-- Identified Airspace Hazards — derived from active NOTAMs + restrictions -->
+      <div style="margin-top:14px">
+        <div class="field-label auto-label">Identified Airspace Hazards <span style="font-size:10px;font-weight:400;color:var(--faint)">— derived from active NOTAMs &amp; restrictions</span></div>
+        <textarea id="pf-hazards-onsite" style="margin-top:6px" placeholder="Auto-filled from active NOTAMs and airspace restrictions when Skylark runs"></textarea>
       </div>
 
       <!-- Permissions & Notifications -->
@@ -3719,34 +3684,37 @@ function populatePreflightFromOnsite(rec) {
     pfRaResult.value = raText;
   }
 
-  // Hazards — compiled from onsite survey answers
-  const pfHazards = document.getElementById('pf-hazards-onsite');
-  if (pfHazards) {
+  // Identified Airspace Hazards — cleared here, populated by populateActionData
+  // when Skylark Action result arrives with active NOTAM + restriction data
+  const pfAirspaceHazards = document.getElementById('pf-hazards-onsite');
+  if (pfAirspaceHazards && !pfAirspaceHazards.value) {
+    pfAirspaceHazards.value = '';
+  }
+
+  // Ground Hazards — compiled from onsite survey answers
+  const ghFromOnsite = document.getElementById('pf-ground-hazards');
+  if (ghFromOnsite) {
     const hazardLines = [];
     const hazardMap = [
-      ['Uninvolved People',   rec.uninvolved_people],
-      ['Assemblies of People',rec.assemblies_of_people],
-      ['Public Access Points',rec.public_access_points],
+      ['Uninvolved People',    rec.uninvolved_people],
+      ['Assemblies of People', rec.assemblies_of_people],
+      ['Public Access Points', rec.public_access_points],
       ['Unanticipated Hazards',rec.unanticipated_hazards],
-      ['Obstructions',        rec.obstructions],
-      ['VLOS Limitations',    rec.vlos_limitations],
-      ['RLOS Limitations',    rec.rlos_limitations],
-      ['EMI Sources',         rec.sources_of_electromagnetic_inte],
-      ['Livestock',           rec.livestock],
-      ['Birds',               rec.birds],
+      ['Obstructions',         rec.obstructions],
+      ['VLOS Limitations',     rec.vlos_limitations],
+      ['RLOS Limitations',     rec.rlos_limitations],
+      ['EMI Sources',          rec.sources_of_electromagnetic_inte],
+      ['Livestock',            rec.livestock],
+      ['Birds',                rec.birds],
     ];
     hazardMap.forEach(([label, val]) => {
       if (val && val !== 'No') hazardLines.push(`${label}: ${val}`);
     });
     if (rec.details_of_above_risks_and_miti) hazardLines.push(`Details: ${rec.details_of_above_risks_and_miti}`);
-    pfHazards.value = hazardLines.length ? hazardLines.join('\n') : 'No hazards identified';
-  }
-
-  // Append onsite hazard details to ground hazards field (estate data already populated by populateAirspaceFromEstate)
-  const ghEl = document.getElementById('pf-ground-hazards');
-  if (ghEl && rec.details_of_above_risks_and_miti) {
-    const existing = ghEl.value.replace('— not specified in estate data —', '').trim();
-    ghEl.value = [existing, `Onsite details: ${rec.details_of_above_risks_and_miti}`].filter(Boolean).join('\n');
+    // Append to existing estate ground hazards rather than overwrite
+    const existing = ghFromOnsite.value.replace('— not specified in estate data —', '').trim();
+    const onsiteText = hazardLines.join('\n');
+    ghFromOnsite.value = [existing, onsiteText].filter(Boolean).join('\n');
   }
 
   // Permissions — police and ATC from onsite
@@ -3927,13 +3895,13 @@ function checkAllCardTicks() {
     'tick-objective': pfVal('pf-objective') !== '',
     'tick-roles':   !!(pfVal('pf-pilot') && pfVal('pf-payload-op')),
     'tick-airspace': (() => {
-      const classOk  = !!pfVal('pf-airspace-class');
-      const typeOk   = !!pfVal('pf-airspace-type');
-      const notamEl  = document.getElementById('notam-list');
-      const notamsOk = notamEl && !notamEl.textContent.includes('Run Skylark');
+      const classOk   = !!pfVal('pf-airspace-class');
+      const typeOk    = !!pfVal('pf-airspace-type');
+      const notamEl   = document.getElementById('notam-list');
+      const notamsOk  = notamEl && !notamEl.textContent.includes('Run Skylark');
       const hazardsOk = pfVal('pf-hazards-onsite') !== '';
-      const aeroOk   = (document.getElementById('pf-nearest-aerodrome')?.textContent || '').trim() !== '—';
-      const atcOk    = (document.getElementById('pf-nearest-atc')?.textContent || '').trim() !== '—';
+      const aeroOk    = (document.getElementById('pf-nearest-aerodrome')?.textContent || '').trim() !== '';
+      const atcOk     = (document.getElementById('pf-nearest-atc')?.textContent || '').trim() !== '';
       return classOk && typeOk && notamsOk && hazardsOk && aeroOk && atcOk;
     })(),
     'tick-cordons': !!(pfVal('pf-opvol-dist') && pfVal('pf-opvol-height') && pfVal('pf-tola-desc') && pfVal('pf-contvol-dist') && pfVal('pf-contvol-height') && pfVal('pf-ela-direction') && pfVal('pf-access-points') && pfVal('pf-marshal-points')),
@@ -4131,20 +4099,9 @@ function detectAirspaceForEstate(estateName, notams) {
 }
 
 // ── Populate estate-based airspace fields ─────────────────────────────────
-// Colour the airspace type info-cell based on restriction severity
-function updateAirspaceTypeCellStyle() {
-  const sel  = document.getElementById('pf-airspace-type');
-  const cell = document.getElementById('pf-airspace-type-cell');
-  if (!cell || !sel) return;
-  const val = sel.value;
-  cell.className = 'info-cell';
-  if (!val || val === 'Clear') {
-    cell.classList.add('ic-airspace');
-  } else if (val === 'FRZ' || val === 'Prohibited Area' || val === 'Restricted Area') {
-    cell.classList.add('ic-notam');  // red — high severity
-  } else {
-    cell.classList.add('ic-hazard'); // orange — Danger Area / TDA
-  }
+// Airspace type select — plain style, no colour coding (auto-label badge is sufficient)
+function updateAirspaceTypeInputStyle() {
+  // Intentionally no-op — type select uses standard form styling
 }
 
 function renderAirspaceAreas(airspace, estate, notamRefs) {
@@ -4219,55 +4176,168 @@ function renderAirspaceAreas(airspace, estate, notamRefs) {
 
 function populateAirspaceFromEstate(estateName) {
   const e = estatesData[estateName] || {};
-  setText('pf-nearest-aerodrome', e.nearest_aerodrome || '—');
-  const atcStr = [e.nearest_atc, e.atc_phone].filter(Boolean).join(' · ');
-  setText('pf-nearest-atc', atcStr || '—');
-  setText('pf-other-airspace', e.other_airspace || '—');
-  const contactStr = e.airspace_manager_contact || (atcStr ? atcStr : '—');
-  setText('pf-atc-contact', contactStr);
-  // Cordon fields
+
+  // ── Cordon / hazard fields (unchanged) ──────────────────────────────────
   const apEl = document.getElementById('pf-access-points');
   if (apEl) apEl.value = e.public_access_points || '— not specified in estate data —';
   const mpEl = document.getElementById('pf-marshal-points');
   if (mpEl) mpEl.value = e.marshalling_points || '— not specified in estate data —';
-  // Hazard fields from estate data
   const ahEl = document.getElementById('pf-airspace-hazards');
   if (ahEl) ahEl.value = e.airspace_hazards || '— not specified in estate data —';
   const ghEl = document.getElementById('pf-ground-hazards');
-  if (ghEl) {
-    const parts = [e.known_hazards].filter(Boolean);
-    ghEl.value = parts.join('\n') || '— not specified in estate data —';
-  }
+  if (ghEl) ghEl.value = [e.known_hazards].filter(Boolean).join('\n') || '— not specified in estate data —';
   const aaEl = document.getElementById('pf-areas-avoid');
   if (aaEl) aaEl.value = e.areas_to_avoid || '— not specified in estate data —';
-  // ATC contact hint — now below buttons, not above
+
+  // ── Populate static ID holders (used by record builder + tick checks) ──────
+  const atcStr     = [e.nearest_atc, e.atc_phone].filter(Boolean).join(' · ');
+  const contactStr = e.airspace_manager_contact || atcStr || '';
+  setText('pf-nearest-aerodrome', e.nearest_aerodrome || '');
+  setText('pf-nearest-atc',       atcStr || '');
+  setText('pf-other-airspace',    e.other_airspace || '');
+  setText('pf-atc-contact',       contactStr);
   const atcHint = document.getElementById('pf-atc-contact-hint');
   if (atcHint) {
-    const contact = e.airspace_manager_contact || (e.nearest_atc ? [e.nearest_atc, e.atc_phone].filter(Boolean).join(' · ') : '');
-    if (contact) { atcHint.textContent = contact; atcHint.style.display = ''; }
-    else { atcHint.style.display = 'none'; }
+    const contact = e.airspace_manager_contact || [e.nearest_atc, e.atc_phone].filter(Boolean).join(' · ');
+    atcHint.textContent = contact; atcHint.style.display = contact ? '' : 'none';
   }
-  // Police contact hint
   const policeHint = document.getElementById('pf-police-contact-hint');
   if (policeHint) {
-    const pc = e.police_contact || '';
-    if (pc) { policeHint.textContent = pc; policeHint.style.display = ''; }
-    else { policeHint.style.display = 'none'; }
+    policeHint.textContent = e.police_contact || ''; policeHint.style.display = e.police_contact ? '' : 'none';
   }
 
-  // ── Airspace class and type from static data ──────────────────────────────
-  // Set immediately on estate select — Action result can only upgrade type, not replace
+  // ── Airspace class and type ───────────────────────────────────────────────
   const airspace = e.airspace || {};
   const classEl = document.getElementById('pf-airspace-class');
   const typeEl  = document.getElementById('pf-airspace-type');
   if (classEl) classEl.value = airspace.class    || 'G';
   if (typeEl)  typeEl.value  = airspace.base_type || 'Clear';
-  updateAirspaceTypeCellStyle();
+  updateAirspaceTypeInputStyle();
 
-  // ── Render airspace areas detail card ─────────────────────────────────────
-  renderAirspaceAreas(airspace, e, {});
+  // ── Build airspace reference grid — two natural-height columns ────────────
+  buildAirspaceRefGrid(e, airspace, {});
 
   checkAllCardTicks();
+}
+
+function buildAirspaceRefGrid(e, airspace, notamRefs) {
+  const grid = document.getElementById('pf-airspace-ref-grid');
+  if (!grid) return;
+
+  const atcStr     = [e.nearest_atc, e.atc_phone].filter(Boolean).join(' · ');
+  const contactStr = e.airspace_manager_contact || atcStr || '';
+  const areas      = (airspace.areas || []).filter(a => {
+    // Exclude areas well above low-level ops
+    const lower = (a.lower || '').toUpperCase();
+    if (lower.includes('FL')) {
+      const fl = parseInt(lower.replace(/[^0-9]/g,''));
+      if (!isNaN(fl) && fl >= 100) return false;
+    }
+    return true;
+  });
+  const constraints = airspace.additional_constraints || [];
+
+  // Helper: build an info-cell HTML string
+  const infoCard = (label, icon, value, cls, extra) => {
+    if (!value) return '';
+    return `<div class="info-cell ${cls}">
+      <div class="ic-header"><span class="ic-icon">${icon}</span><span class="ic-label">${label}</span></div>
+      <div class="ic-value" style="margin-top:4px;white-space:pre-wrap">${value}</div>
+      ${extra || ''}
+    </div>`;
+  };
+
+  const contactCard = (label, icon, phone, name) => {
+    if (!phone && !name) return '';
+    const num = (phone || '').replace(/[^0-9+ ]/g,'').trim();
+    return `<div class="info-cell ic-contact">
+      <div class="ic-header"><span class="ic-icon">${icon}</span><span class="ic-label">${label}</span></div>
+      ${num ? `<a class="ic-phone" href="tel:${num.replace(/ /g,'')}">${num}</a>` : ''}
+      ${name ? `<div class="ic-value" style="margin-top:2px">${name}</div>` : ''}
+    </div>`;
+  };
+
+  // Area severity helper
+  const areaClass = t => {
+    const u = (t||'').toUpperCase();
+    if (u.includes('RESTRICTED')||u.includes('PROHIBITED')||u.includes('FRZ')) return 'ic-notam';
+    if (u.includes('DANGER')||u.includes('TDA')) return 'ic-hazard';
+    return 'ic-airspace';
+  };
+
+  // Build card list
+  const cards = [];
+
+  // Contact cards first — most field-critical
+  if (e.nearest_atc || e.atc_phone) {
+    cards.push(contactCard('Nearest ATC', '📡', e.atc_phone, e.nearest_atc));
+  }
+  if (e.airspace_manager_contact) {
+    const phone = (e.airspace_manager_contact.match(/[\d\-\/ ]{7,}/) || [''])[0].trim();
+    const name  = e.airspace_manager_contact.split(':')[0].trim();
+    cards.push(contactCard('Airspace Manager', '🛂', phone, name));
+  }
+
+  // Aerodrome
+  if (e.nearest_aerodrome) cards.push(infoCard('Nearest Aerodrome', '✈️', e.nearest_aerodrome, 'ic-airspace'));
+
+  // Other airspace — often long, goes full-width via placement
+  if (e.other_airspace) cards.push(infoCard('Other Airspace', '🗺️', e.other_airspace, 'ic-airspace'));
+
+  // Danger/restricted areas from airspace block
+  areas.forEach(a => {
+    const refs        = notamRefs || {};
+    const desig       = (a.designator||'').toUpperCase();
+    const notamId     = refs[desig] || refs[a.designator] || null;
+    const isDisabled  = !!notamId;
+    const badge       = isDisabled
+      ? `<span style="display:inline-block;margin-top:6px;font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:2px 7px;border-radius:4px;background:#dcfce7;color:#166a2a;border:1px solid #4caf70">✓ Disabled by NOTAM ${notamId !== 'NOTAM' ? notamId : ''}</span>`
+      : '';
+    const meta = [
+      a.lower && a.upper ? `<strong>Vertical:</strong> ${a.lower}–${a.upper}${a.upper_notam ? ` (up to ${a.upper_notam} by NOTAM)` : ''}` : '',
+      a.hours            ? `<strong>Hours:</strong> ${a.hours}` : '',
+      a.booking_required && a.booking_contact ? `<strong>Booking:</strong> ${a.booking_contact}` : '',
+      a.frequency        ? `<strong>Freq:</strong> ${a.frequency}` : '',
+    ].filter(Boolean).join(' · ');
+    const notes = a.notes ? `<div style="margin-top:4px;font-size:11px;color:var(--faint)">${a.notes}</div>` : '';
+    cards.push(`<div class="info-cell ${isDisabled ? 'ic-airspace' : areaClass(a.type)}" style="${isDisabled ? 'opacity:0.7' : ''}">
+      <div class="ic-header">
+        <span class="ic-icon">${isDisabled ? '✅' : areaClass(a.type) === 'ic-notam' ? '🔴' : '⚠️'}</span>
+        <span class="ic-label">${a.designator || ''}</span>
+        <span style="font-family:var(--mono);font-size:10px;font-weight:600;margin-left:auto;padding:2px 6px;border-radius:3px;background:rgba(0,0,0,0.06)">${a.type||''}</span>
+      </div>
+      ${a.name ? `<div style="font-size:12px;color:var(--muted);margin-top:2px">${a.name}</div>` : ''}
+      ${meta ? `<div class="ic-value" style="margin-top:4px;font-size:12px">${meta}</div>` : ''}
+      ${notes}
+      ${badge}
+    </div>`);
+  });
+
+  // Additional constraints as small tags appended to last card or standalone
+  if (constraints.length) {
+    const tags = constraints.map(c => `<span style="display:inline-block;font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:2px 7px;border-radius:4px;background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-border);margin:2px 2px 0 0">${c}</span>`).join('');
+    cards.push(`<div class="info-cell ic-hazard">
+      <div class="ic-header"><span class="ic-icon">⚡</span><span class="ic-label">Additional Constraints</span></div>
+      <div style="margin-top:6px;display:flex;flex-wrap:wrap">${tags}</div>
+    </div>`);
+  }
+
+  // AIP source note
+  if (airspace.source) {
+    cards.push(`<div class="info-cell ic-default" style="border-left-color:var(--faint)">
+      <div class="ic-value" style="font-family:var(--mono);font-size:10px;color:var(--faint);font-style:italic">${airspace.source}</div>
+    </div>`);
+  }
+
+  // Filter empty
+  const filled = cards.filter(Boolean);
+
+  if (!filled.length) { grid.innerHTML = ''; return; }
+
+  // Distribute into two columns alternately (same pattern as onsite)
+  const col1 = filled.filter((_,i) => i % 2 === 0).join('');
+  const col2 = filled.filter((_,i) => i % 2 !== 0).join('');
+  grid.innerHTML = `<div class="estate-info-col">${col1}</div><div class="estate-info-col">${col2}</div>`;
 }
 
 // ── Action result: NOTAMs, Kp, METAR, TAF, sunrise/sunset — never touches met fields ──
@@ -4320,12 +4390,34 @@ function populateActionData(d) {
     notams.forEach(n => { const el = document.createElement('div'); el.className = 'notam-item'; el.textContent = n; list.appendChild(el); });
   }
 
-  // ── Re-render airspace areas with NOTAM disable refs if present ──────────
-  if (d._notam_refs && Object.keys(d._notam_refs).length > 0) {
-    const estateName = document.getElementById('pf-estate-select')?.value || '';
-    const e = estatesData[estateName] || {};
-    const airspace = e.airspace || {};
-    renderAirspaceAreas(airspace, e, d._notam_refs);
+  // ── Identified Airspace Hazards — derived from active restrictions + NOTAMs ──
+  const airspaceHazardsEl = document.getElementById('pf-hazards-onsite');
+  if (airspaceHazardsEl) {
+    const lines = [];
+    // Airspace notification requirement reason (e.g. "EGD510A active — booking required")
+    if (d._notam_required_reason && d._notam_required_reason !== 'No FRZ, active danger areas, or NOTAM restrictions identified. Phone-call coordination only if applicable.') {
+      lines.push(d._notam_required_reason);
+    }
+    // Summarise active NOTAMs by ID only (full text is in the NOTAM list above)
+    if (notams.length) {
+      const ids = notams.map(n => {
+        const m = n.match(/^([A-Z0-9][A-Z0-9\/\-]{2,})/);
+        return m ? m[1] : null;
+      }).filter(Boolean);
+      if (ids.length) lines.push(`Active NOTAMs: ${ids.join(', ')}`);
+    }
+    // NOTAM-disabled areas
+    const refs = d._notam_refs || {};
+    const disabledEntries = Object.entries(refs).map(([desig, nid]) => `${desig} disabled by NOTAM ${nid}`);
+    if (disabledEntries.length) lines.push(disabledEntries.join('; '));
+
+    if (lines.length) {
+      airspaceHazardsEl.value = lines.join('\n');
+      setAutoFieldColor(airspaceHazardsEl, notams.length || d._notam_required_bool ? 'orange' : 'green');
+    } else if (!airspaceHazardsEl.value) {
+      airspaceHazardsEl.value = 'No active airspace restrictions or NOTAM hazards identified';
+      setAutoFieldColor(airspaceHazardsEl, 'green');
+    }
   }
 
   // Auto-detect airspace class and type — static data first, NOTAMs upgrade only
@@ -4335,7 +4427,11 @@ function populateActionData(d) {
   const typeEl  = document.getElementById('pf-airspace-type');
   if (classEl) classEl.value = airspaceClass;
   if (typeEl)  typeEl.value  = airspaceType;
-  updateAirspaceTypeCellStyle();
+  updateAirspaceTypeInputStyle();
+
+  // Re-build reference grid with notam disable refs
+  const estateForGrid = estatesData[currentEstate] || {};
+  buildAirspaceRefGrid(estateForGrid, estateForGrid.airspace || {}, d._notam_refs || {});
 }
 
 // ── Legacy wrapper — kept so any remaining internal calls don't break ──
