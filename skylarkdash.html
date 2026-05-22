@@ -2599,7 +2599,7 @@ function showOnsiteCarriedData(r) {
     ['Mission ID', r.site_survey_number],
     ['Estate',     r._estate],
     ['Remote Pilot', r.remote_pilot],
-    ['Task',       r.field_103],
+    ['Task',       r.task || r.field_103],
     ['UAS',        r.uas_system],
     ['Payload',    r.payload],
     ['Command Unit', r.command_unit],
@@ -2801,8 +2801,8 @@ async function triggerOnsiteFetch(estateName) {
     if (browserWeatherOk) {
       // Browser already loaded weather — only apply NOTAMs and space weather from Action
       const actionOnly = {
-        field_102:                       data.field_102,
-        _space_weather_raw:              data._space_weather_raw,
+        field_102:                       data.field_102 ?? data._space_weather_raw,
+        _space_weather_raw:              data._space_weather_raw ?? data.field_102,
         _sw_time_tag:                    data._sw_time_tag,
         are_any_notams_published_for_th: data.are_any_notams_published_for_th,
         notam_details_that_affect_the_u: data.notam_details_that_affect_the_u,
@@ -3069,9 +3069,10 @@ function applyOnsiteFetchData(d) {
 
   // ── Space weather ─────────────────────────────────────────────────────────
   // Only update if this call contains space weather data (Action result)
-  // Met Office direct fetch won't have field_102 so skip it
-  if (d.field_102 !== undefined) {
-    const kpRaw   = String(d.field_102).trim();
+  // Met Office direct fetch won't have field_102 / _space_weather_raw so skip it
+  const _swRaw = d.field_102 ?? d._space_weather_raw;
+  if (_swRaw !== undefined) {
+    const kpRaw   = String(_swRaw).trim();
     const display = document.getElementById('f-space-display');
     const hidden  = document.getElementById('f-space-hidden');
     if (display) {
@@ -3857,7 +3858,7 @@ function populatePreflightFromOnsite(rec) {
 
   // Task — read-only, from today's onsite record
   const pfTask = document.getElementById('pf-task');
-  if (pfTask) pfTask.value = rec.field_103 || '';
+  if (pfTask) pfTask.value = rec.task || rec.field_103 || '';
 
   // Drone fields — editable, pre-filled from onsite
   const pfUas = document.getElementById('pf-uas');
@@ -3896,7 +3897,7 @@ function populatePreflightFromOnsite(rec) {
   // Risk Assessment Result — derived from onsite gate + additional RA field
   const pfRaResult = document.getElementById('pf-ra-result-onsite');
   if (pfRaResult) {
-    const gate      = rec.field_58;           // 'GO' or 'NO GO'
+    const gate      = rec.onsite_hazards_decision || rec.field_58;  // 'GO' or 'NO GO'
     const addRa     = rec.additional_risk_assessment_comp; // 'Yes' / 'Not required' / 'No'
     const unanticip = rec.unanticipated_hazards;           // 'Yes' / 'No'
     let raText = '';
