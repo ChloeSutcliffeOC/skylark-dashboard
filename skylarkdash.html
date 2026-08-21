@@ -2345,12 +2345,15 @@ async function loadEstates() {
     populatePilotSelects(pilots);
     populateEstateSelect(Object.keys(estatesData));
   } catch {
-    // Fallback: hardcoded defaults so dashboard still works offline
+    // Fail closed. Identities and estates come from staticdata.json in the private
+    // repo only. Never substitute stale defaults - a populated dropdown with no
+    // airspace data behind it reads as working software when it is not.
+    showFetchStatus('Could not load estate or pilot data from GitHub - check your token in Setup. No live data loaded. Do not use this form for a pre-flight decision.', 'error');
     populatePilotSelects([
-      { name:'Chloe Sutcliffe', licence:'GBR-RP-5DYNHLQLHQLC', roles:['remote_pilot','payload_operator'] },
-      { name:'Doris Koeck',     licence:'GBR-RP-6PS644X4XVPW',  roles:['remote_pilot','payload_operator'] },
+
+
     ]);
-    populateEstateSelect(['Blackburn & Hartsgarth','Invergeldie','Siblyback','Kinrara','Dorback']);
+    populateEstateSelect([]);
   }
 }
 
