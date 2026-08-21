@@ -2334,7 +2334,7 @@ async function loadEstates() {
       'Accept':'application/vnd.github+json',
       'X-GitHub-Api-Version':'2022-11-28',
     }});
-    if (!resp.ok) throw new Error();
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const meta = await resp.json();
     const raw  = decodeURIComponent(Array.from(atob(meta.content.replace(/\n/g,'')),
                    c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0')).join(''));
@@ -2344,11 +2344,13 @@ async function loadEstates() {
     estatesData = estates;
     populatePilotSelects(pilots);
     populateEstateSelect(Object.keys(estatesData));
-  } catch {
+  } catch (e) {
     // Fail closed. Identities and estates come from staticdata.json in the private
     // repo only. Never substitute stale defaults - a populated dropdown with no
     // airspace data behind it reads as working software when it is not.
-    showFetchStatus('Could not load estate or pilot data from GitHub - check your token in Setup. No live data loaded. Do not use this form for a pre-flight decision.', 'error');
+    var st = parseInt(String((e && e.message) || '').replace(/[^0-9]/g, ''), 10) || 0;
+    showFetchStatus(ghErrorText(st, 'estate and pilot data') + ' No live data loaded - do not use this form for a pre-flight decision.', 'error');
+    if (st === 401 || st === 403) showChangeSetup();
     populatePilotSelects([
 
 
@@ -2424,6 +2426,26 @@ function closePanel(panel) {
 }
 
 // ── Estate change ──────────────────────────────────────────────────────────
+function showDataStatus(e) {
+  var el = document.getElementById('data-status-banner');
+  var txt = (e && e.data_status) || '';
+  var bad = /UNVERIFIED|LOW-CONFIDENCE/i.test(txt);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'data-status-banner';
+    el.style.cssText = 'border-radius:8px;padding:13px 16px;font-family:var(--mono);font-size:12px;font-weight:600;line-height:1.5;margin-bottom:12px';
+    var card = document.getElementById('estate-info-card');
+    if (card && card.parentNode) card.parentNode.insertBefore(el, card);
+  }
+  if (!el) return;
+  if (!txt) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.style.background = bad ? '#fde9c0' : '#e8f5e9';
+  el.style.border = '2px solid ' + (bad ? '#b45309' : '#4caf70');
+  el.style.color = bad ? '#7c3a06' : '#166a2a';
+  el.textContent = (bad ? 'DESK DRAFT - NOT VERIFIED. Check every field yourself before using this for a PDRA-01. ' : 'Data status: ') + txt;
+}
+
 function onEstateChange() {
   const name = document.getElementById('f-estate').value;
   document.getElementById('header-estate').textContent = name||'—';
@@ -2432,6 +2454,7 @@ function onEstateChange() {
   const loc  = document.getElementById('f-location');
   if (!name) { card.style.display='none'; loc.value=''; return; }
   const e = estatesData[name]||{};
+  showDataStatus(e);
   loc.value = (e.lat && e.lon)
     ? `${parseFloat(e.lat).toFixed(4)}N, ${Math.abs(parseFloat(e.lon)).toFixed(4)}${parseFloat(e.lon)<0?'W':'E'}`
     : name;
@@ -2643,6 +2666,30 @@ async function fetchKpDirect() {
   }
 }
 
+function ghErrorText(status, what) {
+  var repo = CONFIG.GITHUB_OWNER + '/' + CONFIG.GITHUB_REPO;
+  if (status === 401) return 'Token rejected (401) - it has expired or been revoked. Press "Change setup" below and enter a new Personal Access Token. Could not load ' + what + '.';
+  if (status === 403) return 'Refused (403) - the token is valid but has no Contents access to ' + repo + ', or you are rate-limited. Check the token permissions on GitHub. Could not load ' + what + '.';
+  if (status === 404) return 'Not found (404) - ' + repo + ' or the file does not exist, or the token cannot see this private repo. Check the owner and repo name in Setup. Could not load ' + what + '.';
+  if (status === 422) return 'Rejected (422) - the workflow event type may not match. Could not send ' + what + '.';
+  if (!status) return 'No network - could not reach GitHub to load ' + what + '. Check signal and retry.';
+  return 'GitHub returned ' + status + '. Could not load ' + what + '.';
+}
+
+function showChangeSetup() {
+  var b = document.getElementById('change-setup-btn');
+  if (b) { b.style.display = ''; return; }
+  b = document.createElement('button');
+  b.id = 'change-setup-btn';
+  b.className = 'submit-btn';
+  b.textContent = 'Change setup - re-enter GitHub token';
+  b.style.marginTop = '12px';
+  b.onclick = function () { localStorage.removeItem('SKY_GH_TOKEN'); location.reload(); };
+  var bar = document.getElementById('onsite-fetch-bar');
+  if (bar && bar.parentNode) bar.parentNode.insertBefore(b, bar.nextSibling);
+  else document.querySelector('main').appendChild(b);
+}
+
 function showFetchStatus(msg, cls) {
   const bar = document.getElementById('onsite-fetch-bar');
   if (!bar) return;
@@ -2796,7 +2843,7 @@ async function triggerOnsiteFetch(estateName) {
       }),
     }
   ).then(async resp => {
-    if (!resp.ok) throw new Error(`GitHub ${resp.status}`);
+    if (!resp.ok) throw new Error(ghErrorText(resp.status, 'NOTAMs and space weather'));
     await weatherPromise;
     const data = await pollOnsiteFetch(onsiteFetchRunId, 120, 5000);
     if (myAbortKey !== onsiteFetchAbortKey) return; // superseded by a newer fetch — discard
@@ -2849,9 +2896,9 @@ async function pollOnsiteFetch(runId, timeoutSecs, intervalMs) {
       const raw = decodeURIComponent(Array.from(atob(meta.content.replace(/\n/g,'')),
                     c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0')).join(''));
       return JSON.parse(raw);
-    } catch {}
+    } catch (e) { var m = String((e && e.message) || ''); if (m.indexOf('(401)') >= 0 || m.indexOf('(403)') >= 0) throw e; }
   }
-  throw new Error('Timed out waiting for NOTAMs. Check GitHub Actions.');
+  throw new Error('Timed out after ' + timeoutSecs + 's waiting for NOTAMs. The Action may have failed - open the run log at https://github.com/' + CONFIG.GITHUB_OWNER + '/' + CONFIG.GITHUB_REPO + '/actions');
 }
 
 // ── Traffic light thresholds ──────────────────────────────────────────────────
@@ -4042,7 +4089,7 @@ async function runSkylark() {
         body: JSON.stringify({ event_type:'run_skylark_preflight', client_payload:{ estate_name:estate, lat:lat||'', lon:lon||'', run_id:runId } }),
       }
     );
-    if (!resp.ok) throw new Error(`GitHub API ${resp.status}`);
+    if (!resp.ok) throw new Error(ghErrorText(resp.status, 'the pre-flight briefing'));
     setLaunchInfo('Weather loaded. Waiting for NOTAMs, Kp and METAR (~60–90s)…','');
     const data = await pollForResult(runId, 90, 5000);
     if (data._status === 'error') throw new Error(data._error || 'Skylark returned an error');
@@ -4076,9 +4123,9 @@ async function pollForResult(runId, timeoutSecs, intervalMs) {
       const meta = await resp.json();
       const raw = decodeURIComponent(Array.from(atob(meta.content.replace(/\n/g,'')),c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0')).join(''));
       return JSON.parse(raw);
-    } catch {}
+    } catch (e) { var m = String((e && e.message) || ''); if (m.indexOf('(401)') >= 0 || m.indexOf('(403)') >= 0) throw e; }
   }
-  throw new Error('Timed out waiting for Skylark result. Check GitHub Actions for errors.');
+  throw new Error('Timed out after ' + timeoutSecs + 's waiting for the pre-flight result. The Action may have failed - open the run log at https://github.com/' + CONFIG.GITHUB_OWNER + '/' + CONFIG.GITHUB_REPO + '/actions');
 }
 
 // ── Browser-direct met: all weather fields — called instantly on estate select ──
