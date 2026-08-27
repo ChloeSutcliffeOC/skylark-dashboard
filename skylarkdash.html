@@ -3591,6 +3591,40 @@ function evalFinalDecision() {
 }
 
 // ── Build JSON ─────────────────────────────────────────────────────────────
+const OPS_CATEGORIES = {
+  'PDRA-01': 'PDRA-01 (Specific category) - requires a valid Operational Authorisation. VLOS, max 400ft AGL. Separation from uninvolved persons per your OA and site RA.',
+  'Open A3': 'Open category A3 (far from people) - at least 150m horizontally from residential, commercial, industrial or recreational areas, and NO uninvolved persons in the area of operation. Max 120m (400ft) AGL.'
+};
+
+// Recorded in the survey record. Deliberately does NOT change the GO/NO-GO gates:
+// the two categories set different thresholds for uninvolved persons, and that
+// rule belongs to the operator, not to this tool. The note states the headline
+// constraint so the choice is made knowingly.
+function buildOpsCategory() {
+  var missionInput = document.getElementById('f-mission-id');
+  if (!missionInput || document.getElementById('f-ops-category')) return;
+  var host = missionInput.parentNode;
+  if (!host || !host.parentNode) return;
+  var wrap = document.createElement('div');
+  wrap.innerHTML = '<div class="field-label">Operating Category</div>'
+    + '<select id="f-ops-category" onchange="showOpsCategoryNote()">'
+    + '<option value="">- Select category -</option>'
+    + '<option value="PDRA-01">PDRA-01 (Specific)</option>'
+    + '<option value="Open A3">Open category A3</option>'
+    + '</select>'
+    + '<div id="ops-category-note" style="display:none;margin-top:8px;border-radius:8px;padding:11px 14px;font-family:var(--mono);font-size:11px;line-height:1.5;background:#eef2ff;border:2px solid #4b5563;color:#1f2937"></div>';
+  host.parentNode.insertBefore(wrap, host.nextSibling);
+}
+
+function showOpsCategoryNote() {
+  var sel = document.getElementById('f-ops-category');
+  var note = document.getElementById('ops-category-note');
+  if (!sel || !note) return;
+  var txt = OPS_CATEGORIES[sel.value] || '';
+  note.textContent = txt;
+  note.style.display = txt ? '' : 'none';
+}
+
 function buildOnsiteRecord() {
   const estate  = document.getElementById('f-estate').value;
   const finalGo = !document.getElementById('final-go').classList.contains('hidden');
@@ -3603,6 +3637,7 @@ function buildOnsiteRecord() {
   return {
     // ── Survey identification ───────────────────────────────────────────────
     site_survey_number:                       document.getElementById('f-mission-id').value.trim(),
+    operating_category:      document.getElementById('f-ops-category') ? document.getElementById('f-ops-category').value : '',
     date_and_time_of_survey:                  document.getElementById('f-datetime').value,
     // ── Client details ──────────────────────────────────────────────────────
     name:                                     document.getElementById('f-name').value.trim(),
@@ -3800,6 +3835,7 @@ async function submitOnsite() {
 
 document.addEventListener('DOMContentLoaded', () => {
   buildHazardGrid();
+  buildOpsCategory();
   buildAreaCards();
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
