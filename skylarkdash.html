@@ -839,6 +839,22 @@
   #panel-indicator.pi-onsite .pi-label  { opacity: 0.22; }
   #panel-indicator.pi-preflight .pi-label { opacity: 0.22; }
 
+  /* -- Header action buttons -- */
+  .hdr-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: #1c2330;
+    border: 1px solid #2a3441;
+    color: #7d8590;
+    cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .hdr-btn:hover  { color: #e6edf3; border-color: #3d4753; background: #232b3a; }
+  .hdr-btn:active { transform: translateY(1px); }
 </style>
 </head>
 <body>
@@ -856,6 +872,8 @@
   <div style="display:flex;align-items:center;gap:12px">
     <div id="header-estate">—</div>
     <div id="status-badge" style="display:none;font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:20px;background:#1c2330;border:1px solid #2a3441;color:#7d8590;letter-spacing:0.05em">● READY</div>
+    <button id="btn-reload" class="hdr-btn" type="button" onclick="reloadApp()" title="Fetch the latest published version - stays logged in">⟳ Reload</button>
+    <button id="btn-logout" class="hdr-btn" type="button" style="display:none" onclick="logOut()" title="Clear saved credentials and return to the login screen">Log out</button>
   </div>
 </header>
 
@@ -2312,6 +2330,7 @@ function saveSetup() {
   CONFIG = loadConfig();
   document.getElementById('setup-card').style.display='none';
   document.getElementById('main-content').style.display='flex';
+  document.getElementById('btn-logout').style.display = 'inline-block';
   loadEstates();
 }
 
@@ -2319,11 +2338,33 @@ function checkSetup() {
   if (!CONFIG.GITHUB_TOKEN || !CONFIG.GITHUB_OWNER) {
     document.getElementById('setup-card').style.display='block';
     document.getElementById('main-content').style.display='none';
+    document.getElementById('btn-logout').style.display = 'none';
   } else {
     document.getElementById('setup-card').style.display='none';
     document.getElementById('main-content').style.display='flex';
+    document.getElementById('btn-logout').style.display = 'inline-block';
     loadEstates();
   }
+}
+
+function reloadApp() {
+  // Cache-busted reload: localStorage is keyed to the origin, not the URL,
+  // so changing the query string forces fresh HTML and keeps you signed in.
+  const u = new URL(location.href);
+  u.searchParams.set('v', Date.now());
+  location.replace(u.toString());
+}
+
+function logOut() {
+  const ok = confirm(
+    'Log out?\n\n' +
+    'This clears your GitHub token, username, repo name and Met Office API key ' +
+    'from this browser. You will need to enter them again next time.'
+  );
+  if (!ok) return;
+  ['SKY_GH_TOKEN', 'SKY_GH_OWNER', 'SKY_GH_REPO', 'SKY_MET_KEY', 'SKY_PREFLIGHT_LAST']
+    .forEach(k => localStorage.removeItem(k));
+  location.reload();
 }
 
 async function loadEstates() {
