@@ -1197,6 +1197,17 @@
     background:#fff0e0; border:1.5px solid #d45a00; color:#8a3300;
   }
 
+  /* ── Home: section heading over a group of cards ── */
+  .home-section {
+    display:flex; align-items:center; gap:12px;
+    font-family:var(--mono); font-size:11px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.14em;
+    color:var(--oc-accent-ink); margin:10px 2px 0;
+  }
+  .home-section::after {
+    content:''; flex:1; height:2px; background:var(--oc-accent-line); border-radius:1px;
+  }
+
   /* ── Home: noticeboard ── */
   .notice-list { display:flex; flex-direction:column; gap:9px; }
   .notice {
@@ -1364,6 +1375,9 @@
     </div>
   </div>
 
+  <!-- ── Everything that has to happen the day before ── -->
+  <div class="home-section">The Day Before You Fly</div>
+
   <!-- ── 24-hour offline cache ── -->
   <div class="card">
     <div class="card-header"><h2>Download the Next 24 Hours</h2></div>
@@ -1402,17 +1416,21 @@
           </select>
         </div>
         <div>
-          <div class="field-label">Date of Flight</div>
-          <input type="date" id="mamc-date" onchange="mamcRefresh()">
+          <div class="field-label">Aircraft</div>
+          <select id="mamc-aircraft" onchange="mamcRefresh()">
+            <option value="">&mdash; Select aircraft &mdash;</option>
+          </select>
         </div>
       </div>
 
       <div class="two-col">
         <div>
-          <div class="field-label">Aircraft</div>
-          <select id="mamc-aircraft" onchange="mamcRefresh()">
-            <option value="">&mdash; Select aircraft &mdash;</option>
-          </select>
+          <div class="field-label">Dates</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="date" id="mamc-date" style="flex:1" onchange="mamcRefresh()">
+            <span style="font-family:var(--mono);font-size:12px;color:var(--faint)">to</span>
+            <input type="date" id="mamc-date-end" style="flex:1" onchange="mamcRefresh()">
+          </div>
         </div>
         <div>
           <div class="field-label">Times (UTC)</div>
@@ -1456,7 +1474,7 @@
       <div class="mamc-deadline" id="mamc-deadline"></div>
 
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="submit-btn" type="button" id="mamc-send" style="flex:1;min-width:200px" onclick="mamcOpenMail()">Open in Mail</button>
+        <button class="submit-btn" type="button" id="mamc-send" style="flex:1;min-width:200px" onclick="mamcOpenMail()">Open in Outlook</button>
         <button class="secondary-btn" type="button" style="flex:1;min-width:150px;margin:0" onclick="mamcCopy()">Copy Text</button>
       </div>
       <button class="secondary-btn" type="button" style="margin:0" onclick="mamcTogglePreview()">Preview</button>
@@ -9380,17 +9398,25 @@ function mamcDeadline(flight) {
   return by;
 }
 
+const mamcLong  = d => `${ocPad(d.getDate())} ${MAMC_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+const mamcShort = d => `${ocPad(d.getDate())} ${ocPad(d.getMonth() + 1)} ${d.getFullYear()}`;
+
 function mamcBuild() {
   const estate = ocVal('mamc-estate');
   const d      = mamcParseDate(ocVal('mamc-date'));
+  const dEnd   = mamcParseDate(ocVal('mamc-date-end'));
   const w3w    = ocVal('mamc-w3w').replace(/^\/+/, '');
   const centre = ocVal('mamc-centre');
   const name   = ocVal('mamc-name');
   const phone  = ocVal('mamc-phone');
   const email  = ocVal('mamc-email');
 
-  const dSub = d ? `${ocPad(d.getDate())} ${MAMC_MONTHS[d.getMonth()]} ${d.getFullYear()}` : '[DATE]';
-  const dRow = d ? `${ocPad(d.getDate())} ${ocPad(d.getMonth() + 1)} ${d.getFullYear()}`  : '[DD MM YYYY]';
+  // One date or a range. An end date the same as, or before, the start is
+  // treated as a single day rather than as a range of one.
+  const spans = !!(d && dEnd && dEnd.getTime() > d.getTime());
+  const dSub  = d ? (spans ? `${mamcLong(d)} to ${mamcLong(dEnd)}`   : mamcLong(d))  : '[DATE]';
+  const dRow  = d ? (spans ? `Dates: ${mamcShort(d)} to ${mamcShort(dEnd)}`
+                           : `Date: ${mamcShort(d)}`)                : 'Date: [DD MM YYYY]';
 
   const body = [
     'I wish to notify any low flying aircraft of the following UAS activity:',
@@ -9406,7 +9432,7 @@ function mamcBuild() {
     `Location: ${estate || '[ESTATE NAME]'} ${w3w ? '///' + w3w : '[///what.three.words]'}`,
     `Centre: ${centre || '[0°0\'0" N, 0°0\'0" W]'}`,
     `Area: ${MAMC_AREA}`,
-    `Date: ${dRow}`,
+    dRow,
     `Times: ${ocVal('mamc-from') || '[0900]'} to ${ocVal('mamc-to') || '[1700]'} UTC (Coordinated Universal Time)`,
     '',
     'Please confirm the reference by reply. If any of the requested parameters are unworkable, please advise and I will resubmit.',
@@ -9430,18 +9456,17 @@ function mamcRefresh() {
     cEl.value = (!isNaN(lat) && !isNaN(lon)) ? mamcDms(lat, lon) : '';
   }
 
+  // The deadline for the FIRST day of the range. No late warning - a
+  // notification that has slipped still needs sending, and being told off
+  // by the dashboard does not help anyone.
   const d  = mamcParseDate(ocVal('mamc-date'));
   const by = mamcDeadline(d);
   const dl = ocEl('mamc-deadline');
   if (dl) {
     dl.classList.remove('visible', 'ok', 'late');
-    if (by) {
-      const when = `${MAMC_MONTHS[by.getMonth()]} ${by.getDate()} at 20:00`;
-      const late = Date.now() > by.getTime();
-      dl.classList.add('visible', late ? 'late' : 'ok');
-      dl.textContent = late
-        ? `This should have gone by ${when}. Send it anyway and say it is late.`
-        : `Send by ${when} - 20:00 the day before, for weekday missions.`;
+    if (by && Date.now() <= by.getTime()) {
+      dl.classList.add('visible', 'ok');
+      dl.textContent = `Send by ${MAMC_MONTHS[by.getMonth()]} ${by.getDate()} at 20:00 - 20:00 the day before, for weekday missions.`;
     }
   }
 
@@ -9461,12 +9486,21 @@ function mamcTogglePreview() {
   pre.style.display = 'block';
 }
 
-function mamcOpenMail() {
+// Mail wants CRLF line endings, and Outlook in particular is happier with
+// them - a body joined with bare \n is where mangled drafts come from. The
+// percent-encoding itself is required by the mailto scheme; the mail app is
+// supposed to decode it, and Copy Text is the clean route for any client
+// that does not.
+function mamcMailtoHref() {
   const m = mamcBuild();
-  const href = `mailto:${m.to}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}`;
-  // location.href rather than a synthesised click: iOS handles the handover
-  // to Mail more reliably from a Home Screen app this way.
-  window.location.href = href;
+  const body = m.body.replace(/\r?\n/g, '\r\n');
+  return `mailto:${m.to}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function mamcOpenMail() {
+  // location.href rather than a synthesised click: iOS hands over to the
+  // mail app more reliably from a Home Screen app this way.
+  window.location.href = mamcMailtoHref();
 }
 
 async function mamcCopy() {
@@ -9515,6 +9549,10 @@ function mamcInit() {
     while (n.getDay() === 0 || n.getDay() === 6) n.setDate(n.getDate() + 1);
     dt.value = `${n.getFullYear()}-${ocPad(n.getMonth() + 1)}-${ocPad(n.getDate())}`;
   }
+  // The end date is left empty on purpose: one day is the common case, and
+  // an empty end date reads as "just that day".
+  const dtEnd = ocEl('mamc-date-end');
+  if (dtEnd) dtEnd.min = ocVal('mamc-date');
   mamcRestoreContact();
   mamcRefresh();
 }
