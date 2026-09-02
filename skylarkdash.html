@@ -937,6 +937,16 @@
   .db-chip-act { font-size:10px; opacity:0.7; margin-left:2px; }
   .db-vocab-wrap { border-top:1.5px dashed #fde68a; padding-top:11px; margin-top:2px; }
 
+
+  /* ── Field dictation (onsite hazards, cordons, notes) ── */
+  .mic-field-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+  .mic-btn-sm { width:30px; height:30px; font-size:12.5px; }
+  .mic-interim { font-family:var(--mono); font-size:11px; font-style:italic; color:#8a6200; line-height:1.4; margin-top:4px; }
+  .mic-corr { margin-top:8px; padding:9px 11px; }
+  .mic-corr .db-corr-label { font-size:10px; }
+  .mic-corr .db-corr-hint { font-size:10.5px; }
+  .mic-corr .db-chip { font-size:11px; padding:4px 8px; }
+
   /* ── Narrow screens: three accordion buttons ── */
   @media (max-width: 560px) {
     .accordion-bar { gap:6px; padding:10px 10px; }
@@ -1451,8 +1461,14 @@
   <div class="card">
     <div class="card-header"><h2>Additional Notes</h2></div>
     <div class="card-body">
-      <div class="field-label">Notes</div>
+      <div class="mic-field-head">
+        <div class="field-label" style="margin:0">Notes</div>
+        <button class="mic-btn mic-btn-sm" type="button" id="mic-f-notes"
+                title="Dictate this field" onclick="dictateField('f-notes')">&#127908;</button>
+      </div>
       <textarea id="f-notes" placeholder="Any additional information relevant to this operation"></textarea>
+      <div class="mic-interim" id="mic-int-f-notes"></div>
+      <div class="db-corrections mic-corr" id="mic-corr-f-notes"></div>
     </div>
   </div>
 
@@ -2483,8 +2499,9 @@ function buildHazardGrid() {
         <button class="toggle-btn" onclick="setHazardToggle('${h.key}','No',this,'${h.dbKey}')">No</button>
       </div>
       <div class="hazard-detail-box hidden" id="hd-${h.dbKey}">
-        <div class="field-label">Details &amp; Mitigations</div>
+        ${micHead('Details &amp; Mitigations', `hd-${h.dbKey}-text`)}
         <textarea id="hd-${h.dbKey}-text" placeholder="Describe and mitigate" style="min-height:60px"></textarea>
+        ${micTail(`hd-${h.dbKey}-text`)}
       </div>
     </div>
   `).join('');
@@ -2516,8 +2533,9 @@ function buildAreaCards() {
           </div>
         </div>
         <div id="${s.id}-cordon-detail" class="hidden">
-          <div class="field-label">Cordon Details</div>
+          ${micHead('Cordon Details', `f-${s.id}-cord-detail`)}
           <textarea id="f-${s.id}-cord-detail" placeholder="Describe cordon arrangement"></textarea>
+          ${micTail(`f-${s.id}-cord-detail`)}
         </div>
         <div class="gate-card gate-pending" id="gate-${s.id}">
           <div class="gate-indicator" id="gate-${s.id}-label">—</div>
@@ -5752,19 +5770,34 @@ function dbSpeechInit() {
   if (warn) warn.classList.add('visible');
   const big = document.getElementById('db-big-mic');
   if (big) big.disabled = true;
-  document.querySelectorAll('#form-debrief .mic-btn').forEach(b => b.disabled = true);
+  document.querySelectorAll('.mic-btn').forEach(b => b.disabled = true);
+}
+
+// A dictation target is one of:
+//   'dump'                  the whole-debrief transcript
+//   '<debrief row key>'     one debrief row
+//   { field: 'elementId' }  any other input or textarea in the app
+function dbTargetFieldId(target) {
+  return (target && typeof target === 'object' && target.field) ? target.field : null;
 }
 
 function dbMicControl(target) {
-  return target === 'dump'
-    ? document.getElementById('db-big-mic')
-    : document.getElementById('dbmic-' + target);
+  if (target === 'dump') return document.getElementById('db-big-mic');
+  const f = dbTargetFieldId(target);
+  if (f) return document.getElementById('mic-' + f);
+  return document.getElementById('dbmic-' + target);
+}
+
+function dbSetInterim(text) {
+  const f  = dbTargetFieldId(dbRecTarget);
+  const el = document.getElementById(f ? 'mic-int-' + f : 'db-transcript-interim');
+  if (el) el.textContent = text ? '… ' + text : '';
 }
 
 function dbRecUi(on) {
   const dump = document.getElementById('db-dump');
   const big  = document.getElementById('db-big-mic');
-  document.querySelectorAll('#form-debrief .mic-btn').forEach(b => {
+  document.querySelectorAll('.mic-btn').forEach(b => {
     b.classList.remove('listening');
     b.disabled = on;
   });
@@ -5775,7 +5808,9 @@ function dbRecUi(on) {
     const ctl = dbMicControl(dbRecTarget);
     if (ctl) { ctl.classList.add('listening'); ctl.disabled = false; }
   } else {
-    document.getElementById('db-transcript-interim').textContent = '';
+    const t = document.getElementById('db-transcript-interim');
+    if (t) t.textContent = '';
+    document.querySelectorAll('.mic-interim').forEach(el => { el.textContent = ''; });
   }
 }
 
@@ -5803,8 +5838,7 @@ function dbStartRec(target) {
       if (e.results[i].isFinal) fin += t; else interim += t;
     }
     if (fin.trim()) dbAppendSpeech(fin.trim());
-    const el = document.getElementById('db-transcript-interim');
-    if (el) el.textContent = interim ? '… ' + interim : '';
+    dbSetInterim(interim);
   };
 
   rec.onerror = e => {
@@ -5831,7 +5865,10 @@ function dbStartRec(target) {
     dbRec = null;
     dbRecUi(false);
     dbRecTarget = null;
-    if (finishedTarget === 'dump' && (document.getElementById('db-transcript').value || '').trim()) {
+    const finishedField = dbTargetFieldId(finishedTarget);
+    if (finishedField) {
+      dbFieldSenseCheck(finishedField);
+    } else if (finishedTarget === 'dump' && (document.getElementById('db-transcript').value || '').trim()) {
       dbCheckAndSort();   // vocabulary pass, then sort
     }
     updateDebriefProgress();
@@ -5843,6 +5880,16 @@ function dbStartRec(target) {
 }
 
 function dbAppendSpeech(chunk) {
+  const fieldId = dbTargetFieldId(dbRecTarget);
+  if (fieldId) {
+    const el = document.getElementById(fieldId);
+    if (!el) return;
+    el.value = el.value.trim() ? (el.value.trim() + ' ' + chunk)
+                               : chunk.charAt(0).toUpperCase() + chunk.slice(1);
+    el.scrollTop = el.scrollHeight;
+    el.dispatchEvent(new Event('input', { bubbles: true }));   // let existing listeners re-run
+    return;
+  }
   if (dbRecTarget === 'dump') {
     const ta = document.getElementById('db-transcript');
     ta.value = ta.value.trim() ? (ta.value.trim() + ' ' + chunk) : chunk.charAt(0).toUpperCase() + chunk.slice(1);
@@ -6280,6 +6327,9 @@ const DB_VOCAB = [
   { term:'marshal', cue:false,
     hear:['marshall','martial','marshel'],
     ctx:['cordon','public','gate','crew','point','points'] },
+  { term:'marshals', cue:false,
+    hear:['marshalls','martials','marshels'],
+    ctx:['cordon','public','gate','crew','point','points','two','three'] },
   { term:'marshalling', cue:false,
     hear:['marshalling','martialling','marshaling'],
     ctx:['cordon','public','gate','point','points'] },
@@ -6313,6 +6363,56 @@ const DB_VOCAB = [
   { term:'FOD', cue:false,
     hear:['fod','f o d','fodd'],
     ctx:['clear','checked','debris','tola','free'] },
+
+  // ── Onsite hazard vocabulary ──
+  { term:'RLOS', cue:false,
+    hear:['r los','are loss','arlos','our loss','r l o s'],
+    ctx:['limitation','limitations','signal','radio','maintained','terrain','link'] },
+  { term:'EMI', cue:false,
+    hear:['e m i','ee em eye','emmy','emi'],
+    ctx:['sources','interference','mast','pylon','powerline','substation','compass'] },
+  { term:'uninvolved', cue:false,
+    hear:['un involved','uninvolve','on involved'],
+    ctx:['people','person','public','cordon','sheltered'] },
+  { term:'assemblies', cue:false,
+    hear:['assembly s','assemblies of','a semblies'],
+    ctx:['people','crowd','gathering','event'] },
+  { term:'obstructions', cue:false,
+    hear:['obstruction s','abstractions','obstruckshons'],
+    ctx:['trees','wires','cables','wall','fence','mast','height'] },
+  { term:'pylon', cue:false,
+    hear:['python','pilon','pie lon','py lon'],
+    ctx:['overhead','cables','powerline','electricity','line','grid'] },
+  { term:'pylons', cue:false,
+    hear:['pythons','pilons'],
+    ctx:['overhead','cables','powerline','electricity','grid'] },
+  { term:'powerline', cue:false,
+    hear:['power line','power lines','powerlines'],
+    ctx:['overhead','cables','pylon','grid','height'] },
+  { term:'substation', cue:false,
+    hear:['sub station','sub stations'],
+    ctx:['electricity','emi','grid','fenced'] },
+  { term:'overhead', cue:false,
+    hear:['over head'],
+    ctx:['cables','lines','wires','powerline','pylon'] },
+  { term:'bridleway', cue:false,
+    hear:['bridal way','bridle way','bridal path'],
+    ctx:['footpath','right of way','public','walkers','access'] },
+  { term:'footpath', cue:false,
+    hear:['foot path','foot paths'],
+    ctx:['public','right of way','walkers','access','cordon'] },
+  { term:'turbine', cue:false,
+    hear:['turbin','turbeen'],
+    ctx:['wind','blade','height','rotating'] },
+  { term:'livestock', cue:false,
+    hear:['live stock'],
+    ctx:['sheep','cattle','field','grazing','startled','farmer'] },
+  { term:'raptor', cue:false,
+    hear:['rapter','wraptor'],
+    ctx:['birds','nest','buzzard','kite','harrier','mobbing'] },
+  { term:'mitigation', cue:false,
+    hear:['mitigations','mitagation','mit gation'],
+    ctx:['hazard','risk','control','measure'] },
 ];
 
 // Terms that must never be "corrected" — canonical vocabulary, plus the
@@ -6618,6 +6718,119 @@ function dbFindTermNear(text, word, hint) {
 function dbResort() {
   if (dbSortSnapshot) undoSortToRows();
   sortTranscriptToRows();
+}
+
+// ══════════════════════════════════════════════════════
+// FIELD DICTATION (onsite hazards, cordons, notes)
+// ══════════════════════════════════════════════════════
+// The same engine and the same OC vocabulary pass as the
+// debrief, pointed at a single field. Corrections appear as
+// chips under that field and are reverted the same way.
+// ══════════════════════════════════════════════════════
+
+const dbFieldCorr = {};   // fieldId -> { applied: [], suggested: [] }
+
+function dictateField(fieldId) {
+  if (dbRec) { dbStopRec(); return; }      // one mic at a time
+  dbStartRec({ field: fieldId });
+}
+
+function dbFieldSenseCheck(fieldId) {
+  const el = document.getElementById(fieldId);
+  if (!el) return;
+  const text = el.value || '';
+  if (!text.trim()) { dbFieldCorr[fieldId] = { applied: [], suggested: [] }; dbRenderFieldCorr(fieldId); return; }
+
+  const found = dbFindCorrections(text);
+  const auto  = found.filter(c => c.auto);
+  if (auto.length) {
+    el.value = dbApplyCorrections(text, auto);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  dbFieldCorr[fieldId] = { applied: auto, suggested: found.filter(c => !c.auto) };
+  dbRenderFieldCorr(fieldId);
+}
+
+function dbRenderFieldCorr(fieldId) {
+  const box = document.getElementById('mic-corr-' + fieldId);
+  if (!box) return;
+  const st = dbFieldCorr[fieldId] || { applied: [], suggested: [] };
+  if (!st.applied.length && !st.suggested.length) {
+    box.classList.remove('visible');
+    box.innerHTML = '';
+    return;
+  }
+  const chip = (c, i, kind) =>
+    `<button type="button" class="db-chip db-chip-${kind}" title="${dbEscape(c.why)}"
+             onclick="${kind === 'fixed' ? `dbFieldRevert('${fieldId}',${i})` : `dbFieldAccept('${fieldId}',${i})`}">
+       <span class="db-chip-from">${dbEscape(c.heard)}</span>
+       <span class="db-chip-arrow">&rarr;</span>
+       <span class="db-chip-to">${dbEscape(c.term)}</span>
+       <span class="db-chip-act">${kind === 'fixed' ? '&#10005;' : '&#43;'}</span>
+     </button>`;
+
+  let html = '';
+  if (st.applied.length) {
+    html += `<div class="db-corr-row"><span class="db-corr-label db-corr-label-fixed">`
+          + `&#10003; Corrected ${st.applied.length}</span>`
+          + `<span class="db-corr-hint">tap to put back</span></div>`
+          + `<div class="db-chips">${st.applied.map((c, i) => chip(c, i, 'fixed')).join('')}</div>`;
+  }
+  if (st.suggested.length) {
+    html += `<div class="db-corr-row"${st.applied.length ? ' style="margin-top:9px"' : ''}>`
+          + `<span class="db-corr-label db-corr-label-maybe">? ${st.suggested.length} possible</span>`
+          + `<span class="db-corr-hint">tap to apply</span></div>`
+          + `<div class="db-chips">${st.suggested.map((c, i) => chip(c, i, 'maybe')).join('')}</div>`;
+  }
+  box.innerHTML = html;
+  box.classList.add('visible');
+}
+
+function dbFieldRevert(fieldId, i) {
+  const st = dbFieldCorr[fieldId];
+  const el = document.getElementById(fieldId);
+  if (!st || !el) return;
+  const c = st.applied[i];
+  if (!c) return;
+  const idx = dbFindTermNear(el.value || '', c.term, c.start);
+  if (idx >= 0) {
+    el.value = el.value.slice(0, idx) + c.heard + el.value.slice(idx + c.term.length);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  dbDeclined.add(c.heard.toLowerCase() + '>' + c.term);   // don't re-apply this session
+  st.applied.splice(i, 1);
+  dbRenderFieldCorr(fieldId);
+}
+
+function dbFieldAccept(fieldId, i) {
+  const st = dbFieldCorr[fieldId];
+  const el = document.getElementById(fieldId);
+  if (!st || !el) return;
+  const c = st.suggested[i];
+  if (!c) return;
+  const idx = dbFindTermNear(el.value || '', c.heard, c.start);
+  if (idx >= 0) {
+    el.value = el.value.slice(0, idx) + c.term + el.value.slice(idx + c.heard.length);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    st.applied.push(Object.assign({}, c, { start: idx, auto: true }));
+  }
+  st.suggested.splice(i, 1);
+  dbRenderFieldCorr(fieldId);
+}
+
+// The markup every dictatable field gets: a mic in the label row,
+// a live interim line, and a slot for correction chips.
+function micHead(labelHtml, fieldId, extraLabelClass) {
+  return `<div class="mic-field-head">
+      <div class="field-label ${extraLabelClass || ''}" style="margin:0">${labelHtml}</div>
+      <button class="mic-btn mic-btn-sm" type="button" id="mic-${fieldId}"
+              title="Dictate this field" onclick="dictateField('${fieldId}')">&#127908;</button>
+    </div>`;
+}
+
+function micTail(fieldId) {
+  return `<div class="mic-interim" id="mic-int-${fieldId}"></div>
+    <div class="db-corrections mic-corr" id="mic-corr-${fieldId}"></div>`;
 }
 
 </script>
