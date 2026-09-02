@@ -1205,6 +1205,22 @@
     display:none;
   }
   .oc-queue.visible { display:block; }
+  .oc-queue.oc-queue-ok { background:var(--oc-ok-fill); border-color:var(--oc-ok-strong); color:var(--oc-ok-ink); }
+
+  /* ── Toast: short, non-blocking messages (no modal dialogs on iPad) ── */
+  #sky-toast {
+    position:fixed; left:50%; bottom:24px; z-index:9999;
+    transform:translateX(-50%) translateY(10px);
+    max-width:min(520px, 92vw);
+    background:var(--oc-ink); color:#fff;
+    font-family:var(--mono); font-size:12px; line-height:1.55;
+    padding:12px 16px; border-radius:9px;
+    border:2px solid var(--oc-accent-line);
+    box-shadow:0 6px 22px rgba(0,0,0,.30);
+    opacity:0; pointer-events:none;
+    transition:opacity .18s, transform .18s;
+  }
+  #sky-toast.visible { opacity:1; transform:translateX(-50%) translateY(0); }
 
   @media (max-width:560px) {
     .mode-card { padding:16px 15px; }
@@ -1315,6 +1331,8 @@
   <div class="card">
     <div class="card-header"><h2>Download the Next 24 Hours</h2></div>
     <div class="card-body">
+      <div class="oc-queue" id="oc-queue-banner"></div>
+
       <div class="cache-row">
         <div>
           <div class="field-label">Estate</div>
@@ -1373,17 +1391,6 @@
           </select>
         </div>
         <div>
-          <div class="field-label">What Is the Flight For?</div>
-          <input type="text" id="oc-task" placeholder="e.g. habitat photos, fence line check" oninput="ocRefresh()">
-        </div>
-      </div>
-
-      <div class="two-col">
-        <div>
-          <div class="field-label auto-label">Time of Flight</div>
-          <input type="datetime-local" id="oc-datetime" onchange="ocOnTimeChange()">
-        </div>
-        <div>
           <div class="field-label">Landing Time</div>
           <div style="display:flex;gap:8px;align-items:center">
             <input type="time" id="oc-landing-time" style="flex:1" onchange="ocRefresh()">
@@ -1392,9 +1399,13 @@
         </div>
       </div>
 
+      <!-- The flight time is whatever hour you pick in the Weather card, and
+           the record carries its own submitted_at stamp. Held here so the
+           hour strip and the OM 2.14.3 flight-log fields still agree. -->
+      <input type="hidden" id="oc-datetime">
+
       <div id="oc-aircraft-info" style="display:none">
         <div class="oc-limits" id="oc-limit-chips"></div>
-        <div class="oc-source-note" id="oc-source-note" style="display:none"></div>
       </div>
 
       <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
@@ -1509,11 +1520,31 @@
       <div id="oc-final-pending" style="font-family:var(--mono);font-size:13px;color:var(--faint)">Complete the sections above to see the decision.</div>
       <div id="oc-final-go" class="final-go hidden">
         <h3>&#10003; GO</h3>
-        <p>Conditions are within limits and the Open category rules are confirmed. Fly the flight, then come back and fill in the debrief note.</p>
+        <p id="oc-final-go-msg">Conditions are within limits and the Open category rules are confirmed. Fly the flight, then come back and fill in the debrief note.</p>
       </div>
       <div id="oc-final-nogo" class="final-nogo hidden">
         <h3>&#10007; NO GO</h3>
         <p id="oc-nogo-reasons" style="margin-top:8px;font-size:13px;font-family:var(--mono);line-height:1.7"></p>
+      </div>
+
+      <!-- Weather override. Offered only when the forecast is what is
+           stopping the flight, and only against a written reading. -->
+      <div id="oc-wx-override" style="display:none;margin-top:14px;border-top:1.5px dashed var(--oc-accent-line);padding-top:14px">
+        <div class="field-label" style="margin-bottom:7px">Real Conditions On Site</div>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:9px">
+          The forecast is outside this aircraft&rsquo;s limits. If you have measured the conditions where you are standing
+          and they are <strong>inside</strong> those limits, write what you measured and override. It is saved with the record
+          against your name.
+        </p>
+        <textarea id="oc-wx-override-note" style="min-height:80px" placeholder="e.g. anemometer 6 m/s steady, gusting 8, dry, 11 C, vis good" oninput="ocRefresh()"></textarea>
+        <button class="secondary-btn" type="button" style="margin-top:9px" onclick="ocSetWxOverride()">I Choose to Override on Real Conditions</button>
+        <div id="oc-wx-override-err" style="display:none;font-family:var(--mono);font-size:11px;color:var(--danger);margin-top:7px">Write what you measured before overriding.</div>
+      </div>
+
+      <div id="oc-wx-override-active" style="display:none;margin-top:14px;border-radius:8px;padding:12px 15px;font-family:var(--mono);font-size:11.5px;line-height:1.65;background:var(--oc-accent-tint);border:2px solid var(--oc-accent-ink);color:var(--oc-accent-ink)">
+        <strong>Weather overridden on measured conditions.</strong>
+        <div id="oc-wx-override-text" style="margin-top:6px"></div>
+        <button class="secondary-btn" type="button" style="width:auto;padding:6px 12px;margin-top:9px;display:inline-block" onclick="ocClearWxOverride()">Remove override</button>
       </div>
     </div>
   </div>
@@ -1559,7 +1590,6 @@
   <div class="card">
     <div class="card-header"><h2>Save Flight Record</h2></div>
     <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
-      <div class="oc-queue" id="oc-queue-banner"></div>
       <div id="oc-completion-banner" style="display:none;padding:12px 16px;border-radius:8px;font-family:var(--mono);font-size:12px;line-height:1.6"></div>
       <div id="oc-submit-info" class="info-bar"></div>
       <button id="oc-submit-btn" class="submit-btn" type="button" onclick="ocSave()">Save Flight Record</button>
@@ -3143,9 +3173,50 @@ function checkSetup() {
   }
 }
 
-function reloadApp() {
+function skyToast(msg) {
+  let t = document.getElementById('sky-toast');
+  if (!t) { t = document.createElement('div'); t.id = 'sky-toast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.classList.add('visible');
+  clearTimeout(skyToast._timer);
+  skyToast._timer = setTimeout(() => t.classList.remove('visible'), 6000);
+}
+
+async function reloadApp() {
   // Cache-busted reload: localStorage is keyed to the origin, not the URL,
   // so changing the query string forces fresh HTML and keeps you signed in.
+  //
+  // But a reload with no signal replaces a working app with a browser error
+  // page, and in the field that is the worst possible moment to lose it. So
+  // the connection is checked first and the reload is refused if it fails.
+  const btn = document.getElementById('btn-reload');
+  const label = btn ? btn.innerHTML : '';
+
+  if (navigator.onLine === false) {
+    skyToast('No connection - staying on the version you already have.');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.innerHTML = '⟳ Checking…'; }
+  let reachable = false;
+  try {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 6000);
+    // Any answer at all means the network is there. A 404 or a 405 still
+    // proves reachability; only a thrown request does not.
+    await fetch(location.pathname + '?ping=' + Date.now(), { method: 'HEAD', cache: 'no-store', signal: ctl.signal });
+    clearTimeout(timer);
+    reachable = true;
+  } catch (e) {
+    reachable = false;
+  }
+  if (btn) { btn.disabled = false; btn.innerHTML = label; }
+
+  if (!reachable) {
+    skyToast('Cannot reach Skylark right now - staying on the version you already have, so nothing is lost.');
+    return;
+  }
+
   const u = new URL(location.href);
   u.searchParams.set('v', Date.now());
   location.replace(u.toString());
@@ -7746,6 +7817,10 @@ let   ocCache       = null;   // the cached bundle for the selected estate
 let   ocHours       = [];     // 24 normalised hourly forecasts
 let   ocHourIdx     = -1;     // which hour the pilot picked
 let   ocCacheBusy   = false;
+// Set only when the pilot has measured the conditions where they are
+// standing and taken responsibility for flying against a red forecast.
+// { reason, at, by } - cleared whenever the aircraft, estate or hour moves.
+let   ocWxOverride  = null;
 
 const OC_CACHE_PREFIX = 'SKY_OC_CACHE_';
 const OC_QUEUE_KEY    = 'SKY_OC_QUEUE';
@@ -7798,6 +7873,7 @@ function goHome() {
   ocSetIndicator('Skylark', 'pi-home');
   ocSetMode('home');
   ocRenderCacheList();
+  ocRenderQueue();
   window.scrollTo({ top: 0 });
 }
 
@@ -7996,6 +8072,10 @@ async function ocCacheEstate() {
   if (btn) { btn.disabled = false; btn.textContent = 'Download 24 Hours of Data'; }
   ocRenderCacheList();
 
+  // We have just proved there is signal, so push up anything the device has
+  // been holding. Same button press, both directions.
+  ocFlushQueue();
+
   // If the pilot already has this estate open in the brief, refresh it.
   if (ocVal('oc-estate') === estate) ocLoadCacheForEstate(estate);
 }
@@ -8190,8 +8270,11 @@ function ocSetCell(id, text, status) {
 function ocOnAircraftChange() {
   const ac   = ocCurrentAircraft();
   const info = ocEl('oc-aircraft-info');
-  const note = ocEl('oc-source-note');
   const chips = ocEl('oc-limit-chips');
+
+  // A different airframe means different limits, so any weather override
+  // taken against the old ones has to be re-taken against the new ones.
+  ocWxOverride = null;
 
   if (!ac) {
     if (info) info.style.display = 'none';
@@ -8204,23 +8287,9 @@ function ocOnAircraftChange() {
   if (info) info.style.display = '';
   if (chips) {
     chips.innerHTML =
-      `<span class="oc-subcat-chip">Subcategory ${ac.subcat}</span>` +
-      `<span class="oc-limit-chip">${ac.mtom}</span>` +
       `<span class="oc-limit-chip">Wind &le; ${ac.windMs} m/s</span>` +
       `<span class="oc-limit-chip">Rain &le; ${ac.precipMm} mm/h</span>` +
       `<span class="oc-limit-chip">${ac.tMin} to ${ac.tMax}°C</span>`;
-  }
-  if (note) {
-    if (!ac.inOm) {
-      note.style.display = '';
-      note.innerHTML = '&#9888; This airframe is not in the fleet list of PDRA-01 operations manual v3.1, so these are <strong>DJI’s published limits</strong>, not limits the manual has adopted. Check them against OC’s Open Category Operations Manual before relying on them.';
-    } else {
-      note.style.display = '';
-      note.style.background = '#f4f8fc';
-      note.style.borderColor = '#1a6fa8';
-      note.style.color = '#1a6fa8';
-      note.innerHTML = 'Limits from section 3.3 of the PDRA-01 operations manual v3.1. Where OC’s Open Category Operations Manual is stricter, that manual wins.';
-    }
   }
 
   ocRenderRules();
@@ -8292,6 +8361,7 @@ function ocRenderHourStrip() {
 
 function ocSelectHour(i) {
   ocHourIdx = i;
+  ocWxOverride = null;   // a different hour is a different set of conditions
   const h = ocHours[i];
   if (h) {
     const d  = new Date(h.time);
@@ -8487,6 +8557,7 @@ function ocLoadCacheForEstate(estate) {
 
 function ocOnEstateChange() {
   const name = ocVal('oc-estate');
+  ocWxOverride = null;   // different site, different conditions
   const hdr = ocEl('header-estate');
   if (hdr) hdr.textContent = name || '—';
   if (!name) { ocCache = null; ocHours = []; ocHourIdx = -1; ocRenderHourStrip(); ocRenderConditions(); ocRenderAirspace(); ocRefresh(); return; }
@@ -8552,6 +8623,32 @@ function ocStampLanding() {
 }
 
 // ══════════════════════════════════════════════════════
+// WEATHER OVERRIDE
+// ══════════════════════════════════════════════════════
+// The forecast is a forecast. A pilot standing on the ground with an
+// anemometer knows better than a model does - but only if what they
+// measured is written down and carried into the record.
+
+function ocSetWxOverride() {
+  const note = ocVal('oc-wx-override-note');
+  const err  = ocEl('oc-wx-override-err');
+  if (!note) {
+    if (err) err.style.display = '';
+    const box = ocEl('oc-wx-override-note');
+    if (box) box.focus();
+    return;
+  }
+  if (err) err.style.display = 'none';
+  ocWxOverride = { reason: note, at: new Date().toISOString(), by: ocPilotName() };
+  ocRefresh();
+}
+
+function ocClearWxOverride() {
+  ocWxOverride = null;
+  ocRefresh();
+}
+
+// ══════════════════════════════════════════════════════
 // TOGGLES, TICKS AND THE DECISION
 // ══════════════════════════════════════════════════════
 function ocSetToggle(key, value, btn) {
@@ -8598,8 +8695,13 @@ function ocRefresh() {
   const rules = ocRulesState();
   const worst = ocWeatherWorst();
 
-  const flightOk = !!(ocVal('oc-estate') && ocPilotName() && ac && ocVal('oc-task') && ocVal('oc-datetime'));
+  const flightOk = !!(ocVal('oc-estate') && ocPilotName() && ac && ocVal('oc-datetime'));
   const wxOk     = worst !== null;
+  // Is the weather what is stopping this flight?
+  const wxBlocked = !wxOk || worst === 'red';
+  // An override only survives while the thing it overrides is still true.
+  if (!wxBlocked && ocWxOverride) ocWxOverride = null;
+  const wxOverridden = wxBlocked && !!ocWxOverride;
   const airOk    = !!ocGetToggle('oc-airspace-ok');
   const rulesOk  = rules.total > 0 && rules.missing.length === 0;
   const issues   = ocGetToggle('oc-issues');
@@ -8636,8 +8738,10 @@ function ocRefresh() {
   // The decision
   const reasons = [];
   if (!flightOk) reasons.push('The flight details are incomplete.');
-  if (!wxOk)     reasons.push('No weather for the hour you are flying — pick an hour, or cache the estate.');
-  else if (worst === 'red') reasons.push('Weather is outside this aircraft’s limits at that hour.');
+  if (!wxOverridden) {
+    if (!wxOk)     reasons.push('No weather for the hour you are flying — pick an hour, or cache the estate.');
+    else if (worst === 'red') reasons.push('Weather is outside this aircraft’s limits at that hour.');
+  }
   if (ocGetToggle('oc-airspace-ok') === 'No') reasons.push('You have said the airspace is not clear.');
   else if (!airOk) reasons.push('The airspace question has not been answered.');
   if (!rulesOk && ac) reasons.push(`${rules.missing.length} of the ${rules.total} Open category rules are not confirmed.`);
@@ -8654,6 +8758,23 @@ function ocRefresh() {
   const rEl = ocEl('oc-nogo-reasons');
   if (rEl) rEl.innerHTML = reasons.map(r => '• ' + r).join('<br>');
 
+  // Weather override: offered while the forecast is the blocker, and shown
+  // back to the pilot for as long as it is standing.
+  const ovBox  = ocEl('oc-wx-override');
+  const ovLive = ocEl('oc-wx-override-active');
+  const ovTxt  = ocEl('oc-wx-override-text');
+  if (ovBox)  ovBox.style.display  = (wxBlocked && !ocWxOverride && flightOk) ? '' : 'none';
+  if (ovLive) ovLive.style.display = wxOverridden ? '' : 'none';
+  if (ovTxt && wxOverridden) {
+    ovTxt.textContent = `${ocWxOverride.reason} — ${ocWxOverride.by || 'pilot'}, ${new Date(ocWxOverride.at).toLocaleString('en-GB')}`;
+  }
+  const goMsg = ocEl('oc-final-go-msg');
+  if (goMsg) {
+    goMsg.textContent = wxOverridden
+      ? 'The Open category rules are confirmed and you have overridden the forecast on conditions you measured on site. The override and your reading are saved with the record. Fly the flight, then come back and fill in the debrief note.'
+      : 'Conditions are within limits and the Open category rules are confirmed. Fly the flight, then come back and fill in the debrief note.';
+  }
+
   // Save button
   const banner = ocEl('oc-completion-banner');
   const btn    = ocEl('oc-submit-btn');
@@ -8663,7 +8784,7 @@ function ocRefresh() {
     banner.style.display = '';
     if (!canSave) {
       banner.style.background = '#fdd9d7'; banner.style.border = '1.5px solid #e05c5c'; banner.style.color = '#7a1212';
-      banner.innerHTML = '⚠ Fill in the estate, pilot, aircraft, purpose and time before saving.';
+      banner.innerHTML = '⚠ Fill in the estate, pilot and aircraft before saving.';
     } else if (!dbOk) {
       banner.style.background = '#fff0e0'; banner.style.border = '1.5px solid #d45a00'; banner.style.color = '#8a3300';
       banner.innerHTML = '⚠ You can save now, but the debrief note is empty. Come back and finish it after you land.';
@@ -8692,11 +8813,15 @@ function ocBuildRecord() {
   return {
     _type:            'open_category_flight',
     _generated_at:    new Date().toISOString(),
+    // When the pilot pressed save. The one time this record is certain of.
+    submitted_at:     new Date().toISOString(),
     // ── Flight log fields required by OM 2.14.3 ────────────────────────
     date:             ocVal('oc-datetime').split('T')[0] || '',
     estate:           ocVal('oc-estate'),
     location:         (ocVal('oc-lat') && ocVal('oc-lon')) ? `${ocVal('oc-lat')}, ${ocVal('oc-lon')}` : '',
-    task:             ocVal('oc-task'),
+    // Kept in the schema so anything reading these files still finds the
+    // key. The form no longer asks the pilot what the flight is for.
+    task:             '',
     flight_crew:      ocPilotName(),
     remote_pilot:     ocPilotName(),
     uas:              ocVal('oc-aircraft'),
@@ -8724,12 +8849,18 @@ function ocBuildRecord() {
     metar:            ocCache ? ocCache.metar   : '',
     taf:              ocCache ? ocCache.taf     : '',
     conditions_verdict: worst === 'red' ? 'Outside limits' : worst === 'orange' ? 'Within limits, close to one' : worst === 'green' ? 'Within limits' : 'Not assessed',
+    // ── Weather override ───────────────────────────────────────────────
+    weather_override:        ocWxOverride ? 'Yes' : 'No',
+    weather_override_reason: ocWxOverride ? ocWxOverride.reason : '',
+    weather_override_by:     ocWxOverride ? ocWxOverride.by     : '',
+    weather_override_at:     ocWxOverride ? ocWxOverride.at     : '',
     // ── Airspace ───────────────────────────────────────────────────────
     notams_present:   ocCache ? ((ocCache.notams || []).length ? 'Yes' : 'No') : '',
     notams_details:   ocCache ? (ocCache.notams || []).join('\n\n') : '',
     airspace_clear:   ocGetToggle('oc-airspace-ok'),
     // ── Decision ───────────────────────────────────────────────────────
     decision:         ocEl('oc-final-go') && !ocEl('oc-final-go').classList.contains('hidden') ? 'GO' : 'NO GO',
+    decision_basis:   ocWxOverride ? 'GO taken on measured on-site conditions; the forecast was outside limits' : 'Forecast, airspace and Open category rules',
     // ── Debrief ────────────────────────────────────────────────────────
     anything_to_report: ocGetToggle('oc-issues'),
     debrief_note:       ocVal('oc-debrief-note'),
@@ -8758,11 +8889,12 @@ function ocCollectFormState() {
   });
   return {
     estate: ocVal('oc-estate'), pilot: ocVal('oc-pilot'), pilotOther: ocVal('oc-pilot-other'),
-    aircraft: ocVal('oc-aircraft'), task: ocVal('oc-task'),
+    aircraft: ocVal('oc-aircraft'),
     datetime: ocVal('oc-datetime'), landing: ocVal('oc-landing-time'),
     lat: ocVal('oc-lat'), lon: ocVal('oc-lon'),
     hourIdx: ocHourIdx, toggles: Object.assign({}, ocToggleState),
     rules, note: ocVal('oc-debrief-note'),
+    wxOverride: ocWxOverride, wxOverrideNote: ocVal('oc-wx-override-note'),
   };
 }
 
@@ -8770,14 +8902,16 @@ function ocRestoreDraft(s) {
   if (!s) return;
   const set = (id, v) => { const el = ocEl(id); if (el && v) el.value = v; };
   set('oc-estate', s.estate); set('oc-pilot', s.pilot); set('oc-pilot-other', s.pilotOther);
-  set('oc-aircraft', s.aircraft); set('oc-task', s.task);
+  set('oc-aircraft', s.aircraft);
   set('oc-datetime', s.datetime); set('oc-landing-time', s.landing);
   set('oc-lat', s.lat); set('oc-lon', s.lon);
-  set('oc-debrief-note', s.note);
+  set('oc-debrief-note', s.note); set('oc-wx-override-note', s.wxOverrideNote);
   ocOnPilotChange();
   ocOnAircraftChange();
   if (s.estate) ocLoadCacheForEstate(s.estate);
   if (typeof s.hourIdx === 'number' && s.hourIdx >= 0 && ocHours[s.hourIdx]) ocSelectHour(s.hourIdx);
+  // ocOnAircraftChange and ocSelectHour both clear it, so it goes back last.
+  ocWxOverride = s.wxOverride || null;
   Object.entries(s.toggles || {}).forEach(([k, v]) => {
     if (!v) return;
     ocToggleState[k] = v;
@@ -8820,14 +8954,23 @@ function ocSetQueue(q) {
   ocRenderQueue();
 }
 
-function ocRenderQueue() {
+const ocEsc = s => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// The banner lives on the home screen, next to the weather download, so a
+// pilot who gets back into signal can push the day's records up at the same
+// moment they pull the next day's weather. Pass a message to say something
+// other than the standing "n waiting" state.
+function ocRenderQueue(msg, kind) {
   const el = ocEl('oc-queue-banner');
   if (!el) return;
   const q = ocQueue();
-  if (!q.length) { el.classList.remove('visible'); return; }
+  if (!q.length && !msg) { el.classList.remove('visible', 'oc-queue-ok'); return; }
   el.classList.add('visible');
-  el.innerHTML = `&#128228; <strong>${q.length} flight record${q.length === 1 ? '' : 's'} waiting to upload.</strong> ` +
-    `Saved on this device. <button class="secondary-btn" type="button" style="width:auto;padding:6px 12px;margin-left:8px;display:inline-block" onclick="ocFlushQueue()">Upload now</button>`;
+  el.classList.toggle('oc-queue-ok', kind === 'ok');
+  if (msg) { el.innerHTML = msg; return; }
+  el.innerHTML = `<strong>${q.length} flight record${q.length === 1 ? '' : 's'} waiting to upload.</strong> ` +
+    `Saved on this device. <button class="secondary-btn" type="button" style="width:auto;padding:6px 12px;margin-left:8px;display:inline-block" onclick="ocFlushQueue(true)">Upload now</button>`;
 }
 
 async function ocPutRecord(path, record) {
@@ -8878,7 +9021,7 @@ async function ocSave() {
     q.push({ path, record });
     ocSetQueue(q);
     if (bar) {
-      bar.textContent = `✓ Saved on this device — upload will retry when you have signal. (${err.message})`;
+      bar.textContent = `✓ Saved on this device. It will upload by itself when you have signal, or press Upload now on the home screen. (${err.message})`;
       bar.className = 'info-bar visible warn';
     }
   }
@@ -8886,19 +9029,50 @@ async function ocSave() {
   ocRenderQueue();
 }
 
-async function ocFlushQueue() {
+// Every failure here used to be swallowed - the loop caught the error,
+// put the record back in the queue and said nothing, so pressing "Upload
+// now" looked like pressing a dead button. Whatever GitHub says now gets
+// said back on the banner.
+let ocFlushing = false;
+
+async function ocFlushQueue(manual) {
+  if (ocFlushing) return;
   const q = ocQueue();
-  if (!q.length) return;
+  if (!q.length) { if (manual) ocRenderQueue('Nothing waiting to upload.', 'ok'); return; }
+
+  if (navigator.onLine === false) {
+    ocRenderQueue(`<strong>${q.length} record${q.length === 1 ? '' : 's'} still waiting.</strong> ` +
+      `This device has no connection - try again once you have signal.`);
+    return;
+  }
+  if (!CONFIG.GITHUB_TOKEN || !CONFIG.GITHUB_OWNER) {
+    ocRenderQueue(`<strong>${q.length} record${q.length === 1 ? '' : 's'} still waiting.</strong> ` +
+      `No GitHub token on this device - set one up before uploading.`);
+    return;
+  }
+
+  ocFlushing = true;
+  ocRenderQueue(`Uploading ${q.length} record${q.length === 1 ? '' : 's'}&hellip;`);
+
   const left = [];
+  let lastErr = '';
   for (const item of q) {
     try { await ocPutRecord(item.path, item.record); }
-    catch (e) { left.push(item); }
+    catch (e) { lastErr = (e && e.message) ? e.message : String(e); left.push(item); }
   }
+  ocFlushing = false;
   ocSetQueue(left);
-  const bar = ocEl('oc-submit-info');
-  if (bar && left.length < q.length) {
-    bar.textContent = `✓ Uploaded ${q.length - left.length} queued record${(q.length - left.length) === 1 ? '' : 's'}.`;
-    bar.className = 'info-bar visible ok';
+
+  const done = q.length - left.length;
+  if (!left.length) {
+    ocRenderQueue(`<strong>Uploaded ${done} record${done === 1 ? '' : 's'}.</strong> Nothing left waiting.`, 'ok');
+    setTimeout(() => { if (!ocQueue().length) ocRenderQueue(); }, 8000);
+  } else {
+    ocRenderQueue(
+      `<strong>${left.length} of ${q.length} could not be uploaded.</strong>` +
+      (lastErr ? `<br>GitHub said: ${ocEsc(lastErr)}` : '') +
+      `<br><button class="secondary-btn" type="button" style="width:auto;padding:6px 12px;margin-top:9px;display:inline-block" onclick="ocFlushQueue(true)">Try again</button>`
+    );
   }
 }
 
@@ -8931,7 +9105,7 @@ function ocBuildAircraftSelect() {
     const ac = OC_AIRCRAFT[name];
     const o = document.createElement('option');
     o.value = name;
-    o.textContent = `${name} — ${ac.mtom} — ${ac.subcat}`;
+    o.textContent = name;
     sel.appendChild(o);
   });
   sel.dataset.built = '1';
