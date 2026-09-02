@@ -1141,7 +1141,7 @@
   .oc-hours { display:flex; gap:6px; min-width:min-content; }
 
   .oc-hour {
-    flex:0 0 auto; width:56px;
+    flex:0 0 auto; width:64px;
     border:2px solid var(--border); border-radius:8px;
     background:var(--surface2); color:var(--muted);
     padding:8px 4px; cursor:pointer; text-align:center;
@@ -1149,11 +1149,8 @@
     -webkit-tap-highlight-color:transparent; touch-action:manipulation;
   }
   .oc-hour-time { font-size:12px; font-weight:700; letter-spacing:.02em; }
-  .oc-hour-wind { font-size:10px; margin-top:2px; opacity:.85; }
-  .oc-hour.h-green  { background:#e8f5e9; border-color:#4caf70; color:#166a2a; }
-  .oc-hour.h-orange { background:#fff0e0; border-color:#d45a00; color:#8a3300; }
-  .oc-hour.h-red    { background:#fde8e8; border-color:#991b1b; color:#6b1212; }
-  .oc-hour.sel      { box-shadow:0 0 0 3px rgba(0,0,0,.55); border-color:#000; }
+  .oc-hour-wind { font-size:9.5px; margin-top:3px; opacity:.8; white-space:nowrap; }
+  .oc-hour.sel      { box-shadow:0 0 0 3px rgba(0,0,0,.55); border-color:#000; background:var(--surface); color:var(--text); }
   .oc-hour.past     { opacity:.4; }
 
   /* ── Open Category: the hard-stop confirmations ── */
@@ -1431,7 +1428,7 @@
       <div id="oc-weather-source" style="display:none;background:#f0f7f0;border:1.5px solid #4caf70;border-radius:7px;padding:9px 13px;font-family:var(--mono);font-size:11px;color:#166a2a;line-height:1.6"></div>
 
       <div>
-        <div class="field-label">Pick Your Flight Hour</div>
+        <div class="field-label">Pick Your Flight Hour <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--faint)">&mdash; wind speed under each time</span></div>
         <div class="oc-hours-wrap">
           <div class="oc-hours" id="oc-hour-strip">
             <div style="font-family:var(--mono);font-size:12px;color:var(--faint);padding:10px 2px">Select an estate to load the forecast.</div>
@@ -8336,15 +8333,18 @@ function ocRenderHourStrip() {
     return;
   }
 
+  // Deliberately not colour-coded. The conditions grid below shows the
+  // traffic lights for whichever hour is picked; the strip is just the
+  // times, with the wind speed under each one so it reads as a number
+  // rather than as an unexplained one.
   const nowH = Date.now() - 60 * 60 * 1000;
   strip.innerHTML = ocHours.map((h, i) => {
     const d    = new Date(h.time);
-    const cls  = ac ? 'h-' + ocHourStatus(h, ac) : '';
     const past = d.getTime() < nowH ? ' past' : '';
     const sel  = i === ocHourIdx ? ' sel' : '';
-    return `<button type="button" class="oc-hour ${cls}${past}${sel}" onclick="ocSelectHour(${i})">
+    return `<button type="button" class="oc-hour${past}${sel}" onclick="ocSelectHour(${i})">
       <div class="oc-hour-time">${ocHhmm(d)}</div>
-      <div class="oc-hour-wind">${h.windMs != null ? h.windMs : '–'}</div>
+      <div class="oc-hour-wind">${h.windMs != null ? h.windMs + ' m/s' : '–'}</div>
     </button>`;
   }).join('');
 }
@@ -8743,7 +8743,13 @@ function ocRefresh() {
   const ovBox  = ocEl('oc-wx-override');
   const ovLive = ocEl('oc-wx-override-active');
   const ovTxt  = ocEl('oc-wx-override-text');
-  if (ovBox)  ovBox.style.display  = (wxBlocked && !ocWxOverride && flightOk) ? '' : 'none';
+  // Offered as soon as there is something to override: an aircraft chosen
+  // and either a red hour, or no forecast at all on this device. It used to
+  // also wait for the whole flight card to be complete, which meant it was
+  // invisible exactly when a pilot went looking for it.
+  const ovOffer = !!ac && !ocWxOverride &&
+    ((wxOk && worst === 'red') || (!wxOk && !ocHours.length));
+  if (ovBox)  ovBox.style.display  = ovOffer ? '' : 'none';
   if (ovLive) ovLive.style.display = wxOverridden ? '' : 'none';
   if (ovTxt && wxOverridden) {
     ovTxt.textContent = `${ocWxOverride.reason} — ${ocWxOverride.by || 'pilot'}, ${new Date(ocWxOverride.at).toLocaleString('en-GB')}`;
@@ -9029,9 +9035,14 @@ function ocUploadHint(msg) {
   return '';
 }
 
+// Estate, date, time - readable at a glance in the repo listing. Local
+// time, because that is the time the pilot flew in. Seconds are there to
+// keep two records from the same minute apart, not for anyone to read.
 function ocRecordPath(record) {
-  const stamp = new Date(record._generated_at || Date.now()).toISOString().replace(/[:.]/g, '-');
-  return `open_category/open_${ocSlug(record.estate) || 'flight'}_${stamp}.json`;
+  const d = new Date(record.submitted_at || record._generated_at || Date.now());
+  const stamp = `${d.getFullYear()}-${ocPad(d.getMonth() + 1)}-${ocPad(d.getDate())}` +
+                `_${ocPad(d.getHours())}${ocPad(d.getMinutes())}${ocPad(d.getSeconds())}`;
+  return `open_category/${ocSlug(record.estate) || 'flight'}_${stamp}.json`;
 }
 
 async function ocSave() {
