@@ -855,6 +855,75 @@
   }
   .hdr-btn:hover  { color: #e6edf3; border-color: #3d4753; background: #232b3a; }
   .hdr-btn:active { transform: translateY(1px); }
+
+  /* ══════════════════════════════════════════════════════
+     DEBRIEF PANEL
+     ══════════════════════════════════════════════════════ */
+  #panel-indicator.pi-debrief .pi-label { opacity: 0.22; }
+
+  .accordion-btn.debrief-active {
+    background: #1a1a1a; border-color: #1a1a1a; color: #fff;
+  }
+  .accordion-btn.debrief-active:hover { background: #1a1a1a; border-color: #1a1a1a; color: #fff; }
+  .accordion-btn.debrief-active.open  { background: #000; border-color: #000; color: #fff; }
+  .accordion-btn.debrief-active .accordion-number   { background: #fff; color: #000; border-color: #fff; }
+  .accordion-btn.debrief-active .accordion-btn-meta { color: #aaa; }
+
+  /* ── Debrief rows ── */
+  .db-row { border:1.5px solid var(--border); border-radius:10px; background:var(--surface); overflow:hidden; transition:border-color .2s; }
+  .db-row + .db-row { margin-top:10px; }
+  .db-row-head { display:flex; align-items:center; gap:10px; padding:10px 13px; background:var(--surface2); border-bottom:1.5px solid var(--border); flex-wrap:wrap; }
+  .db-row-title { font-size:14px; font-weight:600; color:var(--text); flex:1; min-width:110px; line-height:1.35; }
+  .db-row-q { font-family:var(--mono); font-size:10px; color:var(--faint); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; }
+  .db-row-body { padding:12px 13px; display:flex; flex-direction:column; gap:10px; }
+  .db-row.db-filled { border-color:var(--ok-border); }
+  .db-row.db-filled .db-row-head { background:#f0f7f0; border-bottom-color:var(--ok-border); }
+  .db-row.db-filled .db-row-q { color:var(--ok); }
+  .db-row textarea { min-height:74px; }
+
+  .db-dictated-tag { font-family:var(--mono); font-size:9.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:#4c1d95; background:#ede9fe; border:1px solid #a78bfa; border-radius:4px; padding:2px 6px; white-space:nowrap; }
+  @keyframes dbFlash { 0% { background:#ede9fe; } 100% { background:var(--surface); } }
+  .db-flash { animation: dbFlash 1.8s ease-out; }
+
+  /* ── Mic buttons ── */
+  .mic-btn { flex-shrink:0; width:34px; height:34px; border-radius:50%; border:1.5px solid var(--border-strong); background:var(--surface); color:var(--muted); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s, border-color .15s, color .15s; -webkit-tap-highlight-color:transparent; padding:0; }
+  .mic-btn:hover:not(:disabled) { border-color:#000; color:#000; }
+  .mic-btn.listening { background:var(--danger-bg); border-color:var(--danger); color:var(--danger); animation:micPulse 1.2s infinite; }
+  .mic-btn:disabled { opacity:.28; cursor:not-allowed; }
+  @keyframes micPulse {
+    0%,100% { box-shadow:0 0 0 0 rgba(153,27,27,.45); }
+    50%     { box-shadow:0 0 0 7px rgba(153,27,27,0); }
+  }
+
+  /* ── Whole-debrief dictation ── */
+  .db-dump { border:2px dashed #a78bfa; border-radius:10px; background:#faf8ff; padding:14px; display:flex; flex-direction:column; gap:12px; }
+  .db-dump.listening { border-style:solid; border-color:#7c3aed; background:#f4f0ff; }
+  .db-dump-title { font-family:var(--mono); font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.09em; color:#5b21b6; }
+  .db-big-mic { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:17px 20px; border-radius:10px; border:2px solid #7c3aed; background:#7c3aed; color:#fff; font-family:var(--mono); font-size:13.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; cursor:pointer; transition:background .15s, border-color .15s; -webkit-tap-highlight-color:transparent; }
+  .db-big-mic:hover:not(:disabled) { background:#6d28d9; border-color:#6d28d9; }
+  .db-big-mic.listening { background:var(--danger); border-color:var(--danger); animation:micPulse 1.2s infinite; }
+  .db-big-mic:disabled { opacity:.35; cursor:not-allowed; }
+  #db-transcript { min-height:104px; font-size:15px; line-height:1.6; background:#fff; }
+  #db-transcript-interim { font-family:var(--mono); font-size:12px; color:#6d28d9; min-height:17px; font-style:italic; line-height:1.4; }
+  .db-hint { font-size:12.5px; color:var(--muted); line-height:1.6; }
+  .db-hint code { font-family:var(--mono); font-size:11.5px; background:#ede9fe; color:#4c1d95; padding:1px 5px; border-radius:3px; }
+  .db-sort-summary { font-family:var(--mono); font-size:11.5px; line-height:1.75; color:#1f2937; background:#eef2ff; border:2px solid #4b5563; border-radius:8px; padding:11px 14px; display:none; }
+  .db-sort-summary.visible { display:block; }
+  .db-unsorted { background:var(--warn-bg); border:2px solid var(--warn); border-radius:8px; padding:11px 14px; font-size:13px; color:#8a3300; line-height:1.6; display:none; }
+  .db-unsorted.visible { display:block; }
+  .db-unsorted strong { font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; display:block; margin-bottom:5px; }
+  .mic-unsupported { background:var(--warn-bg); border:2px solid var(--warn); border-radius:8px; padding:11px 14px; font-family:var(--mono); font-size:11.5px; color:var(--warn); line-height:1.6; display:none; margin-bottom:12px; }
+  .mic-unsupported.visible { display:block; }
+
+  /* ── Narrow screens: three accordion buttons ── */
+  @media (max-width: 560px) {
+    .accordion-bar { gap:6px; padding:10px 10px; }
+    .accordion-btn { padding:9px 8px; gap:7px; }
+    .accordion-btn-label { font-size:12px; }
+    .accordion-number { width:20px !important; height:20px !important; font-size:10px !important; }
+    .accordion-chevron { display:none; }
+    .db-row-head { gap:8px; }
+  }
 </style>
 </head>
 <body>
@@ -891,6 +960,14 @@
     <span class="accordion-btn-text">
       <span class="accordion-btn-label">Pre-Flight Briefing</span>
       <span class="accordion-btn-meta" id="preflight-meta"></span>
+    </span>
+    <span class="accordion-chevron">&#9660;</span>
+  </button>
+  <button class="accordion-btn" id="btn-debrief" onclick="togglePanel('debrief')">
+    <span class="accordion-number" id="badge-debrief">3</span>
+    <span class="accordion-btn-text">
+      <span class="accordion-btn-label">Debrief</span>
+      <span class="accordion-btn-meta" id="debrief-meta"></span>
     </span>
     <span class="accordion-chevron">&#9660;</span>
   </button>
@@ -2179,6 +2256,123 @@
 </div><!-- end form-preflight -->
 </div><!-- end panel-preflight -->
 
+<div class="accordion-panel" id="panel-debrief">
+<div id="form-debrief" style="display:flex;flex-direction:column;gap:16px">
+
+  <!-- 1. Debrief details -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Debrief Details</h2>
+    </div>
+    <div class="card-body">
+      <div class="two-col">
+        <div>
+          <div class="field-label">Mission ID</div>
+          <input type="text" id="db-mission-id" placeholder="Carried from today's onsite survey">
+        </div>
+        <div>
+          <div class="field-label">Estate</div>
+          <input type="text" id="db-estate" placeholder="Carried from today's onsite survey">
+        </div>
+      </div>
+      <div class="two-col" style="margin-top:14px">
+        <div>
+          <div class="field-label">Debrief Date &amp; Time</div>
+          <input type="datetime-local" id="db-datetime">
+        </div>
+        <div>
+          <div class="field-label">Debrief Led By</div>
+          <select id="db-led-by"><option value="">&mdash; Select &mdash;</option></select>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="field-label">Crew Present</div>
+        <input type="text" id="db-crew" placeholder="Everyone at the debrief">
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Voice debrief -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Voice Debrief <span class="card-tick" id="tick-db-voice" style="display:none">&#10003;</span></h2>
+    </div>
+    <div class="card-body">
+      <div class="mic-unsupported" id="db-mic-unsupported">&#9888; Speech recognition isn&rsquo;t available in this browser. Use Chrome or Safari for voice, or type straight into the rows below.</div>
+      <div class="db-dump" id="db-dump">
+        <div class="db-dump-title">&#127908; Dictate the whole debrief</div>
+        <p class="db-hint">Talk through the debrief as you normally would, naming each area as you reach it &mdash; <code>weather</code>, <code>timings</code>, <code>objectives</code>, <code>safe flight</code>, <code>cordon</code>, <code>airspace</code>, <code>comms</code>, <code>phases of the operation</code>, <code>what went well</code>, <code>what could be improved</code>, <code>questions</code>. Skylark drops each part into the matching row and sets the Yes/No answers where it can. Always read the rows back before saving. Voice needs a data connection &mdash; with no signal on site, type straight into the rows.</p>
+        <button class="db-big-mic" id="db-big-mic" type="button" onclick="toggleDumpDictation()">&#127908; Start dictating</button>
+        <div id="db-transcript-interim"></div>
+        <textarea id="db-transcript" placeholder="Your spoken debrief appears here. You can edit it before sorting."></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="secondary-btn" type="button" onclick="sortTranscriptToRows()" style="flex:1;min-width:140px">Sort into rows</button>
+          <button class="secondary-btn" type="button" id="db-undo-sort" onclick="undoSortToRows()" style="flex:1;min-width:140px" disabled>Undo sort</button>
+        </div>
+        <div class="db-sort-summary" id="db-sort-summary"></div>
+        <div class="db-unsorted" id="db-unsorted"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Operational review -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Operational Review <span class="card-tick" id="tick-db-review" style="display:none">&#10003;</span></h2>
+    </div>
+    <div class="card-body">
+      <div id="db-review-rows"></div>
+    </div>
+  </div>
+
+  <!-- 4. Overview of phases -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Overview of the Operation <span class="card-tick" id="tick-db-phases" style="display:none">&#10003;</span></h2>
+    </div>
+    <div class="card-body">
+      <div id="db-phase-rows"></div>
+    </div>
+  </div>
+
+  <!-- 5. Lessons identified -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Lessons Identified <span class="card-tick" id="tick-db-lessons" style="display:none">&#10003;</span></h2>
+    </div>
+    <div class="card-body">
+      <div id="db-lesson-rows"></div>
+    </div>
+  </div>
+
+  <!-- 6. Questions -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Questions <span class="card-tick" id="tick-db-questions" style="display:none">&#10003;</span></h2>
+    </div>
+    <div class="card-body">
+      <div id="db-question-rows"></div>
+    </div>
+  </div>
+
+  <!-- 7. Save -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Save Debrief Record</h2>
+    </div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+      <div id="db-completion-banner" style="display:none;padding:12px 16px;border-radius:8px;font-family:var(--mono);font-size:12px;line-height:1.6"></div>
+      <div id="db-submit-info" class="info-bar"></div>
+      <button id="db-submit-btn" class="submit-btn" type="button" onclick="submitDebrief()">Save Debrief Record</button>
+      <button class="secondary-btn" type="button" onclick="downloadDebrief()" style="margin-top:4px">Download JSON</button>
+      <button class="secondary-btn" type="button" onclick="previewDebriefJson()">Preview JSON</button>
+      <pre class="json-preview" id="db-json-preview"></pre>
+    </div>
+  </div>
+
+</div><!-- end form-debrief -->
+</div><!-- end panel-debrief -->
+
 </div><!-- end main-content -->
 </main>
 
@@ -2187,6 +2381,7 @@
 const toggleState  = {};
 let   estatesData  = {};
 let   onsiteComplete = false;
+let   onsiteRecord   = null;   // declared up front: buildPreflightRecord() reads it before any onsite is saved
 
 // ── Area definitions (TOLAs, OpVol, Hold, ELA) ─────────────────────────────
 const AREA_SECTIONS = [
@@ -2447,7 +2642,7 @@ function populateEstateSelect(names) {
 // ── Panel switching ────────────────────────────────────────────────────────
 function togglePanel(panel) {
   // Always show the clicked panel; hide the other
-  ['onsite','preflight'].forEach(p => {
+  ['onsite','preflight','debrief'].forEach(p => {
     const active = p === panel;
     document.getElementById('panel-' + p).classList.toggle('open', active);
     document.getElementById('btn-'   + p).classList.toggle('open', active);
@@ -2456,7 +2651,8 @@ function togglePanel(panel) {
   const ind = document.getElementById('panel-indicator');
   if (ind) {
     ind.className = 'pi-' + panel;
-    ind.querySelector('.pi-label').textContent = panel === 'onsite' ? 'Onsite' : 'Pre-flight';
+    ind.querySelector('.pi-label').textContent =
+      panel === 'onsite' ? 'Onsite' : panel === 'preflight' ? 'Pre-flight' : 'Debrief';
   }
 }
 
@@ -5074,6 +5270,898 @@ function toggleJsonPreview(id) {
   if (id==='onsite-json-preview') pre.textContent=JSON.stringify(buildOnsiteRecord(),null,2);
   pre.style.display='block';
 }
+
+// ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// DEBRIEF (step 3)
+// ══════════════════════════════════════════════════════
+// Mirrors OC's Debriefing Form: 7 yes/no rows with notes,
+// plus 4 free-text rows. Voice dictation (Web Speech API)
+// can fill a single row or the whole form at once, routing
+// each spoken section into the row it belongs to.
+// ══════════════════════════════════════════════════════
+
+const DEBRIEF_ROWS = [
+  {
+    key: 'weather', group: 'review',
+    title: 'Weather', q: 'Any issues?',
+    toggle: 'neg', answerField: 'weather_issues', textField: 'weather_detail',
+    cues: ['weather','the weather','weather wise','weatherwise','conditions'],
+    kw: ['wind','winds','windy','gust','gusts','gusting','rain','raining','shower','showers','cloud','cloudbase','visibility','viz','fog','mist','temperature','precipitation','forecast','met office','kp index','glare','drizzle','hail','snow','sunny','overcast'],
+    goodRe: [/\bno issues\b/,/\bno problems\b/,/\bnothing to report\b/,/\ball good\b/,/\ball fine\b/,/\bwas fine\b/,/\bwere fine\b/,/\bno concerns\b/,/\bwithin limits\b/,/\bwell within limits\b/,/\bas forecast\b/,/\bbetter than forecast\b/,/\bgood conditions\b/,/\bclear skies\b/,/\bno weather issues\b/],
+    badRe:  [/\bissues?\b/,/\bproblems?\b/,/\bgusting\b/,/\bgusty\b/,/\btoo windy\b/,/\bmarginal\b/,/\bout of limits?\b/,/\bdeteriorat\w*\b/,/\baborted\b/,/\bstood down\b/,/\bheavy rain\b/,/\bpoor visibility\b/,/\blow cloud\b/,/\bhad to wait\b/,/\bwind picked up\b/,/\bworse than forecast\b/],
+  },
+  {
+    key: 'timings', group: 'review',
+    title: 'Mission timings', q: 'On time?',
+    toggle: 'pos', answerField: 'timings_on_time', textField: 'timings_detail',
+    cues: ['timings','mission timings','timing','time wise','timewise','timings wise','schedule'],
+    kw: ['on time','late','delay','delayed','delays','overran','overrun','early','behind schedule','ahead of schedule','start time','finish time','took longer','ran over','ran late'],
+    goodRe: [/\bon time\b/,/\bas planned\b/,/\bto plan\b/,/\bahead of schedule\b/,/\bno delays?\b/,/\bbang on\b/,/\bfinished early\b/,/\bahead of time\b/,/\bno hold ?ups?\b/],
+    badRe:  [/\blate\b/,/\bdelayed?\b/,/\bdelays\b/,/\bover ?ran\b/,/\bover ?run\b/,/\bbehind schedule\b/,/\bslipped\b/,/\btook longer\b/,/\bran over\b/,/\bstarted late\b/,/\bfinished late\b/,/\bhold ?ups?\b/],
+  },
+  {
+    key: 'objectives', group: 'review',
+    title: 'Objectives', q: 'Achieved?',
+    toggle: 'pos', answerField: 'objectives_achieved', textField: 'objectives_detail',
+    cues: ['objectives','objective','mission objectives','the objectives','aims'],
+    kw: ['coverage','flight lines','data captured','captured','capture','survey area','deliverable','deliverables','got the data','achieved','hectares','tiles','orthomosaic','point cloud'],
+    goodRe: [/\ball achieved\b/,/\bfully achieved\b/,/\bachieved\b/,/\bcompleted?\b/,/\ball captured\b/,/\bfull coverage\b/,/\bgot everything\b/,/\bgot the data\b/,/\bmet in full\b/,/\bas briefed\b/],
+    badRe:  [/\bnot achieved\b/,/\bnot fully achieved\b/,/\bdid ?n.?t achieve\b/,/\bdid not achieve\b/,/\bpartially\b/,/\bpartial\b/,/\bpart achieved\b/,/\bunable\b/,/\bcould ?n.?t\b/,/\bcould not\b/,/\bmissed\b/,/\bshortfall\b/,/\baborted\b/,/\babandoned\b/,/\bonly got\b/,/\bneed to (return|go back)\b/,/\bwill need another\b/],
+  },
+  {
+    key: 'safe_flight', group: 'review',
+    title: 'Safe flight', q: 'Achieved?',
+    toggle: 'pos', answerField: 'safe_flight_achieved', textField: 'safe_flight_detail',
+    cues: ['safe flight','safety','safety wise','flight safety','safe flying'],
+    kw: ['incident','incidents','near miss','near misses','accident','emergency','emergency procedure','rth','return to home','loss of control','flyaway','fly away','bird','birds','battery warning','geofence','crash','collision','tree strike'],
+    goodRe: [/\bsafely\b/,/\bsafe\b/,/\bno incidents?\b/,/\bwithout incident\b/,/\bno near ?miss(es)?\b/,/\bnothing untoward\b/,/\buneventful\b/,/\bno issues\b/,/\bno safety\b/],
+    badRe:  [/\bincidents?\b/,/\bnear ?miss(es)?\b/,/\bunsafe\b/,/\bemergency\b/,/\bcrash(ed)?\b/,/\bcollision\b/,/\bfly ?away\b/,/\bloss of control\b/,/\blost control\b/,/\brth (triggered|activated)\b/,/\bforced landing\b/,/\bhad to land\b/,/\bbird strike\b/,/\btree strike\b/],
+  },
+  {
+    key: 'cordon', group: 'review',
+    title: 'Cordon', q: 'Kept secure?',
+    toggle: 'pos', answerField: 'cordon_secure', textField: 'cordon_detail',
+    cues: ['cordon','the cordon','cordon wise','cordons'],
+    kw: ['perimeter','public','member of the public','members of the public','walker','walkers','dog walker','hiker','hikers','uninvolved','marshal','marshals','marshalling','signage','signs','barrier','gate','livestock','sheep','cattle','access point','landowner','tape'],
+    goodRe: [/\bkept secure\b/,/\bsecure\b/,/\bmaintained\b/,/\bheld\b/,/\bno breach(es)?\b/,/\bno ?(one|body) (entered|came)\b/,/\bno incursions?\b/,/\bstayed clear\b/,/\bclear throughout\b/,/\bno public\b/,/\bno issues\b/],
+    badRe:  [/\bbreach(ed|es)?\b/,/\bbroken\b/,/\bnot secure\b/,/\bcompromised\b/,/\bwalked (through|into|in)\b/,/\bentered the\b/,/\bgot inside\b/,/\bhad to (pause|land|stop)\b/,/\bcame (through|into)\b/,/\bstrayed\b/],
+  },
+  {
+    key: 'airspace', group: 'review',
+    title: 'Airspace', q: 'Any incursions?',
+    toggle: 'neg', answerField: 'airspace_incursions', textField: 'airspace_detail',
+    cues: ['airspace','incursions','incursion','airspace wise','air space'],
+    kw: ['other aircraft','aircraft','helicopter','helicopters','plane','planes','microlight','paraglider','paramotor','glider','gliding','notam','notams','atc','air traffic','low flying','overflight','overflew','transited','military'],
+    goodRe: [/\bno incursions?\b/,/\bno other aircraft\b/,/\bnothing in the airspace\b/,/\bairspace was clear\b/,/\bclear throughout\b/,/\bnothing seen\b/,/\bnothing else up\b/,/\bno traffic\b/,/\bquiet\b/,/\bno issues\b/],
+    badRe:  [/\bincursions?\b/,/\baircraft\b/,/\bhelicopter\b/,/\bmicrolight\b/,/\bparaglider\b/,/\bparamotor\b/,/\bglider\b/,/\blow flying\b/,/\boverflew\b/,/\bhad to (descend|land)\b/,/\btransited\b/,/\bpassed overhead\b/,/\bcame through\b/],
+  },
+  {
+    key: 'communications', group: 'review',
+    title: 'Communications', q: 'Clear, concise, on time?',
+    toggle: 'pos', answerField: 'communications_clear', textField: 'communications_detail',
+    cues: ['communications','comms','communication','comms wise','coms'],
+    kw: ['radio','radios','callout','callouts','call out','handset','phone signal','mobile signal','signal','relay','heard each other','shouting','earpiece','channel'],
+    goodRe: [/\bclear\b/,/\bconcise\b/,/\bworked well\b/,/\bno issues\b/,/\beffective\b/,/\bgood\b/,/\bfine\b/,/\bloud and clear\b/],
+    badRe:  [/\bbroke ?(up|down)\b/,/\bdropped out\b/,/\bunclear\b/,/\bpoor\b/,/\bgarbled\b/,/\bcould ?n.?t hear\b/,/\bcould not hear\b/,/\blost comms\b/,/\bno signal\b/,/\bhad to shout\b/,/\bmissed a call\b/,/\bconfusion\b/],
+  },
+  {
+    key: 'phases', group: 'phase',
+    title: 'Overview of phases of the operation', q: 'Detail',
+    toggle: null, textField: 'phases_overview',
+    cues: ['phases of the operation','overview of phases','phases','phase overview','overview of the operation','sequence of events','run through of the operation','walk through of the operation','order of events','overview'],
+    kw: ['arrived','arrival','setup','set up','site setup','pre-flight','preflight','launch','takeoff','take off','transit','recovery','landing','packed up','pack down','packdown','first flight','second flight','sortie','sorties','timeline','battery swap','battery change'],
+  },
+  {
+    key: 'went_well', group: 'lesson',
+    title: 'Identify what went well', q: 'Detail',
+    toggle: null, textField: 'what_went_well',
+    cues: ['what went well','went well','worked well','positives','what worked','things that went well','good points'],
+    kw: ['positive','strength','strengths','pleased','smooth','smoothly','slick','effective','win','wins','strong','went well','worked well'],
+  },
+  {
+    key: 'improve', group: 'lesson',
+    title: 'Identify what could be improved', q: 'Detail',
+    toggle: null, textField: 'what_could_be_improved',
+    cues: ['what could be improved','could be improved','could be better','improvements','improvement','room for improvement','what to improve','lessons learned','lessons learnt','lessons','do differently','next time','things to improve'],
+    kw: ['improve','improved','better','could have','should have','learned','learnt','room for','snag','snags','niggle','frustrating','wasted time','not ideal','clunky'],
+  },
+  {
+    key: 'questions', group: 'question',
+    title: 'Questions', q: 'Ask',
+    toggle: null, textField: 'questions',
+    cues: ['questions','any questions','open questions','queries','question'],
+    kw: ['query','unclear','unsure','wondering','follow up','follow-up','need to find out','needs answering','open point','open points','action for','who owns'],
+  },
+];
+
+const DB_GROUP_HOSTS = {
+  review:   'db-review-rows',
+  phase:    'db-phase-rows',
+  lesson:   'db-lesson-rows',
+  question: 'db-question-rows',
+};
+const DB_GROUP_TICKS = {
+  review:   'tick-db-review',
+  phase:    'tick-db-phases',
+  lesson:   'tick-db-lessons',
+  question: 'tick-db-questions',
+};
+
+const dbToggleState = {};
+let dbSortSnapshot  = null;
+
+// ── Row rendering ─────────────────────────────────────────────────────────
+function buildDebriefRows() {
+  Object.entries(DB_GROUP_HOSTS).forEach(([group, hostId]) => {
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    host.innerHTML = DEBRIEF_ROWS.filter(r => r.group === group).map(r => `
+      <div class="db-row" id="dbrow-${r.key}">
+        <div class="db-row-head">
+          <span class="db-row-title">${r.title}</span>
+          <span class="db-row-q">${r.q}</span>
+          <span class="db-dictated-tag hidden" id="dbtag-${r.key}">&#127908; dictated</span>
+          <button class="mic-btn" type="button" id="dbmic-${r.key}" title="Dictate this row"
+                  onclick="toggleRowDictation('${r.key}')">&#127908;</button>
+        </div>
+        <div class="db-row-body" id="dbbody-${r.key}">
+          ${r.toggle ? `
+          <div class="toggle-group">
+            <button class="toggle-btn" type="button" id="dbyes-${r.key}" onclick="setDbToggle('${r.key}','Yes',this)">Yes</button>
+            <button class="toggle-btn" type="button" id="dbno-${r.key}"  onclick="setDbToggle('${r.key}','No',this)">No</button>
+          </div>` : ''}
+          <textarea id="dbtext-${r.key}" placeholder="${r.toggle ? 'Notes / detail' : 'Detail'}"
+                    oninput="updateDebriefProgress()"></textarea>
+        </div>
+      </div>`).join('');
+  });
+  updateDebriefProgress();
+}
+
+// ── Toggles ───────────────────────────────────────────────────────────────
+const DB_TOGGLE_CLASSES = ['sel-yes','sel-no','sel-hazard-yes','sel-hazard-no'];
+
+function setDbToggle(key, value, btn) {
+  const row   = DEBRIEF_ROWS.find(r => r.key === key);
+  const group = btn.closest('.toggle-group');
+  if (!row || !group) return;
+  const clear = () => group.querySelectorAll('.toggle-btn')
+    .forEach(b => b.classList.remove(...DB_TOGGLE_CLASSES));
+
+  if (dbToggleState[key] === value) {   // tap the selected answer again to clear it
+    dbToggleState[key] = '';
+    clear();
+  } else {
+    dbToggleState[key] = value;
+    clear();
+    // 'neg' rows ask about a problem, so "Yes" is a concern (amber), "No" is good (green)
+    const cls = row.toggle === 'neg'
+      ? (value === 'Yes' ? 'sel-hazard-yes' : 'sel-hazard-no')
+      : (value === 'Yes' ? 'sel-yes'        : 'sel-no');
+    btn.classList.add(cls);
+  }
+  updateDebriefProgress();
+}
+
+function setDbToggleValue(key, value) {
+  const btn = document.getElementById(`db${value === 'Yes' ? 'yes' : 'no'}-${key}`);
+  if (!btn) return;
+  dbToggleState[key] = '';   // force a set rather than a toggle-off
+  setDbToggle(key, value, btn);
+}
+
+function clearDbToggle(key) {
+  dbToggleState[key] = '';
+  const g = document.querySelector(`#dbrow-${key} .toggle-group`);
+  if (g) g.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove(...DB_TOGGLE_CLASSES));
+}
+
+// ══════════════════════════════════════════════════════
+// TRANSCRIPT ROUTING
+// ══════════════════════════════════════════════════════
+// Strategy: find every spoken section cue in the transcript,
+// cut the transcript at those points, and hand each slice to
+// the row its cue belongs to. Anything before the first cue is
+// scored against the supporting keyword lists instead.
+// ══════════════════════════════════════════════════════
+
+const DB_FILLER = new Set([
+  'so','then','ok','okay','right','alright','anyway','and','now','next','moving','move',
+  'on','onto','to','as','for','regarding','in','terms','of','with','about','um','uh','er',
+  'erm','well','yeah','yep','the','a','an','my','our','lets','let','us','also','just',
+  'basically','obviously','anyways','onto','towards','toward'
+]);
+
+function dbBare(w) {
+  return String(w).toLowerCase().replace(/[‘’]/g, "'").replace(/[^a-z0-9']/g, '');
+}
+
+function dbTokenise(text) {
+  const raw  = String(text).replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  const norm = raw.map(dbBare);
+  return { raw, norm };
+}
+
+// Words that are filler at the START of a segment but can carry meaning at
+// the end of one ("the radios worked well"), so they're never trimmed there.
+const DB_LEAD_ONLY = new Set([
+  'well','right','ok','okay','alright','yeah','yep','anyway','so','then',
+  'basically','obviously','just','also','lets','let','us',
+]);
+
+function dbCleanSegment(words) {
+  const w = words.slice();
+  const trailFiller = x => DB_FILLER.has(x) && !DB_LEAD_ONLY.has(x);
+  let n = 0;
+  while (w.length && n < 6 && trailFiller(dbBare(w[w.length - 1])))    { w.pop();   n++; }
+  n = 0;
+  while (w.length && n < 6 && DB_FILLER.has(dbBare(w[0])))             { w.shift(); n++; }
+  const t = w.join(' ').replace(/^[\s,;.:\-]+/, '').replace(/[\s,;:\-]+$/, '').trim();
+  if (!t) return '';
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+// Cues that also read naturally mid-sentence ("the radios worked well").
+// These only start a new section at a boundary: the very start of the
+// transcript, after punctuation, or after a transition word.
+const DB_SOFT_CUES = new Set([
+  'went well','worked well','what worked','positives','good points',
+  'conditions','schedule','question','queries','lessons','next time',
+  'overview','improvements','improvement','do differently','could be better',
+]);
+
+// Locate every section cue, longest match wins, overlaps dropped
+function dbFindCues(raw, norm) {
+  const hits = [];
+  const atBoundary = i => {
+    if (i === 0) return true;
+    const prevRaw = raw[i - 1] || '';
+    if (/[.,;:!?]$/.test(prevRaw)) return true;
+    return DB_FILLER.has(dbBare(prevRaw));
+  };
+  DEBRIEF_ROWS.forEach(r => {
+    (r.cues || []).forEach(cue => {
+      const soft = DB_SOFT_CUES.has(cue);
+      const cw   = cue.split(' ').map(dbBare);
+      for (let i = 0; i + cw.length <= norm.length; i++) {
+        let ok = true;
+        for (let j = 0; j < cw.length; j++) { if (norm[i + j] !== cw[j]) { ok = false; break; } }
+        if (!ok) continue;
+        if (soft && !atBoundary(i)) continue;
+        hits.push({ key: r.key, start: i, end: i + cw.length, len: cw.length });
+      }
+    });
+  });
+  hits.sort((a, b) => b.len - a.len || a.start - b.start);
+  const taken = [];
+  hits.forEach(h => {
+    if (taken.some(t => h.start < t.end && h.end > t.start)) return;
+    taken.push(h);
+  });
+  taken.sort((a, b) => a.start - b.start);
+  // Repeating the same section name mid-flow doesn't start a new segment
+  return taken.filter((h, i, arr) => i === 0 || arr[i - 1].key !== h.key);
+}
+
+// Score un-cued text against the supporting keyword lists
+function dbScoreRow(normWords) {
+  const hay = ' ' + normWords.join(' ') + ' ';
+  let best = null, bestScore = 0;
+  DEBRIEF_ROWS.forEach(r => {
+    let sc = 0;
+    (r.cues || []).concat(r.kw || []).forEach(k => {
+      const needle = ' ' + k.split(' ').map(dbBare).join(' ') + ' ';
+      if (hay.indexOf(needle) !== -1) sc += k.indexOf(' ') !== -1 ? 2 : 1;
+    });
+    if (sc > bestScore) { bestScore = sc; best = r.key; }
+  });
+  return bestScore >= 2 ? best : null;
+}
+
+function dbRouteTranscript(text) {
+  const { raw, norm } = dbTokenise(text);
+  const rows = {}, order = [];
+  let leftover = '';
+  if (!raw.length) return { rows, order, leftover };
+
+  const push = (key, from, to) => {
+    const seg = dbCleanSegment(raw.slice(from, to));
+    if (!seg) return;
+    (rows[key] = rows[key] || []).push(seg);
+    if (order.indexOf(key) === -1) order.push(key);
+  };
+
+  const cues = dbFindCues(raw, norm);
+
+  if (!cues.length) {
+    const key = dbScoreRow(norm);
+    if (key) push(key, 0, raw.length);
+    else leftover = raw.join(' ');
+    return { rows, order, leftover };
+  }
+
+  if (cues[0].start > 0) {
+    const key = dbScoreRow(norm.slice(0, cues[0].start));
+    if (key) push(key, 0, cues[0].start);
+    else {
+      const t = dbCleanSegment(raw.slice(0, cues[0].start));
+      if (t && t.split(' ').length > 3) leftover = t;
+    }
+  }
+
+  cues.forEach((c, i) => {
+    const end = (i + 1 < cues.length) ? cues[i + 1].start : raw.length;
+    push(c.key, c.start, end);   // cue words stay in the text so nothing spoken is lost
+  });
+
+  return { rows, order, leftover };
+}
+
+// Infer a Yes/No answer from the words assigned to a row.
+// goodRe = "nothing went wrong here", badRe = "something did".
+// Both lists are matched and the side with the LONGEST match wins, so
+// "no other aircraft" beats a bare "aircraft" and "no delays" beats "delay".
+// The row's polarity then turns good/bad into the answer to ITS question:
+// a 'pos' row asks whether something was achieved (good = Yes), a 'neg'
+// row asks whether there was a problem (good = No).
+function dbInferAnswer(row, text) {
+  if (!row.toggle) return '';
+  const hay = ' ' + String(text).toLowerCase().replace(/\s+/g, ' ') + ' ';
+  const longest = list => (list || []).reduce((max, re) => {
+    const m = hay.match(re);
+    return m && m[0].length > max ? m[0].length : max;
+  }, 0);
+  const good = longest(row.goodRe), bad = longest(row.badRe);
+  if (good === bad) return '';                       // nothing matched, or a tie
+  const isGood = good > bad;
+  return row.toggle === 'neg' ? (isGood ? 'No' : 'Yes') : (isGood ? 'Yes' : 'No');
+}
+
+// ── Sort / undo ───────────────────────────────────────────────────────────
+function dbSnapshot() {
+  const snap = { text: {}, toggle: Object.assign({}, dbToggleState), tags: {} };
+  DEBRIEF_ROWS.forEach(r => {
+    const ta  = document.getElementById('dbtext-' + r.key);
+    const tag = document.getElementById('dbtag-'  + r.key);
+    snap.text[r.key] = ta ? ta.value : '';
+    snap.tags[r.key] = tag ? !tag.classList.contains('hidden') : false;
+  });
+  return snap;
+}
+
+function sortTranscriptToRows() {
+  const ta        = document.getElementById('db-transcript');
+  const summary   = document.getElementById('db-sort-summary');
+  const unsorted  = document.getElementById('db-unsorted');
+  const text      = (ta.value || '').trim();
+
+  unsorted.classList.remove('visible');
+  if (!text) {
+    summary.innerHTML = 'Nothing to sort yet &mdash; dictate or type a debrief above first.';
+    summary.classList.add('visible');
+    return;
+  }
+
+  dbSortSnapshot = dbSnapshot();
+  document.getElementById('db-undo-sort').disabled = false;
+
+  const { rows, order, leftover } = dbRouteTranscript(text);
+  const filled = [], answered = [];
+
+  order.forEach(key => {
+    const row = DEBRIEF_ROWS.find(r => r.key === key);
+    const box = document.getElementById('dbtext-' + key);
+    if (!row || !box) return;
+    const seg = rows[key].join(' ');
+    box.value = box.value.trim() ? (box.value.trim() + '\n' + seg) : seg;
+    filled.push(row.title);
+
+    document.getElementById('dbtag-' + key).classList.remove('hidden');
+    const body = document.getElementById('dbbody-' + key);
+    if (body) { body.classList.remove('db-flash'); void body.offsetWidth; body.classList.add('db-flash'); }
+
+    if (row.toggle) {
+      const ans = dbInferAnswer(row, seg);
+      if (ans) { setDbToggleValue(key, ans); answered.push(`${row.title} &rarr; ${ans}`); }
+    }
+  });
+
+  const lines = [];
+  if (filled.length) {
+    lines.push(`&#127908; Sorted into ${filled.length} row${filled.length === 1 ? '' : 's'}: ${filled.join(', ')}`);
+  } else {
+    lines.push('&#9888; Couldn&rsquo;t match any section &mdash; see the unsorted text below and move it by hand.');
+  }
+  if (answered.length) lines.push(`&#10003; Yes/No set: ${answered.join(' &middot; ')}`);
+  const unanswered = DEBRIEF_ROWS.filter(r => r.toggle && !dbToggleState[r.key]).map(r => r.title);
+  if (unanswered.length) lines.push(`&#9633; Still needs a Yes/No: ${unanswered.join(', ')}`);
+  lines.push('Read every row back before saving &mdash; voice sorting is a first pass, not the record.');
+  summary.innerHTML = lines.join('<br>');
+  summary.classList.add('visible');
+
+  if (leftover) {
+    unsorted.innerHTML = '<strong>Not sorted &mdash; move this into a row yourself</strong>' + dbEscape(leftover);
+    unsorted.classList.add('visible');
+  }
+
+  updateDebriefProgress();
+}
+
+function undoSortToRows() {
+  if (!dbSortSnapshot) return;
+  DEBRIEF_ROWS.forEach(r => {
+    const box = document.getElementById('dbtext-' + r.key);
+    if (box) box.value = dbSortSnapshot.text[r.key] || '';
+    clearDbToggle(r.key);
+    const tag = document.getElementById('dbtag-' + r.key);
+    if (tag) tag.classList.toggle('hidden', !dbSortSnapshot.tags[r.key]);
+  });
+  Object.keys(dbSortSnapshot.toggle).forEach(k => {
+    if (dbSortSnapshot.toggle[k]) setDbToggleValue(k, dbSortSnapshot.toggle[k]);
+  });
+  dbSortSnapshot = null;
+  document.getElementById('db-undo-sort').disabled = true;
+  document.getElementById('db-sort-summary').classList.remove('visible');
+  document.getElementById('db-unsorted').classList.remove('visible');
+  updateDebriefProgress();
+}
+
+function dbEscape(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ══════════════════════════════════════════════════════
+// SPEECH TO TEXT (Web Speech API)
+// ══════════════════════════════════════════════════════
+const DB_SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let dbRec = null, dbRecTarget = null, dbWantListening = false, dbRestartTimer = null;
+
+function dbSpeechInit() {
+  if (DB_SR) return;
+  const warn = document.getElementById('db-mic-unsupported');
+  if (warn) warn.classList.add('visible');
+  const big = document.getElementById('db-big-mic');
+  if (big) big.disabled = true;
+  document.querySelectorAll('#form-debrief .mic-btn').forEach(b => b.disabled = true);
+}
+
+function dbMicControl(target) {
+  return target === 'dump'
+    ? document.getElementById('db-big-mic')
+    : document.getElementById('dbmic-' + target);
+}
+
+function dbRecUi(on) {
+  const dump = document.getElementById('db-dump');
+  const big  = document.getElementById('db-big-mic');
+  document.querySelectorAll('#form-debrief .mic-btn').forEach(b => {
+    b.classList.remove('listening');
+    b.disabled = on;
+  });
+  if (big) { big.classList.remove('listening'); big.disabled = on && dbRecTarget !== 'dump'; }
+  if (dump) dump.classList.toggle('listening', !!(on && dbRecTarget === 'dump'));
+  if (big)  big.innerHTML = (on && dbRecTarget === 'dump') ? '&#9209; Stop and sort into rows' : '&#127908; Start dictating';
+  if (on) {
+    const ctl = dbMicControl(dbRecTarget);
+    if (ctl) { ctl.classList.add('listening'); ctl.disabled = false; }
+  } else {
+    document.getElementById('db-transcript-interim').textContent = '';
+  }
+}
+
+function dbStopRec() {
+  dbWantListening = false;
+  if (dbRestartTimer) { clearTimeout(dbRestartTimer); dbRestartTimer = null; }
+  if (dbRec) { try { dbRec.stop(); } catch (e) { /* already stopped */ } }
+}
+
+function dbStartRec(target) {
+  if (!DB_SR || dbRec) return;
+  dbRecTarget     = target;
+  dbWantListening = true;
+
+  const rec = new DB_SR();
+  rec.lang            = 'en-GB';
+  rec.continuous      = true;
+  rec.interimResults  = true;
+  rec.maxAlternatives = 1;
+
+  rec.onresult = e => {
+    let fin = '', interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) fin += t; else interim += t;
+    }
+    if (fin.trim()) dbAppendSpeech(fin.trim());
+    const el = document.getElementById('db-transcript-interim');
+    if (el) el.textContent = interim ? '… ' + interim : '';
+  };
+
+  rec.onerror = e => {
+    if (e.error === 'no-speech' || e.error === 'aborted') return;   // onend will restart
+    dbWantListening = false;
+    const msg = e.error === 'not-allowed' || e.error === 'service-not-allowed'
+      ? '⚠ Microphone blocked. Allow mic access for this site, then try again.'
+      : e.error === 'network'
+        ? '⚠ Voice needs a data connection — Chrome sends the audio away to transcribe it. No signal on site? Type into the rows instead.'
+        : `⚠ Speech recognition error: ${e.error}`;
+    const bar = document.getElementById('db-submit-info');
+    if (bar) { bar.textContent = msg; bar.className = 'info-bar visible warn'; }
+  };
+
+  rec.onend = () => {
+    if (dbWantListening) {
+      // Chrome ends the stream after a pause — restart so a long debrief keeps recording
+      dbRestartTimer = setTimeout(() => {
+        try { rec.start(); } catch (err) { dbWantListening = false; dbRec = null; dbRecUi(false); }
+      }, 250);
+      return;
+    }
+    const finishedTarget = dbRecTarget;
+    dbRec = null;
+    dbRecUi(false);
+    dbRecTarget = null;
+    if (finishedTarget === 'dump' && (document.getElementById('db-transcript').value || '').trim()) {
+      sortTranscriptToRows();
+    }
+    updateDebriefProgress();
+  };
+
+  try { rec.start(); } catch (err) { dbWantListening = false; return; }
+  dbRec = rec;
+  dbRecUi(true);
+}
+
+function dbAppendSpeech(chunk) {
+  if (dbRecTarget === 'dump') {
+    const ta = document.getElementById('db-transcript');
+    ta.value = ta.value.trim() ? (ta.value.trim() + ' ' + chunk) : chunk.charAt(0).toUpperCase() + chunk.slice(1);
+    ta.scrollTop = ta.scrollHeight;
+  } else {
+    const ta = document.getElementById('dbtext-' + dbRecTarget);
+    if (!ta) return;
+    ta.value = ta.value.trim() ? (ta.value.trim() + ' ' + chunk) : chunk.charAt(0).toUpperCase() + chunk.slice(1);
+    const tag = document.getElementById('dbtag-' + dbRecTarget);
+    if (tag) tag.classList.remove('hidden');
+    ta.scrollTop = ta.scrollHeight;
+  }
+  updateDebriefProgress();
+}
+
+function toggleDumpDictation() {
+  if (dbRec) { dbStopRec(); return; }
+  dbStartRec('dump');
+}
+
+function toggleRowDictation(key) {
+  if (dbRec) { dbStopRec(); return; }
+  dbStartRec(key);
+}
+
+// ══════════════════════════════════════════════════════
+// PROGRESS / TICKS
+// ══════════════════════════════════════════════════════
+function dbRowDone(r) {
+  const box = document.getElementById('dbtext-' + r.key);
+  const txt = box ? box.value.trim() : '';
+  return r.toggle ? !!dbToggleState[r.key] : !!txt;
+}
+
+function updateDebriefProgress() {
+  DEBRIEF_ROWS.forEach(r => {
+    const rowEl = document.getElementById('dbrow-' + r.key);
+    if (rowEl) rowEl.classList.toggle('db-filled', dbRowDone(r));
+  });
+  Object.entries(DB_GROUP_TICKS).forEach(([group, tickId]) => {
+    const tick = document.getElementById(tickId);
+    if (!tick) return;
+    const rows = DEBRIEF_ROWS.filter(r => r.group === group);
+    tick.style.display = rows.every(dbRowDone) ? '' : 'none';
+  });
+  const voiceTick = document.getElementById('tick-db-voice');
+  if (voiceTick) {
+    const t = document.getElementById('db-transcript');
+    voiceTick.style.display = (t && t.value.trim()) ? '' : 'none';
+  }
+
+  const outstanding = DEBRIEF_ROWS.filter(r => !dbRowDone(r)).map(r => r.title);
+  const banner = document.getElementById('db-completion-banner');
+  if (banner) {
+    if (!outstanding.length) {
+      banner.style.display   = '';
+      banner.style.background  = 'var(--ok-bg)';
+      banner.style.border      = '2px solid var(--ok-border)';
+      banner.style.color       = 'var(--ok)';
+      banner.textContent       = '✓ All 11 debrief rows complete.';
+    } else {
+      banner.style.display   = '';
+      banner.style.background  = 'var(--warn-bg)';
+      banner.style.border      = '2px solid var(--warn)';
+      banner.style.color       = 'var(--warn)';
+      banner.textContent       = `□ ${outstanding.length} row${outstanding.length === 1 ? '' : 's'} outstanding: ${outstanding.join(', ')}`;
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// RECORD / SAVE
+// ══════════════════════════════════════════════════════
+function dbVal(id) {
+  const el = document.getElementById(id);
+  return el ? (el.value || '').trim() : '';
+}
+
+function buildDebriefRecord() {
+  const missionId = dbVal('db-mission-id');
+  const estate    = dbVal('db-estate');
+  const rec = {
+    site_survey_number: missionId,
+    _estate:            estate,
+    debrief_datetime:   dbVal('db-datetime'),
+    debrief_led_by:     dbVal('db-led-by'),
+    crew_present:       dbVal('db-crew'),
+  };
+  DEBRIEF_ROWS.forEach(r => {
+    if (r.answerField) rec[r.answerField] = dbToggleState[r.key] || '';
+    rec[r.textField]   = dbVal('dbtext-' + r.key);
+  });
+  rec.voice_transcript = dbVal('db-transcript');
+  rec._type            = 'debrief';
+  rec._run_id          = `${(estate || 'debrief').replace(/[^a-z0-9]/gi,'_')}_${Date.now()}`;
+  rec._generated_at    = new Date().toISOString();
+  return rec;
+}
+
+function debriefKey() {
+  const d = new Date();
+  return `SKY_DEBRIEF_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// Dispatch limit for repository_dispatch client_payload is ~64 KB.
+// A very long dictation could push past it, so the transcript is dropped
+// from the DISPATCHED copy only — the local copy and the download keep it.
+const DB_DISPATCH_LIMIT = 60000;
+
+async function submitDebrief() {
+  const bar = document.getElementById('db-submit-info');
+  const btn = document.getElementById('db-submit-btn');
+  const rec = buildDebriefRecord();
+
+  if (!rec.site_survey_number) {
+    bar.textContent = '✕ Enter a Mission ID before saving the debrief.';
+    bar.className   = 'info-bar visible error';
+    return;
+  }
+
+  // ── Save locally FIRST, so a network failure can never lose the debrief ──
+  let savedLocally = true;
+  try {
+    localStorage.setItem(debriefKey(), JSON.stringify(rec));
+  } catch (e) {
+    savedLocally = false;
+  }
+
+  const pre = document.getElementById('db-json-preview');
+  pre.textContent   = JSON.stringify(rec, null, 2);
+  pre.style.display = 'block';
+
+  const savedTime   = new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+  const outstanding = DEBRIEF_ROWS.filter(r => !dbRowDone(r)).map(r => r.title);
+
+  const markDone = () => {
+    const b     = document.getElementById('btn-debrief');
+    const badge = document.getElementById('badge-debrief');
+    const meta  = document.getElementById('debrief-meta');
+    if (b)     b.classList.add('complete');
+    if (badge) badge.textContent = '✓';
+    if (meta)  meta.textContent = [rec._estate, 'saved ' + savedTime].filter(Boolean).join(' · ');
+  };
+
+  // ── Then fire the GitHub Actions run that commits it and fills the form ──
+  if (!CONFIG.GITHUB_TOKEN) {
+    markDone();
+    bar.textContent = savedLocally
+      ? `✓ Debrief saved on this device at ${savedTime}. No GitHub token set, so it wasn't filed to the repo — use Download JSON.`
+      : `⚠ Couldn't save locally and no GitHub token is set. Use Download JSON now so this isn't lost.`;
+    bar.className = 'info-bar visible warn';
+    return;
+  }
+
+  btn.disabled    = true;
+  bar.textContent = '⏳ Filing debrief to GitHub…';
+  bar.className   = 'info-bar visible ok';
+
+  let payload = JSON.stringify(rec);
+  let trimmed = false;
+  if (payload.length > DB_DISPATCH_LIMIT) {
+    const slim = Object.assign({}, rec, {
+      voice_transcript: '[transcript omitted — payload too large for dispatch; kept in the local copy]',
+    });
+    payload = JSON.stringify(slim);
+    trimmed = true;
+  }
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization':        `Bearer ${CONFIG.GITHUB_TOKEN}`,
+          'Accept':               'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type':         'application/json',
+        },
+        body: JSON.stringify({
+          event_type:     'run_skylark_debrief',
+          client_payload: {
+            debrief_json: payload,
+            mission_id:   rec.site_survey_number,
+          },
+        }),
+      }
+    );
+
+    if (resp.status === 204) {
+      markDone();
+      const notes = [];
+      if (outstanding.length) notes.push(`${outstanding.length} row(s) still blank: ${outstanding.join(', ')}`);
+      if (trimmed)            notes.push('transcript too long to send — kept on this device');
+      if (!savedLocally)      notes.push("couldn't save a local copy");
+      bar.textContent = `✓ Filed at ${savedTime} — GitHub Actions is committing the record and filling the debrief form.`
+                      + (notes.length ? ' (' + notes.join('; ') + ')' : '');
+      bar.className   = notes.length ? 'info-bar visible warn' : 'info-bar visible ok';
+      [0,500,1000].forEach(d => setTimeout(flyBird, d));
+    } else {
+      const txt = await resp.text();
+      bar.textContent = `✕ GitHub error ${resp.status}: ${txt}`
+                      + (savedLocally ? ' — the debrief is still saved on this device. Retry, or use Download JSON.'
+                                      : ' — nothing saved. Use Download JSON now.');
+      bar.className   = 'info-bar visible error';
+      btn.disabled    = false;
+    }
+  } catch (e) {
+    bar.textContent = `✕ Network error: ${e.message}`
+                    + (savedLocally ? ' — the debrief is saved on this device. Retry when you have signal, or use Download JSON.'
+                                    : ' — nothing saved. Use Download JSON now.');
+    bar.className   = 'info-bar visible error';
+    btn.disabled    = false;
+  }
+}
+
+function downloadDebrief() {
+  const rec  = buildDebriefRecord();
+  const name = `skylark_debrief_${(rec.site_survey_number || 'no_mission_id').replace(/[^a-z0-9_-]/gi,'_')}_${new Date().toISOString().slice(0,10)}.json`;
+  const blob = new Blob([JSON.stringify(rec, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  const bar = document.getElementById('db-submit-info');
+  bar.textContent = `✓ Downloaded ${name}`;
+  bar.className   = 'info-bar visible ok';
+}
+
+function previewDebriefJson() {
+  const pre = document.getElementById('db-json-preview');
+  if (!pre) return;
+  if (pre.style.display === 'block') { pre.style.display = 'none'; return; }
+  pre.textContent   = JSON.stringify(buildDebriefRecord(), null, 2);
+  pre.style.display = 'block';
+}
+
+function restoreDebrief(rec) {
+  if (!rec) return;
+  const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+  set('db-mission-id', rec.site_survey_number);
+  set('db-estate',     rec._estate);
+  set('db-datetime',   rec.debrief_datetime);
+  set('db-led-by',     rec.debrief_led_by);
+  set('db-crew',       rec.crew_present);
+  DEBRIEF_ROWS.forEach(r => {
+    set('dbtext-' + r.key, rec[r.textField]);
+    if (r.answerField && rec[r.answerField]) setDbToggleValue(r.key, rec[r.answerField]);
+  });
+  set('db-transcript', rec.voice_transcript);
+  const btn   = document.getElementById('btn-debrief');
+  const badge = document.getElementById('badge-debrief');
+  if (btn)   btn.classList.add('complete');
+  if (badge) badge.textContent = '✓';
+  const meta = document.getElementById('debrief-meta');
+  if (meta && rec._generated_at) {
+    meta.textContent = [rec._estate, 'saved ' + new Date(rec._generated_at)
+      .toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'})].filter(Boolean).join(' · ');
+  }
+  updateDebriefProgress();
+}
+
+// ── Carry-through from the earlier steps ──────────────────────────────────
+function populateDebriefFromOnsite(rec) {
+  if (!rec) return;
+  const mid = document.getElementById('db-mission-id');
+  const est = document.getElementById('db-estate');
+  if (mid && !mid.value) mid.value = rec.site_survey_number || '';
+  if (est && !est.value) est.value = rec._estate || '';
+}
+
+function dbOnPanelOpen() {
+  const dt = document.getElementById('db-datetime');
+  if (dt && !dt.value) {
+    const n = new Date(), p = x => String(x).padStart(2,'0');
+    dt.value = `${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}T${p(n.getHours())}:${p(n.getMinutes())}`;
+  }
+  const mid = document.getElementById('db-mission-id');
+  const est = document.getElementById('db-estate');
+  if ((mid && !mid.value) || (est && !est.value)) {
+    const pfId = document.getElementById('pf-mission-id');
+    if (mid && !mid.value && pfId && pfId.value) mid.value = pfId.value;
+    try {
+      const stored = localStorage.getItem(todayKey());
+      if (stored) populateDebriefFromOnsite(JSON.parse(stored));
+    } catch (e) { /* nothing carried through */ }
+  }
+  if (!document.getElementById('db-crew').value) {
+    const pilot   = document.getElementById('pf-pilot');
+    const payload = document.getElementById('pf-payload-op');
+    const names   = [pilot && pilot.value, payload && payload.value].filter(Boolean);
+    if (names.length) document.getElementById('db-crew').value = names.join(', ');
+  }
+}
+
+// ── Hooks into the existing workflow (wrapped, originals untouched) ───────
+const _dbOrigTogglePanel = togglePanel;
+togglePanel = function (panel) {
+  _dbOrigTogglePanel(panel);
+  if (panel === 'debrief') dbOnPanelOpen();
+};
+
+const _dbOrigMarkOnsiteComplete = markOnsiteComplete;
+markOnsiteComplete = function (record, autoOpenPreflight) {
+  _dbOrigMarkOnsiteComplete(record, autoOpenPreflight);
+  populateDebriefFromOnsite(record);
+};
+
+const _dbOrigSubmitPreflight = submitPreflight;
+submitPreflight = async function () {
+  await _dbOrigSubmitPreflight();
+  const pfBtn = document.getElementById('btn-preflight');
+  if (pfBtn) pfBtn.classList.add('complete');
+  const pfBadge = document.getElementById('badge-preflight');
+  if (pfBadge) pfBadge.textContent = '✓';
+  const dbBtn = document.getElementById('btn-debrief');
+  if (dbBtn && !dbBtn.classList.contains('complete')) dbBtn.classList.add('debrief-active');
+};
+
+const _dbOrigPopulatePilotSelects = populatePilotSelects;
+populatePilotSelects = function (pilots) {
+  _dbOrigPopulatePilotSelects(pilots);
+  const sel = document.getElementById('db-led-by');
+  if (!sel || !Array.isArray(pilots)) return;
+  sel.querySelectorAll('option[value]:not([value=""])').forEach(o => o.remove());
+  pilots.forEach(p => {
+    const o = document.createElement('option');
+    o.value = o.textContent = p.name;
+    sel.appendChild(o);
+  });
+};
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  buildDebriefRows();
+  dbSpeechInit();
+  try {
+    const saved = localStorage.getItem(debriefKey());
+    if (saved) restoreDebrief(JSON.parse(saved));
+  } catch (e) { /* corrupted local debrief — start blank */ }
+  try {
+    const onsite = localStorage.getItem(todayKey());
+    if (onsite) populateDebriefFromOnsite(JSON.parse(onsite));
+  } catch (e) { /* nothing carried through */ }
+  document.getElementById('db-transcript')
+    .addEventListener('input', () => updateDebriefProgress());
+});
 
 </script>
 </body>
