@@ -828,7 +828,13 @@
   #panel-indicator .pi-label {
     writing-mode: vertical-rl;
     font-family: var(--mono);
-    font-size: 22px;
+    /* Scales with the screen rather than sitting at a fixed 22px, which
+       read as tiny on an iPad and slightly heavy on a phone. vmin keys it
+       to the smaller viewport edge, so portrait and landscape agree.
+       Floor keeps it legible on a small phone; cap stops it dominating a
+       large desktop, where main is capped at 820px and this sits in the
+       right-hand gutter. Letter-spacing is in em, so it follows along. */
+    font-size: clamp(17px, 4.8vmin, 44px);
     font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
