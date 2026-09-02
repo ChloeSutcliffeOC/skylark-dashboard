@@ -137,7 +137,7 @@
     font-family: var(--sans);
     font-size: 15px;
     font-weight: 700;
-    color: #fff;
+    color: var(--oc-accent-fill);
     letter-spacing: 0.14em;
     text-transform: uppercase;
   }
@@ -1068,11 +1068,13 @@
     transition:border-color .15s, background .15s, box-shadow .15s, transform .1s;
     -webkit-tap-highlight-color:transparent; touch-action:manipulation;
   }
-  .mode-card:hover  { border-color:#000; background:var(--surface2); box-shadow:0 3px 12px rgba(0,0,0,.10); }
+  .mode-card:hover  { border-color:var(--oc-accent-strong); background:var(--oc-accent-canvas); box-shadow:0 3px 12px rgba(161,98,7,.16); }
   .mode-card:active { transform:scale(.99); }
 
   .mode-card-top { display:flex; align-items:center; gap:11px; }
-  .mode-card-icon { font-size:24px; line-height:1; flex-shrink:0; }
+  /* Yellow keel where the icon used to be — brand, not decoration. */
+  .mode-card-rule { width:4px; height:21px; border-radius:2px; flex-shrink:0; background:var(--oc-accent-strong); }
+  .mode-card-pdra .mode-card-rule { background:var(--oc-ink); }
   .mode-card-title { font-size:17px; font-weight:700; letter-spacing:-.01em; }
   .mode-card-tag {
     margin-left:auto; flex-shrink:0;
@@ -1080,14 +1082,30 @@
     text-transform:uppercase; letter-spacing:.08em;
     padding:3px 8px; border-radius:4px;
   }
-  .mode-tag-open { background:#e0f2fe; color:#075985; border:1px solid #0284c7; }
-  .mode-tag-pdra { background:#ede9fe; color:#4c1d95; border:1px solid #7c3aed; }
+  .mode-tag-open { background:var(--oc-accent-fill); color:var(--oc-accent-ink);  border:1px solid var(--oc-accent-deep); }
+  .mode-tag-pdra { background:var(--oc-ink);         color:var(--oc-accent-fill); border:1px solid var(--oc-ink); }
   .mode-card-desc  { font-size:13px; color:var(--muted); line-height:1.55; }
   .mode-card-steps { font-family:var(--mono); font-size:11px; color:var(--faint); line-height:1.6; }
 
   /* ── Home: back button in the header ── */
   .hdr-home { display:none; }
   .hdr-home.visible { display:inline-block; }
+
+  /* ── Home: Skylark yellow accents ──
+     Scoped to the home screen and the setup card so the PDRA-01 and
+     Open category panels keep their semantic colours untouched. */
+  #panel-home .card,
+  #setup-card { border-color:var(--oc-accent-line); }
+  #panel-home .card-header,
+  #setup-card .card-header { border-bottom:3px solid var(--oc-accent-strong); }
+  #panel-home .field-label { color:var(--oc-accent-deep); }
+  #panel-home .home-intro strong { color:var(--oc-accent-ink); }
+  #panel-home .submit-btn,
+  #setup-card .submit-btn { background:var(--oc-accent-fill); color:var(--oc-ink); }
+  #panel-home .submit-btn:hover:not(:disabled),
+  #setup-card .submit-btn:hover:not(:disabled) { background:var(--oc-accent-strong); }
+  #panel-home select:focus,
+  #setup-card input:focus { border-color:var(--oc-accent-strong); outline:none; }
 
   /* ── Cache panel ── */
   .cache-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
@@ -1247,7 +1265,7 @@
 
 <!-- SETUP -->
 <div class="card" id="setup-card">
-  <div class="card-header"><h2>⚙ First-Time Setup</h2></div>
+  <div class="card-header"><h2>First-Time Setup</h2></div>
   <div class="card-body">
     <p style="font-size:14px;color:var(--muted);line-height:1.6">Stored only in this browser. Enter once per device.</p>
     <div><span class="setup-label">GitHub Personal Access Token</span><input type="password" id="s-token" placeholder="ghp_xxxxxxxxxxxx"></div>
@@ -1275,7 +1293,7 @@
 
         <button class="mode-card" type="button" onclick="enterOpen()">
           <div class="mode-card-top">
-            <span class="mode-card-icon">&#9201;&#65039;</span>
+            <span class="mode-card-rule" aria-hidden="true"></span>
             <span class="mode-card-title">Open Category</span>
             <span class="mode-card-tag mode-tag-open">Short</span>
           </div>
@@ -1283,9 +1301,9 @@
           <div class="mode-card-steps">Brief &middot; Fly &middot; Debrief note</div>
         </button>
 
-        <button class="mode-card" type="button" onclick="enterPdra()">
+        <button class="mode-card mode-card-pdra" type="button" onclick="enterPdra()">
           <div class="mode-card-top">
-            <span class="mode-card-icon">&#128203;</span>
+            <span class="mode-card-rule" aria-hidden="true"></span>
             <span class="mode-card-title">PDRA-01</span>
             <span class="mode-card-tag mode-tag-pdra">Full</span>
           </div>
@@ -1299,7 +1317,7 @@
 
   <!-- ── 24-hour offline cache ── -->
   <div class="card">
-    <div class="card-header"><h2>&#128229; Download the Next 24 Hours</h2></div>
+    <div class="card-header"><h2>Download the Next 24 Hours</h2></div>
     <div class="card-body">
       <p class="home-intro">
         Do this <strong>before you lose signal</strong> &mdash; at the office, in the car park, wherever you still have data.
