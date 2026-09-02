@@ -1463,6 +1463,15 @@
             </div>
           </div>
 
+          <div>
+            <div class="field-label">Area &mdash; Radius From the Centre</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="number" id="mamc-radius" value="2" min="0.5" max="20" step="0.5" style="flex:0 0 110px" oninput="mamcRefresh()">
+              <span style="font-family:var(--mono);font-size:12px;color:var(--faint)">nm radius</span>
+            </div>
+            <div id="mamc-radius-note" style="font-family:var(--mono);font-size:11px;line-height:1.55;color:var(--muted);margin-top:7px"></div>
+          </div>
+
           <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
             <div class="field-label" style="margin-bottom:9px">Contact &mdash; remembered on this device</div>
             <div class="two-col">
@@ -8081,25 +8090,18 @@ function ocSetMode(mode) {
   } catch (e) { /* private browsing - mode just won't persist */ }
 }
 
-// The two stages fold, so the day-before jobs can be put away once done.
-// They start open - the point of the headings is that nobody has to be told
-// which order the day runs in.
-const STAGE_KEY = 'SKY_STAGE_';
-
+// Both stages start closed on every load, so the home screen opens as two
+// clear headings rather than a long scroll. The fold state is deliberately
+// not remembered - a fresh landing should always look the same.
 function toggleStage(id) {
   const el = ocEl('stage-' + id);
-  if (!el) return;
-  const collapsed = el.classList.toggle('collapsed');
-  try { localStorage.setItem(STAGE_KEY + id, collapsed ? 'closed' : 'open'); } catch (e) { /* fine */ }
+  if (el) el.classList.toggle('collapsed');
 }
 
 function ocRestoreStages() {
   ['before', 'flight'].forEach(id => {
     const el = ocEl('stage-' + id);
-    if (!el) return;
-    let v = null;
-    try { v = localStorage.getItem(STAGE_KEY + id); } catch (e) { v = null; }
-    el.classList.toggle('collapsed', v === 'closed');
+    if (el) el.classList.add('collapsed');
   });
 }
 
@@ -9511,7 +9513,7 @@ const MAMC_OP_ID   = 'GBR-OP-7MWQNLBLCHHH';
 const MAMC_OA      = 'PDRA01-22337 (PDRA-01)';
 const MAMC_OA_OPEN = 'None - flown in the Open category';
 const MAMC_CEILING = '110m  Above Ground Level (AGL)';
-const MAMC_AREA    = '2 nm radius';
+const MAMC_AREA_DEFAULT_NM = 2;
 
 const MAMC_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -9526,6 +9528,20 @@ function mamcDms(lat, lon) {
     return `${d}°${m}'${s}" ${hemi}`;
   };
   return `${one(lat, 'N', 'S')}, ${one(lon, 'E', 'W')}`;
+}
+
+// A 2 nm circle is 43 km2 - about 4,300 ha. That is smaller than several OC
+// estates, so the radius is a field rather than a constant, and the form
+// says in hectares what the chosen figure actually covers. A notification
+// whose circle does not contain the flying is not a notification.
+function mamcRadiusNm() {
+  const v = parseFloat(ocVal('mamc-radius'));
+  return (isFinite(v) && v > 0) ? v : MAMC_AREA_DEFAULT_NM;
+}
+
+function mamcRadiusHectares(nm) {
+  const km = nm * 1.852;
+  return Math.round(Math.PI * km * km * 100);
 }
 
 function mamcParseDate(v) {
@@ -9597,7 +9613,7 @@ function mamcBuild() {
     'Visual Line of Sight (VLOS) operation',
     `Location: ${estate || '[ESTATE NAME]'} ${w3w ? '///' + w3w : '[///what.three.words]'}`,
     `Centre: ${centre || '[0°0\'0" N, 0°0\'0" W]'}`,
-    `Area: ${MAMC_AREA}`,
+    `Area: ${mamcRadiusNm()} nm radius`,
     dRow,
     `Times: ${ocVal('mamc-from') || '[0900]'} to ${ocVal('mamc-to') || '[1700]'} UTC (Coordinated Universal Time)`,
     '',
@@ -9626,6 +9642,21 @@ function mamcRefresh() {
   const wEl = ocEl('mamc-w3w');
   if (wEl && estate && !wEl.dataset.touched) {
     wEl.value = String(e.what3words || e.w3w || '').replace(/^\/+/, '');
+  }
+  // Per-estate radius from the site data when there is one, so an estate
+  // that needs 4 nm does not get 2 nm by default every time.
+  const rEl = ocEl('mamc-radius');
+  if (rEl && estate && !rEl.dataset.touched) {
+    const r = parseFloat(e.notification_radius_nm);
+    if (isFinite(r) && r > 0) rEl.value = r;
+  }
+  const rNote = ocEl('mamc-radius-note');
+  if (rNote) {
+    const nm = mamcRadiusNm();
+    const ha = mamcRadiusHectares(nm);
+    const km = (nm * 1.852).toFixed(2);
+    rNote.textContent = `${nm} nm = ${km} km from the centre, covering about ` +
+      `${ha.toLocaleString('en-GB')} ha. The circle has to contain everywhere you will fly.`;
   }
 
   // The deadline for the FIRST day of the range. No late warning - a
@@ -9791,7 +9822,7 @@ function mamcInit() {
     });
     sel.dataset.built = '1';
   }
-  ['mamc-centre', 'mamc-w3w'].forEach(id => {
+  ['mamc-centre', 'mamc-w3w', 'mamc-radius'].forEach(id => {
     const el = ocEl(id);
     if (!el || el.dataset.wired) return;
     el.dataset.wired = '1';
