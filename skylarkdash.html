@@ -915,6 +915,28 @@
   .mic-unsupported { background:var(--warn-bg); border:2px solid var(--warn); border-radius:8px; padding:11px 14px; font-family:var(--mono); font-size:11.5px; color:var(--warn); line-height:1.6; display:none; margin-bottom:12px; }
   .mic-unsupported.visible { display:block; }
 
+
+  /* ── Transcript sense check ── */
+  .db-corrections { display:none; flex-direction:column; gap:2px; background:#fff; border:2px solid #a78bfa; border-radius:8px; padding:11px 13px; }
+  .db-corrections.visible { display:flex; }
+  .db-corr-row { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:7px; }
+  .db-corr-label { font-family:var(--mono); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; }
+  .db-corr-label-fixed { color:var(--ok); }
+  .db-corr-label-maybe { color:var(--warn); }
+  .db-corr-hint { font-size:11.5px; color:var(--faint); }
+  .db-chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .db-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:20px; font-family:var(--mono); font-size:11.5px; cursor:pointer; transition:background .15s, border-color .15s; -webkit-tap-highlight-color:transparent; border:1.5px solid; }
+  .db-chip-fixed { background:var(--ok-bg); border-color:var(--ok-border); color:var(--ok); }
+  .db-chip-fixed:hover { background:#c1e6cd; border-color:var(--ok); }
+  .db-chip-maybe { background:var(--warn-bg); border-color:var(--warn); color:#8a3300; }
+  .db-chip-maybe:hover { background:#fbdda0; }
+  .db-chip-from { text-decoration:line-through; opacity:0.75; }
+  .db-chip-maybe .db-chip-from { text-decoration:none; }
+  .db-chip-arrow { opacity:0.6; }
+  .db-chip-to { font-weight:700; }
+  .db-chip-act { font-size:10px; opacity:0.7; margin-left:2px; }
+  .db-vocab-wrap { border-top:1.5px dashed #c4b5fd; padding-top:11px; margin-top:2px; }
+
   /* ── Narrow screens: three accordion buttons ── */
   @media (max-width: 560px) {
     .accordion-bar { gap:6px; padding:10px 10px; }
@@ -2301,16 +2323,23 @@
       <div class="mic-unsupported" id="db-mic-unsupported">&#9888; Speech recognition isn&rsquo;t available in this browser. Use Chrome or Safari for voice, or type straight into the rows below.</div>
       <div class="db-dump" id="db-dump">
         <div class="db-dump-title">&#127908; Dictate the whole debrief</div>
-        <p class="db-hint">Talk through the debrief as you normally would, naming each area as you reach it &mdash; <code>weather</code>, <code>timings</code>, <code>objectives</code>, <code>safe flight</code>, <code>cordon</code>, <code>airspace</code>, <code>comms</code>, <code>phases of the operation</code>, <code>what went well</code>, <code>what could be improved</code>, <code>questions</code>. Skylark drops each part into the matching row and sets the Yes/No answers where it can. Always read the rows back before saving. Voice needs a data connection &mdash; with no signal on site, type straight into the rows.</p>
+        <p class="db-hint">Talk through the debrief as you normally would, naming each area as you reach it &mdash; <code>weather</code>, <code>timings</code>, <code>objectives</code>, <code>safe flight</code>, <code>cordon</code>, <code>airspace</code>, <code>comms</code>, <code>phases of the operation</code>, <code>what went well</code>, <code>what could be improved</code>, <code>questions</code>. Skylark drops each part into the matching row and sets the Yes/No answers where it can. Before sorting, Skylark checks the transcript against OC vocabulary and shows you every word it changed. Always read the rows back before saving. Voice needs a data connection &mdash; with no signal on site, type straight into the rows.</p>
         <button class="db-big-mic" id="db-big-mic" type="button" onclick="toggleDumpDictation()">&#127908; Start dictating</button>
         <div id="db-transcript-interim"></div>
         <textarea id="db-transcript" placeholder="Your spoken debrief appears here. You can edit it before sorting."></textarea>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="secondary-btn" type="button" onclick="sortTranscriptToRows()" style="flex:1;min-width:140px">Sort into rows</button>
+          <button class="secondary-btn" type="button" onclick="dbCheckAndSort()" style="flex:1;min-width:140px">Sort into rows</button>
           <button class="secondary-btn" type="button" id="db-undo-sort" onclick="undoSortToRows()" style="flex:1;min-width:140px" disabled>Undo sort</button>
         </div>
+        <div class="db-corrections" id="db-corrections"></div>
         <div class="db-sort-summary" id="db-sort-summary"></div>
         <div class="db-unsorted" id="db-unsorted"></div>
+        <div class="db-vocab-wrap">
+          <div class="field-label" style="margin-bottom:5px">Custom vocabulary</div>
+          <input type="text" id="db-custom-vocab" placeholder="Words dictation keeps getting wrong — drone models, place names, crew"
+                 oninput="dbSaveCustomVocab()">
+          <p class="db-hint" style="margin-top:5px">Comma separated, saved on this device. Estate and pilot names are already covered from the site data.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -5803,7 +5832,7 @@ function dbStartRec(target) {
     dbRecUi(false);
     dbRecTarget = null;
     if (finishedTarget === 'dump' && (document.getElementById('db-transcript').value || '').trim()) {
-      sortTranscriptToRows();
+      dbCheckAndSort();   // vocabulary pass, then sort
     }
     updateDebriefProgress();
   };
@@ -6137,6 +6166,7 @@ submitPreflight = async function () {
 const _dbOrigPopulatePilotSelects = populatePilotSelects;
 populatePilotSelects = function (pilots) {
   _dbOrigPopulatePilotSelects(pilots);
+  if (Array.isArray(pilots)) dbCrewNames = pilots.map(p => p.name).filter(Boolean);
   const sel = document.getElementById('db-led-by');
   if (!sel || !Array.isArray(pilots)) return;
   sel.querySelectorAll('option[value]:not([value=""])').forEach(o => o.remove());
@@ -6151,6 +6181,7 @@ populatePilotSelects = function (pilots) {
 document.addEventListener('DOMContentLoaded', () => {
   buildDebriefRows();
   dbSpeechInit();
+  dbLoadCustomVocab();
   try {
     const saved = localStorage.getItem(debriefKey());
     if (saved) restoreDebrief(JSON.parse(saved));
@@ -6162,6 +6193,432 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('db-transcript')
     .addEventListener('input', () => updateDebriefProgress());
 });
+
+// ══════════════════════════════════════════════════════
+// TRANSCRIPT SENSE CHECK
+// ══════════════════════════════════════════════════════
+// Dictation mishears OC vocabulary — "cordon" comes back as
+// "gordon", "NOTAM" as "no tam", "TOLA" as "toller". A misheard
+// SECTION NAME is the costly one: the router can't find the row
+// at all, so the whole section lands in the wrong place.
+//
+// So the transcript gets a vocabulary pass before it is sorted.
+// Two tiers, and nothing is ever changed silently:
+//   • a known mishearing is corrected and shown as a chip you tap to undo
+//   • a soundalike near-miss is only OFFERED as a chip you tap to apply
+// Real crew and estate names are protected — "Gordon was on the
+// gate" stays Gordon unless the words around it are cordon words.
+// ══════════════════════════════════════════════════════
+
+// term  — the canonical spelling to write in
+// cue   — true if this word is a section name the router looks for
+// hear  — known mishearings, corrected automatically
+// ctx   — words that, nearby, confirm the operational sense
+const DB_VOCAB = [
+  { term:'cordon', cue:true,
+    hear:['gordon','gordan','gorden','corden','cordan','carden','cordon off','cord on','quarter on','warden'],
+    ctx:['secure','breach','breached','perimeter','tape','kept','marshal','marshals','public','walker','walkers','gate','intact','integrity','held','cleared'] },
+  { term:'airspace', cue:true,
+    hear:['air space','airspaces','air spaces','airspce'],
+    ctx:['incursion','incursions','aircraft','clear','notam','notams','helicopter','traffic','military','atc'] },
+  { term:'incursion', cue:false,
+    hear:['in cursion','incurtion','excursion','inversion'],
+    ctx:['airspace','aircraft','helicopter','no','any'] },
+  { term:'incursions', cue:true,
+    hear:['in cursions','incurtions','excursions','inversions'],
+    ctx:['airspace','aircraft','no','any'] },
+  { term:'objectives', cue:true,
+    hear:['objectivs','objections','objective sr'],
+    ctx:['achieved','coverage','captured','met','complete','completed'] },
+  { term:'timings', cue:true,
+    hear:['tidings','timing s','time ings'],
+    ctx:['late','delay','delayed','schedule','overran','on time','early'] },
+  { term:'weather', cue:true,
+    hear:['whether','wether','weathers'],
+    ctx:['wind','gust','gusting','rain','cloud','visibility','forecast','limits','conditions'] },
+  { term:'comms', cue:true,
+    hear:['coms','commas','calms','columns'],
+    ctx:['radio','radios','clear','concise','signal','callout','callouts','heard'] },
+  { term:'communications', cue:true,
+    hear:['communication s','communictions'],
+    ctx:['radio','radios','clear','concise','signal'] },
+  { term:'phases', cue:true,
+    hear:['faces','fazes','phrases','phase s'],
+    ctx:['operation','overview','arrived','setup','launch','recovery','sequence'] },
+  { term:'debrief', cue:false,
+    hear:['de brief','dee brief','the brief ing'],
+    ctx:['crew','held','after','post'] },
+
+  // ── Kit, procedures, airspace terms ──
+  { term:'NOTAM', cue:false,
+    hear:['no tam','notham','no term','nortam','notum','no tan'],
+    ctx:['airspace','active','checked','issued','raised','published'] },
+  { term:'NOTAMs', cue:false,
+    hear:['no tams','nothams','no terms','notums'],
+    ctx:['airspace','checked','active'] },
+  { term:'TOLA', cue:false,
+    hear:['tola','toller','toler','tolla','tula','tolar','tolerate','told a'],
+    ctx:['set','setup','launch','site','moved','landing','takeoff','recovery','sterile'] },
+  { term:'RTH', cue:false,
+    hear:['r t h','are tee aitch','arth','earth'],
+    ctx:['triggered','engaged','activated','home','return','initiated'] },
+  { term:'VLOS', cue:false,
+    hear:['vee loss','v loss','veelos','the loss'],
+    ctx:['maintained','lost','visual','line','sight'] },
+  { term:'BVLOS', cue:false,
+    hear:['bee vee loss','b v loss','beavealos'],
+    ctx:['operation','approval','beyond'] },
+  { term:'geofence', cue:false,
+    hear:['geo fence','geo fencing','geofencing','geo friends'],
+    ctx:['set','breach','limit','warning','height','radius'] },
+  { term:'LiDAR', cue:false,
+    hear:['lidar','lie dar','liedar','lightar','my dar','light are'],
+    ctx:['survey','payload','data','scan','point','cloud','returns'] },
+  { term:'orthomosaic', cue:false,
+    hear:['ortho mosaic','ortho mozaic','author mosaic'],
+    ctx:['data','processed','captured','imagery'] },
+  { term:'marshal', cue:false,
+    hear:['marshall','martial','marshel'],
+    ctx:['cordon','public','gate','crew','point','points'] },
+  { term:'marshalling', cue:false,
+    hear:['marshalling','martialling','marshaling'],
+    ctx:['cordon','public','gate','point','points'] },
+  { term:'sortie', cue:false,
+    hear:['sorty','sortee','saughty','sore tea'],
+    ctx:['flight','battery','second','third','flew','first'] },
+  { term:'sorties', cue:false,
+    hear:['sortys','sortees','sore teas'],
+    ctx:['three','two','four','five','flights','flew'] },
+  { term:'microlight', cue:false,
+    hear:['micro light','micro lite','microflight'],
+    ctx:['airspace','aircraft','passed','overhead'] },
+  { term:'paraglider', cue:false,
+    hear:['para glider','paraglide','para glide'],
+    ctx:['airspace','aircraft','overhead'] },
+  { term:'Kp', cue:false,
+    hear:['kay pee','k p','cape ee','kp'],
+    ctx:['index','solar','geomagnetic','gps'] },
+  { term:'IMSAFE', cue:false,
+    hear:['im safe','i m safe','i am safe'],
+    ctx:['crew','checked','fit','health'] },
+  { term:'PDRA01', cue:false,
+    hear:['pedra one','p d r a one','pedro one','pedra oh one'],
+    ctx:['operating','safety','case','category'] },
+  { term:'ATC', cue:false,
+    hear:['a t c','ay tee see','atc'],
+    ctx:['called','contacted','clearance','spoke','notified'] },
+  { term:'VO', cue:false,
+    hear:['v o','vee oh'],
+    ctx:['observer','visual','positioned','briefed'] },
+  { term:'FOD', cue:false,
+    hear:['fod','f o d','fodd'],
+    ctx:['clear','checked','debris','tola','free'] },
+];
+
+// Terms that must never be "corrected" — canonical vocabulary, plus the
+// live estate and pilot names, plus anything Chloe adds herself.
+let dbCrewNames  = [];   // filled from staticdata via populatePilotSelects
+let dbCustomVocab = [];  // from the Custom vocabulary field
+
+function dbLoadCustomVocab() {
+  try {
+    const raw = localStorage.getItem('SKY_DEBRIEF_VOCAB') || '';
+    dbCustomVocab = raw.split(',').map(s => s.trim()).filter(Boolean);
+  } catch (e) { dbCustomVocab = []; }
+  const el = document.getElementById('db-custom-vocab');
+  if (el && !el.value) el.value = dbCustomVocab.join(', ');
+}
+
+function dbSaveCustomVocab() {
+  const el = document.getElementById('db-custom-vocab');
+  if (!el) return;
+  dbCustomVocab = el.value.split(',').map(s => s.trim()).filter(Boolean);
+  try { localStorage.setItem('SKY_DEBRIEF_VOCAB', dbCustomVocab.join(', ')); } catch (e) {}
+}
+
+// Every word the pass may correct TOWARDS, tagged by kind.
+// 'vocab' = OC operational term, 'name' = estate / crew / custom word.
+// Short names are left out as fuzzy targets: "Gordon" is only 6 letters
+// and collides with everyday words like "garden", which produced noise.
+const DB_NAME_MIN_FUZZY = 7;
+
+function dbTargetTerms() {
+  const names = [].concat(Object.keys(estatesData || {}), dbCrewNames, dbCustomVocab)
+                  .filter(Boolean)
+                  .flatMap(n => String(n).split(/[\s&,-]+/))   // "Firth of Tay" -> Firth, of, Tay
+                  .filter(w => w.length >= DB_NAME_MIN_FUZZY);
+  return DB_VOCAB.map(v => ({ term: v.term, kind: 'vocab' }))
+    .concat(names.map(w => ({ term: w, kind: 'name' })));
+}
+
+// Words that are legitimately someone's or somewhere's name
+function dbProtectedNames() {
+  const src = [].concat(Object.keys(estatesData || {}), dbCrewNames, dbCustomVocab);
+  return new Set(src.filter(Boolean)
+    .flatMap(n => String(n).toLowerCase().split(/[\s&,-]+/))
+    .filter(w => w.length >= 3));
+}
+
+// Rough soundalike key: collapse the consonant skeleton so "gordon"
+// and "cordon" land on the same key ("krtn").
+function dbSoundKey(w) {
+  return String(w).toLowerCase().replace(/[^a-z]/g, '')
+    .replace(/ph/g, 'f').replace(/ck/g, 'k').replace(/qu/g, 'kw')
+    .replace(/[csqk]/g, 'k').replace(/[zx]/g, 's').replace(/[dt]/g, 't')
+    .replace(/[bp]/g, 'p').replace(/[mn]/g, 'n').replace(/[gj]/g, 'k')
+    .replace(/[aeiouyhw]/g, '')
+    .replace(/(.)\1+/g, '$1');
+}
+
+function dbEditDistance(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  let prev = Array.from({length: n + 1}, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1,
+                        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+// Tokenise, keeping each word's offsets in the original string
+function dbWordTokens(text) {
+  const out = [];
+  const re = /[A-Za-z0-9'’]+/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    out.push({ raw: m[0], norm: dbBare(m[0]), start: m.index, end: m.index + m[0].length });
+  }
+  return out;
+}
+
+function dbFindCorrections(text) {
+  const toks = dbWordTokens(text);
+  if (!toks.length) return [];
+
+  // heard form -> vocab entry
+  const heardMap = new Map();
+  DB_VOCAB.forEach(v => (v.hear || []).forEach(h => {
+    const key = h.split(' ').map(dbBare).join(' ');
+    if (!heardMap.has(key)) heardMap.set(key, v);
+  }));
+  const canonical = new Set(DB_VOCAB.map(v => dbBare(v.term)));
+  const protected_ = dbProtectedNames();
+  const declined   = dbDeclinedKeys();
+
+  const nearbyHasCtx = (i, ctx) => {
+    if (!ctx || !ctx.length) return false;
+    const from = Math.max(0, i - 8), to = Math.min(toks.length, i + 9);
+    const window = toks.slice(from, to).map(t => t.norm).join(' ');
+    return ctx.some(c => window.includes(c.split(' ').map(dbBare).join(' ')));
+  };
+
+  const atBoundary = i => {
+    if (i === 0) return true;
+    const between = text.slice(toks[i - 1].end, toks[i].start);
+    if (/[.,;:!?]/.test(between)) return true;
+    return DB_FILLER.has(toks[i - 1].norm);
+  };
+
+  const found = [];
+  let i = 0;
+  while (i < toks.length) {
+    let hit = null;
+
+    // ── Tier 1: known mishearing, longest phrase first ──
+    for (let n = 3; n >= 1 && !hit; n--) {
+      if (i + n > toks.length) continue;
+      const phrase = toks.slice(i, i + n).map(t => t.norm).join(' ');
+      const v = heardMap.get(phrase);
+      if (!v) continue;
+      if (dbBare(v.term) === phrase) continue;            // already right
+
+      const heardText = text.slice(toks[i].start, toks[i + n - 1].end);
+      const isName    = n === 1 && protected_.has(phrase);
+      const supported = nearbyHasCtx(i, v.ctx) || (v.cue && atBoundary(i));
+
+      // A real crew or estate name is never overwritten on its own —
+      // context is not enough, because a person can be "on the gate"
+      // or "marshalling" just as a cordon can. It is offered instead.
+      if (isName) {
+        hit = { start: toks[i].start, end: toks[i + n - 1].end, heard: heardText,
+                term: v.term, auto: false,
+                why: `"${heardText}" is a name on the roster — tap only if you meant ${v.term}` };
+      } else {
+        hit = { start: toks[i].start, end: toks[i + n - 1].end, heard: heardText,
+                term: v.term, auto: true,
+                why: supported ? 'known mishearing, context agrees' : 'known mishearing' };
+      }
+      i += n - 1;
+    }
+
+    // ── Tier 2: soundalike near-miss — offered, never auto-applied ──
+    if (!hit) {
+      const t = toks[i];
+      if (t.norm.length >= 4 && !canonical.has(t.norm) && !protected_.has(t.norm)) {
+        const key = dbSoundKey(t.norm);
+        if (key.length >= 3) {
+          let best = null;
+          dbTargetTerms().forEach(tgt => {
+            const tn = dbBare(tgt.term);
+            if (tn === t.norm) { best = 'exact'; return; }
+            if (best === 'exact') return;
+            if (dbSoundKey(tn) !== key) return;
+            const d = dbEditDistance(t.norm, tn);
+            if (d === 0 || d > 2) return;
+            // An OC term is only worth raising if the surrounding words or
+            // the position back it up; a long proper noun stands on its own.
+            if (tgt.kind === 'vocab') {
+              const v = DB_VOCAB.find(x => x.term === tgt.term);
+              if (!v || !(nearbyHasCtx(i, v.ctx) || (v.cue && atBoundary(i)))) return;
+            }
+            if (!best || d < best.d) best = { tgt, d };
+          });
+          if (best && best !== 'exact') {
+            hit = { start: t.start, end: t.end, heard: t.raw, term: best.tgt.term,
+                    auto: false,
+                    why: best.tgt.kind === 'name'
+                      ? 'sounds like a name from the site data — tap to use it'
+                      : 'sounds like it, and the context fits — tap to apply' };
+          }
+        }
+      }
+    }
+
+    if (hit && !declined.has(hit.heard.toLowerCase() + '>' + hit.term)) found.push(hit);
+    i++;
+  }
+  return found;
+}
+
+// Apply back-to-front so earlier offsets stay valid
+function dbApplyCorrections(text, list) {
+  let out = text;
+  list.slice().sort((a, b) => b.start - a.start).forEach(c => {
+    let replacement = c.term;
+    // Keep a capital if the misheard word started a sentence
+    if (/^[A-Z]/.test(text.slice(c.start, c.start + 1)) && /^[a-z]/.test(c.term)) {
+      replacement = c.term.charAt(0).toUpperCase() + c.term.slice(1);
+    }
+    out = out.slice(0, c.start) + replacement + out.slice(c.end);
+  });
+  return out;
+}
+
+// ── Correction state ──────────────────────────────────────────────────────
+let dbApplied   = [];          // corrections written into the transcript
+let dbSuggested = [];          // near-misses on offer
+let dbDeclined  = new Set();   // heard>term pairs Chloe has rejected this session
+
+function dbDeclinedKeys() { return dbDeclined; }
+
+// The pass, then the sort. This is what the mic and the Sort button call.
+function dbCheckAndSort() {
+  dbSenseCheck();
+  sortTranscriptToRows();
+}
+
+function dbSenseCheck() {
+  const ta = document.getElementById('db-transcript');
+  if (!ta) return;
+  const text = ta.value || '';
+  if (!text.trim()) { dbApplied = []; dbSuggested = []; dbRenderCorrections(); return; }
+
+  const found = dbFindCorrections(text);
+  const auto  = found.filter(c => c.auto);
+  dbSuggested = found.filter(c => !c.auto);
+
+  if (auto.length) ta.value = dbApplyCorrections(text, auto);
+  dbApplied = auto;
+  dbRenderCorrections();
+}
+
+function dbRenderCorrections() {
+  const box = document.getElementById('db-corrections');
+  if (!box) return;
+  if (!dbApplied.length && !dbSuggested.length) {
+    box.classList.remove('visible');
+    box.innerHTML = '';
+    return;
+  }
+  const chip = (c, i, kind) =>
+    `<button type="button" class="db-chip db-chip-${kind}" title="${dbEscape(c.why)}"
+             onclick="${kind === 'fixed' ? `dbRevertCorrection(${i})` : `dbAcceptSuggestion(${i})`}">
+       <span class="db-chip-from">${dbEscape(c.heard)}</span>
+       <span class="db-chip-arrow">&rarr;</span>
+       <span class="db-chip-to">${dbEscape(c.term)}</span>
+       <span class="db-chip-act">${kind === 'fixed' ? '&#10005;' : '&#43;'}</span>
+     </button>`;
+
+  let html = '';
+  if (dbApplied.length) {
+    html += `<div class="db-corr-row"><span class="db-corr-label db-corr-label-fixed">`
+          + `&#10003; Corrected ${dbApplied.length} word${dbApplied.length === 1 ? '' : 's'}`
+          + `</span><span class="db-corr-hint">tap one to put it back</span></div>`
+          + `<div class="db-chips">${dbApplied.map((c, i) => chip(c, i, 'fixed')).join('')}</div>`;
+  }
+  if (dbSuggested.length) {
+    html += `<div class="db-corr-row" style="margin-top:10px"><span class="db-corr-label db-corr-label-maybe">`
+          + `? ${dbSuggested.length} possible mishearing${dbSuggested.length === 1 ? '' : 's'}`
+          + `</span><span class="db-corr-hint">left alone &mdash; tap to apply</span></div>`
+          + `<div class="db-chips">${dbSuggested.map((c, i) => chip(c, i, 'maybe')).join('')}</div>`;
+  }
+  box.innerHTML = html;
+  box.classList.add('visible');
+}
+
+// Put a corrected word back, and don't correct it again this session
+function dbRevertCorrection(i) {
+  const c = dbApplied[i];
+  if (!c) return;
+  const ta   = document.getElementById('db-transcript');
+  const text = ta.value || '';
+  // Find the corrected term where it now sits and swap the original back
+  const idx = dbFindTermNear(text, c.term, c.start);
+  if (idx >= 0) {
+    ta.value = text.slice(0, idx) + c.heard + text.slice(idx + c.term.length);
+  }
+  dbDeclined.add(c.heard.toLowerCase() + '>' + c.term);
+  dbApplied.splice(i, 1);
+  dbRenderCorrections();
+  dbResort();
+}
+
+// Accept an offered near-miss
+function dbAcceptSuggestion(i) {
+  const c = dbSuggested[i];
+  if (!c) return;
+  const ta   = document.getElementById('db-transcript');
+  const idx  = dbFindTermNear(ta.value || '', c.heard, c.start);
+  if (idx >= 0) {
+    ta.value = ta.value.slice(0, idx) + c.term + ta.value.slice(idx + c.heard.length);
+    dbApplied.push(Object.assign({}, c, { start: idx, auto: true }));
+  }
+  dbSuggested.splice(i, 1);
+  dbRenderCorrections();
+  dbResort();
+}
+
+// Offsets drift as edits are applied, so look for the word near where it was
+function dbFindTermNear(text, word, hint) {
+  const lower = text.toLowerCase(), target = word.toLowerCase();
+  const direct = text.indexOf(word, Math.max(0, hint - 40));
+  if (direct >= 0 && direct <= hint + 40) return direct;
+  const near = lower.indexOf(target, Math.max(0, hint - 40));
+  if (near >= 0 && near <= hint + 40) return near;
+  return lower.indexOf(target);
+}
+
+// Sorting appends to the rows, so undo the previous sort before re-running
+function dbResort() {
+  if (dbSortSnapshot) undoSortToRows();
+  sortTranscriptToRows();
+}
 
 </script>
 </body>
