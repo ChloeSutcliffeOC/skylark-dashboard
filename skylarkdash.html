@@ -881,8 +881,8 @@
   .db-row.db-filled .db-row-q { color:var(--ok); }
   .db-row textarea { min-height:74px; }
 
-  .db-dictated-tag { font-family:var(--mono); font-size:9.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:#7a5300; background:#fef9e7; border:1px solid #eab308; border-radius:4px; padding:2px 6px; white-space:nowrap; }
-  @keyframes dbFlash { 0% { background:#fef9e7; } 100% { background:var(--surface); } }
+  .db-dictated-tag { font-family:var(--mono); font-size:9.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:#8a6200; background:#fef9c3; border:1px solid #fcd34d; border-radius:4px; padding:2px 6px; white-space:nowrap; }
+  @keyframes dbFlash { 0% { background:#fef9c3; } 100% { background:var(--surface); } }
   .db-flash { animation: dbFlash 1.8s ease-out; }
 
   /* ── Mic buttons ── */
@@ -896,17 +896,17 @@
   }
 
   /* ── Whole-debrief dictation ── */
-  .db-dump { border:2px dashed #eab308; border-radius:10px; background:#fffdf3; padding:14px; display:flex; flex-direction:column; gap:12px; }
-  .db-dump.listening { border-style:solid; border-color:#ca8a04; background:#fef9e7; }
-  .db-dump-title { font-family:var(--mono); font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.09em; color:#7a5300; }
-  .db-big-mic { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:17px 20px; border-radius:10px; border:2px solid #ca8a04; background:#ca8a04; color:#241a00; font-family:var(--mono); font-size:13.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; cursor:pointer; transition:background .15s, border-color .15s; -webkit-tap-highlight-color:transparent; }
-  .db-big-mic:hover:not(:disabled) { background:#b07a03; border-color:#b07a03; }
+  .db-dump { border:2px dashed #fcd34d; border-radius:10px; background:#fefce8; padding:14px; display:flex; flex-direction:column; gap:12px; }
+  .db-dump.listening { border-style:solid; border-color:#facc15; background:#fef9c3; }
+  .db-dump-title { font-family:var(--mono); font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.09em; color:#8a6200; }
+  .db-big-mic { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:17px 20px; border-radius:10px; border:2px solid #fde047; background:#fde047; color:#3d2f00; font-family:var(--mono); font-size:13.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; cursor:pointer; transition:background .15s, border-color .15s; -webkit-tap-highlight-color:transparent; }
+  .db-big-mic:hover:not(:disabled) { background:#fcd34d; border-color:#fcd34d; }
   .db-big-mic.listening { background:var(--danger); border-color:var(--danger); color:#fff; animation:micPulse 1.2s infinite; }
   .db-big-mic:disabled { opacity:.35; cursor:not-allowed; }
   #db-transcript { min-height:104px; font-size:15px; line-height:1.6; background:#fff; }
-  #db-transcript-interim { font-family:var(--mono); font-size:12px; color:#7a5300; min-height:17px; font-style:italic; line-height:1.4; }
+  #db-transcript-interim { font-family:var(--mono); font-size:12px; color:#8a6200; min-height:17px; font-style:italic; line-height:1.4; }
   .db-hint { font-size:12.5px; color:var(--muted); line-height:1.6; }
-  .db-hint code { font-family:var(--mono); font-size:11.5px; background:#fef9e7; color:#7a5300; padding:1px 5px; border-radius:3px; }
+  .db-hint code { font-family:var(--mono); font-size:11.5px; background:#fef9c3; color:#8a6200; padding:1px 5px; border-radius:3px; }
   .db-sort-summary { font-family:var(--mono); font-size:11.5px; line-height:1.75; color:#1f2937; background:#eef2ff; border:2px solid #4b5563; border-radius:8px; padding:11px 14px; display:none; }
   .db-sort-summary.visible { display:block; }
   .db-unsorted { background:var(--warn-bg); border:2px solid var(--warn); border-radius:8px; padding:11px 14px; font-size:13px; color:#8a3300; line-height:1.6; display:none; }
@@ -917,7 +917,7 @@
 
 
   /* ── Transcript sense check ── */
-  .db-corrections { display:none; flex-direction:column; gap:2px; background:#fff; border:2px solid #eab308; border-radius:8px; padding:11px 13px; }
+  .db-corrections { display:none; flex-direction:column; gap:2px; background:#fff; border:2px solid #fcd34d; border-radius:8px; padding:11px 13px; }
   .db-corrections.visible { display:flex; }
   .db-corr-row { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:7px; }
   .db-corr-label { font-family:var(--mono); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; }
@@ -928,14 +928,14 @@
   .db-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:20px; font-family:var(--mono); font-size:11.5px; cursor:pointer; transition:background .15s, border-color .15s; -webkit-tap-highlight-color:transparent; border:1.5px solid; }
   .db-chip-fixed { background:var(--ok-bg); border-color:var(--ok-border); color:var(--ok); }
   .db-chip-fixed:hover { background:#c1e6cd; border-color:var(--ok); }
-  .db-chip-maybe { background:var(--warn-bg); border-color:var(--warn); color:#8a3300; }
-  .db-chip-maybe:hover { background:#fbdda0; }
+  .db-chip-maybe { background:#fff; border-color:var(--warn); color:#8a3300; }
+  .db-chip-maybe:hover { background:var(--warn-bg); }
   .db-chip-from { text-decoration:line-through; opacity:0.75; }
   .db-chip-maybe .db-chip-from { text-decoration:none; }
   .db-chip-arrow { opacity:0.6; }
   .db-chip-to { font-weight:700; }
   .db-chip-act { font-size:10px; opacity:0.7; margin-left:2px; }
-  .db-vocab-wrap { border-top:1.5px dashed #f0d98a; padding-top:11px; margin-top:2px; }
+  .db-vocab-wrap { border-top:1.5px dashed #fde68a; padding-top:11px; margin-top:2px; }
 
   /* ── Narrow screens: three accordion buttons ── */
   @media (max-width: 560px) {
