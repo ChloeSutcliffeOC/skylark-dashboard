@@ -26,15 +26,18 @@
     --oc-surface-2:   #ebebed;
     --oc-canvas:      #f4f4f5;
 
-    /* accent — Skylark yellow */
-    --oc-accent-ink:    #854d0e;
+    /* accent — Skylark yellow.
+       The two dark steps are a dark, fully saturated yellow (blue at zero,
+       red and green close together). The old #854d0e and #a16207 had far
+       more red than green and read as brown. */
+    --oc-accent-ink:    #6d6000;
     --oc-accent-strong: #eab308;
     --oc-accent-line:   #fcd34d;
     --oc-accent-tint:   #fef9c3;
     --oc-accent-fill:   #fde047;
     --oc-accent-btn:    #fef08a;
     --oc-accent-canvas: #fefce8;
-    --oc-accent-deep:   #a16207;
+    --oc-accent-deep:   #806f00;
 
     /* go — green (Skylark original) */
     --oc-ok-ink:    #166a2a;
@@ -1197,15 +1200,52 @@
     background:#fff0e0; border:1.5px solid #d45a00; color:#8a3300;
   }
 
-  /* ── Home: section heading over a group of cards ── */
-  .home-section {
-    display:flex; align-items:center; gap:12px;
-    font-family:var(--mono); font-size:11px; font-weight:700;
-    text-transform:uppercase; letter-spacing:.14em;
-    color:var(--oc-accent-ink); margin:10px 2px 0;
+  /* ── Home: the two stages of a flying day ──
+     Big enough that nobody has to be told the order, and foldable once the
+     day-before jobs are done. */
+  .stage { display:flex; flex-direction:column; gap:14px; }
+
+  .stage-head {
+    display:flex; align-items:center; gap:14px; width:100%;
+    text-align:left; cursor:pointer; font-family:var(--sans);
+    background:var(--oc-accent-canvas);
+    border:2px solid var(--oc-accent-line);
+    border-left:6px solid var(--oc-accent-strong);
+    border-radius:10px; padding:15px 17px;
+    -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+    transition:background .12s, border-color .12s;
   }
-  .home-section::after {
-    content:''; flex:1; height:2px; background:var(--oc-accent-line); border-radius:1px;
+  .stage-head:hover { background:var(--oc-accent-tint); }
+
+  .stage-num {
+    flex-shrink:0; width:34px; height:34px; border-radius:50%;
+    background:var(--oc-ink); color:var(--oc-accent-fill);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:15px; font-weight:700;
+  }
+  .stage-text  { flex:1; min-width:0; }
+  .stage-title {
+    display:block; font-size:19px; font-weight:700; line-height:1.25;
+    letter-spacing:-.01em; color:var(--oc-ink);
+  }
+  .stage-when {
+    display:block; font-family:var(--mono); font-size:10.5px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.1em;
+    color:var(--oc-accent-ink); margin-bottom:3px;
+  }
+  .stage-sub { display:block; font-size:12.5px; line-height:1.5; color:var(--muted); margin-top:4px; }
+  .stage-chevron {
+    flex-shrink:0; font-size:13px; color:var(--oc-accent-ink);
+    transition:transform .15s;
+  }
+  .stage.collapsed .stage-chevron { transform:rotate(-90deg); }
+  .stage.collapsed .stage-body    { display:none; }
+  .stage-body { display:flex; flex-direction:column; gap:16px; }
+
+  @media (max-width:560px) {
+    .stage-head  { padding:13px 13px; gap:11px; }
+    .stage-title { font-size:17px; }
+    .stage-num   { width:30px; height:30px; font-size:14px; }
   }
 
   /* ── Home: noticeboard ── */
@@ -1339,30 +1379,7 @@
      HOME — choose the operating category
      ══════════════════════════════════════════════════════ -->
 <div class="accordion-panel" id="panel-home">
-<div style="display:flex;flex-direction:column;gap:16px">
-
-  <div class="card">
-    <div class="card-header"><h2>What are you flying today?</h2></div>
-    <div class="card-body">
-      <div class="mode-grid">
-
-        <button class="mode-card" type="button" onclick="enterOpen()" aria-label="Open Category - short brief for internal training flights">
-          <div class="mode-card-top">
-            <span class="mode-card-rule" aria-hidden="true"></span>
-            <span class="mode-card-title">Open Category</span>
-          </div>
-        </button>
-
-        <button class="mode-card mode-card-pdra" type="button" onclick="enterPdra()" aria-label="PDRA-01 - full three-step workflow for Specific category operations">
-          <div class="mode-card-top">
-            <span class="mode-card-rule" aria-hidden="true"></span>
-            <span class="mode-card-title">PDRA-01</span>
-          </div>
-        </button>
-
-      </div>
-    </div>
-  </div>
+<div style="display:flex;flex-direction:column;gap:20px">
 
   <!-- ── Noticeboard ── -->
   <div class="card" id="notice-card" style="display:none">
@@ -1375,112 +1392,172 @@
     </div>
   </div>
 
-  <!-- ── Everything that has to happen the day before ── -->
-  <div class="home-section">The Day Before You Fly</div>
+  <!-- ══ STAGE 1 - the day before ══════════════════════════════════════ -->
+  <section class="stage" id="stage-before">
+    <button class="stage-head" type="button" onclick="toggleStage('before')">
+      <span class="stage-num">1</span>
+      <span class="stage-text">
+        <span class="stage-when">By 20:00 the day before</span>
+        <span class="stage-title">The Day Before You Fly</span>
+        <span class="stage-sub">Send the MAMC low-flying notification, then pull 24 hours of weather, NOTAMs and daylight onto this device while you still have signal.</span>
+      </span>
+      <span class="stage-chevron">&#9660;</span>
+    </button>
+    <div class="stage-body">
 
-  <!-- ── 24-hour offline cache ── -->
-  <div class="card">
-    <div class="card-header"><h2>Download the Next 24 Hours</h2></div>
-    <div class="card-body">
-      <div class="oc-queue" id="oc-queue-banner"></div>
+      <!-- ── MAMC low-flying notification ── -->
+      <div class="card">
+        <div class="card-header"><h2>MAMC Notification</h2></div>
+        <div class="card-body">
 
-      <div class="cache-row">
-        <div>
-          <div class="field-label">Estate</div>
-          <select id="oc-cache-estate">
-            <option value="">&mdash; Select estate &mdash;</option>
-          </select>
-        </div>
-      </div>
-
-      <button class="submit-btn" type="button" id="oc-cache-btn" onclick="ocCacheEstate()">Download 24 Hours of Data</button>
-      <div class="cache-status" id="oc-cache-status" style="display:none"></div>
-
-      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
-        <div class="field-label" style="margin-bottom:9px">On this device</div>
-        <div class="cache-list" id="oc-cache-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── MAMC low-flying notification ── -->
-  <div class="card">
-    <div class="card-header"><h2>MAMC Notification</h2></div>
-    <div class="card-body">
-
-      <div class="two-col">
-        <div>
-          <div class="field-label">Estate</div>
-          <select id="mamc-estate" onchange="mamcRefresh()">
-            <option value="">&mdash; Select estate &mdash;</option>
-          </select>
-        </div>
-        <div>
-          <div class="field-label">Aircraft</div>
-          <select id="mamc-aircraft" onchange="mamcRefresh()">
-            <option value="">&mdash; Select aircraft &mdash;</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="two-col">
-        <div>
-          <div class="field-label">Dates</div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="date" id="mamc-date" style="flex:1" onchange="mamcRefresh()">
-            <span style="font-family:var(--mono);font-size:12px;color:var(--faint)">to</span>
-            <input type="date" id="mamc-date-end" style="flex:1" onchange="mamcRefresh()">
+          <div class="two-col">
+            <div>
+              <div class="field-label">Estate</div>
+              <select id="mamc-estate" onchange="mamcRefresh()">
+                <option value="">&mdash; Select estate &mdash;</option>
+              </select>
+            </div>
+            <div>
+              <div class="field-label">Aircraft</div>
+              <select id="mamc-aircraft" onchange="mamcRefresh()">
+                <option value="">&mdash; Select aircraft &mdash;</option>
+              </select>
+            </div>
           </div>
-        </div>
-        <div>
-          <div class="field-label">Times (UTC)</div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="time" id="mamc-from" value="09:00" style="flex:1" onchange="mamcRefresh()">
-            <span style="font-family:var(--mono);font-size:12px;color:var(--faint)">to</span>
-            <input type="time" id="mamc-to" value="17:00" style="flex:1" onchange="mamcRefresh()">
-          </div>
-        </div>
-      </div>
 
-      <div class="two-col">
-        <div>
-          <div class="field-label">what3words</div>
-          <input type="text" id="mamc-w3w" placeholder="what.three.words" oninput="mamcRefresh()">
-        </div>
-        <div>
-          <div class="field-label auto-label">Centre</div>
-          <input type="text" id="mamc-centre" placeholder="from the site data" oninput="mamcRefresh()">
-        </div>
-      </div>
-
-      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
-        <div class="field-label" style="margin-bottom:9px">Contact &mdash; remembered on this device</div>
-        <div class="two-col">
           <div>
-            <div class="field-label" style="font-size:11px">Name</div>
-            <input type="text" id="mamc-name" placeholder="Full name" oninput="mamcRefresh()">
+            <div class="field-label">Category</div>
+            <select id="mamc-category" onchange="mamcRefresh()">
+              <option value="pdra">PDRA-01 &mdash; Specific category, Operational Authorisation</option>
+              <option value="open">Open category &mdash; no Operational Authorisation</option>
+            </select>
           </div>
-          <div>
-            <div class="field-label" style="font-size:11px">Phone</div>
-            <input type="text" id="mamc-phone" placeholder="07000 000000" oninput="mamcRefresh()">
+
+          <div class="two-col">
+            <div>
+              <div class="field-label">Dates</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="date" id="mamc-date" style="flex:1" onchange="mamcRefresh()">
+                <span style="font-family:var(--mono);font-size:12px;color:var(--faint)">to</span>
+                <input type="date" id="mamc-date-end" style="flex:1" onchange="mamcRefresh()">
+              </div>
+            </div>
+            <div>
+              <div class="field-label">Times (UTC)</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="time" id="mamc-from" value="09:00" style="flex:1" onchange="mamcRefresh()">
+                <span style="font-family:var(--mono);font-size:12px;color:var(--faint)">to</span>
+                <input type="time" id="mamc-to" value="17:00" style="flex:1" onchange="mamcRefresh()">
+              </div>
+            </div>
           </div>
-        </div>
-        <div style="margin-top:10px">
-          <div class="field-label" style="font-size:11px">Email</div>
-          <input type="text" id="mamc-email" placeholder="name@oxygenconservation.com" oninput="mamcRefresh()">
+
+          <div class="two-col">
+            <div>
+              <div class="field-label">what3words</div>
+              <input type="text" id="mamc-w3w" placeholder="what.three.words" oninput="mamcRefresh()">
+            </div>
+            <div>
+              <div class="field-label auto-label">Centre</div>
+              <input type="text" id="mamc-centre" placeholder="from the site data" oninput="mamcRefresh()">
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+            <div class="field-label" style="margin-bottom:9px">Contact &mdash; remembered on this device</div>
+            <div class="two-col">
+              <div>
+                <div class="field-label" style="font-size:11px">Name</div>
+                <input type="text" id="mamc-name" placeholder="Full name" oninput="mamcRefresh()">
+              </div>
+              <div>
+                <div class="field-label" style="font-size:11px">Phone</div>
+                <input type="text" id="mamc-phone" placeholder="07000 000000" oninput="mamcRefresh()">
+              </div>
+            </div>
+            <div style="margin-top:10px">
+              <div class="field-label" style="font-size:11px">Email</div>
+              <input type="text" id="mamc-email" placeholder="name@oxygenconservation.com" oninput="mamcRefresh()">
+            </div>
+          </div>
+
+          <div class="mamc-deadline" id="mamc-deadline"></div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="submit-btn" type="button" id="mamc-send" style="flex:1;min-width:200px" onclick="mamcOpenMail()">Open in Outlook</button>
+            <button class="secondary-btn" type="button" style="flex:1;min-width:150px;margin:0" onclick="mamcCopy()">Copy Text</button>
+          </div>
+          <button class="secondary-btn" type="button" style="margin:0" onclick="mamcTogglePreview()">Preview</button>
+          <pre class="json-preview" id="mamc-preview"></pre>
         </div>
       </div>
 
-      <div class="mamc-deadline" id="mamc-deadline"></div>
+      <!-- ── 24-hour offline cache ── -->
+      <div class="card">
+        <div class="card-header"><h2>Download the Next 24 Hours</h2></div>
+        <div class="card-body">
+          <div class="oc-queue" id="oc-queue-banner"></div>
 
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="submit-btn" type="button" id="mamc-send" style="flex:1;min-width:200px" onclick="mamcOpenMail()">Open in Outlook</button>
-        <button class="secondary-btn" type="button" style="flex:1;min-width:150px;margin:0" onclick="mamcCopy()">Copy Text</button>
+          <div class="cache-row">
+            <div>
+              <div class="field-label">Estate</div>
+              <select id="oc-cache-estate">
+                <option value="">&mdash; Select estate &mdash;</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="submit-btn" type="button" id="oc-cache-btn" onclick="ocCacheEstate()">Download 24 Hours of Data</button>
+          <div class="cache-status" id="oc-cache-status" style="display:none"></div>
+
+          <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+            <div class="field-label" style="margin-bottom:9px">On this device</div>
+            <div class="cache-list" id="oc-cache-list"></div>
+          </div>
+        </div>
       </div>
-      <button class="secondary-btn" type="button" style="margin:0" onclick="mamcTogglePreview()">Preview</button>
-      <pre class="json-preview" id="mamc-preview"></pre>
+
     </div>
-  </div>
+  </section>
+
+  <!-- ══ STAGE 2 - on site ═════════════════════════════════════════════ -->
+  <section class="stage" id="stage-flight">
+    <button class="stage-head" type="button" onclick="toggleStage('flight')">
+      <span class="stage-num">2</span>
+      <span class="stage-text">
+        <span class="stage-when">On site, before every single flight</span>
+        <span class="stage-title">Before Every Flight</span>
+        <span class="stage-sub">Fill in the brief for the category you are flying under. Every flight, every time &mdash; not once a day.</span>
+      </span>
+      <span class="stage-chevron">&#9660;</span>
+    </button>
+    <div class="stage-body">
+
+      <div class="card">
+        <div class="card-header"><h2>What are you flying today?</h2></div>
+        <div class="card-body">
+          <div class="mode-grid">
+
+            <button class="mode-card" type="button" onclick="enterOpen()" aria-label="Open Category - short brief for internal training flights">
+              <div class="mode-card-top">
+                <span class="mode-card-rule" aria-hidden="true"></span>
+                <span class="mode-card-title">Open Category</span>
+              </div>
+            </button>
+
+            <button class="mode-card mode-card-pdra" type="button" onclick="enterPdra()" aria-label="PDRA-01 - full three-step workflow for Specific category operations">
+              <div class="mode-card-top">
+                <span class="mode-card-rule" aria-hidden="true"></span>
+                <span class="mode-card-title">PDRA-01</span>
+              </div>
+            </button>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
 
 </div>
 </div><!-- end panel-home -->
@@ -1623,6 +1700,15 @@
         </div>
       </div>
       <div class="estate-info-grid" id="oc-airspace-grid" style="margin-top:10px"></div>
+
+      <!-- The estate's own hazards, straight from the site data. These were
+           only ever shown in the PDRA-01 forms; an Open category pilot needs
+           to read them before answering the question below. -->
+      <div id="oc-hazard-wrap" style="display:none">
+        <div class="field-label auto-label" style="margin-bottom:8px">Site Hazards</div>
+        <div class="estate-info-grid" id="oc-hazard-grid"></div>
+      </div>
+
       <div>
         <div class="field-label">Is the Airspace Clear and Are You Happy to Fly It?</div>
         <div class="toggle-group">
@@ -7892,6 +7978,10 @@ const OC_AIRCRAFT = {
   'DJI Matrice 4TD':  { mtom:'1.23 kg', windMs:12,   precipMm:4, tMin:-20, tMax:50, subcat:'A3', inOm:true  },
   'DJI Matrice 4T':   { mtom:'1.43 kg', windMs:12,   precipMm:4, tMin:-20, tMax:50, subcat:'A3', inOm:true  },
   'DJI Matrice 30T':  { mtom:'4.07 kg', windMs:12,   precipMm:4, tMin:-20, tMax:50, subcat:'A3', inOm:true  },
+  // M350 RTK: DJI's published figures. inOm is false until someone confirms
+  // it against the operations manual fleet list - the record's limits_source
+  // should not claim the manual has adopted limits it may not have.
+  'DJI Matrice 350 RTK': { mtom:'6.47 kg', windMs:12, precipMm:4, tMin:-20, tMax:50, subcat:'A3', inOm:false },
 };
 
 // ── The rules that have to hold ──────────────────────────────────────────
@@ -7982,6 +8072,28 @@ function ocSetMode(mode) {
   } catch (e) { /* private browsing - mode just won't persist */ }
 }
 
+// The two stages fold, so the day-before jobs can be put away once done.
+// They start open - the point of the headings is that nobody has to be told
+// which order the day runs in.
+const STAGE_KEY = 'SKY_STAGE_';
+
+function toggleStage(id) {
+  const el = ocEl('stage-' + id);
+  if (!el) return;
+  const collapsed = el.classList.toggle('collapsed');
+  try { localStorage.setItem(STAGE_KEY + id, collapsed ? 'closed' : 'open'); } catch (e) { /* fine */ }
+}
+
+function ocRestoreStages() {
+  ['before', 'flight'].forEach(id => {
+    const el = ocEl('stage-' + id);
+    if (!el) return;
+    let v = null;
+    try { v = localStorage.getItem(STAGE_KEY + id); } catch (e) { v = null; }
+    el.classList.toggle('collapsed', v === 'closed');
+  });
+}
+
 function goHome() {
   ocCloseAllPanels();
   const panel = ocEl('panel-home');
@@ -7996,6 +8108,7 @@ function goHome() {
   ocRenderQueue();
   mamcInit();
   ocLoadNotices();
+  ocRestoreStages();
   window.scrollTo({ top: 0 });
 }
 
@@ -8591,6 +8704,7 @@ function ocRenderAirspace() {
     if (list) list.innerHTML = '<div class="notam-item notam-loading">Nothing cached for this estate. Download the next 24 hours from the home screen.</div>';
     if (count) count.textContent = '';
     if (grid) grid.innerHTML = '';
+    ocRenderHazards();   // hazards come from the site data, not the cache
     return;
   }
 
@@ -8626,6 +8740,48 @@ function ocRenderAirspace() {
     grid.id = 'oc-airspace-grid';
     if (real) real.id = saveId;
   }
+
+  ocRenderHazards();
+}
+
+// The estate's ground and airspace hazards. buildAirspaceRefGrid only ever
+// built the airspace and contact cards, so an estate with no FRZ, HIRTA or
+// restricted areas - Dorback, for one - showed almost nothing in the Open
+// category brief even though its site data is full of hazards.
+function ocRenderHazards() {
+  const wrap = ocEl('oc-hazard-wrap');
+  const grid = ocEl('oc-hazard-grid');
+  if (!wrap || !grid) return;
+
+  // Live site data first, the cached snapshot second.
+  const estate = ocVal('oc-estate');
+  const live = (typeof estatesData === 'object' && estatesData[estate]) || null;
+  const e = live || (ocCache && ocCache.static) || {};
+
+  const seen = new Set();
+  const cell = (label, icon, value, cls) => {
+    const v = String(value || '').trim();
+    if (!v) return '';
+    const key = v.toLowerCase();
+    if (seen.has(key)) return '';        // known_hazards and ground_hazards often repeat
+    seen.add(key);
+    return `<div class="info-cell ${cls}">
+      <div class="ic-header"><span class="ic-icon">${icon}</span><span class="ic-label">${ocEsc(label)}</span></div>
+      <div class="ic-value" style="margin-top:4px;white-space:pre-wrap">${ocEsc(v)}</div>
+    </div>`;
+  };
+
+  const html = [
+    cell('Airspace Hazards',      '&#9888;',   e.airspace_hazards,      'ic-hazard'),
+    cell('Known Hazards',         '&#9889;',   e.known_hazards,         'ic-hazard'),
+    cell('Ground Hazards',        '&#9889;',   e.ground_hazards,        'ic-hazard'),
+    cell('Areas to Avoid',        '&#128683;', e.areas_to_avoid,        'ic-hazard'),
+    cell('Public Access',         '&#128694;', e.public_access_points,  'ic-airspace'),
+  ].filter(Boolean).join('');
+
+  if (!html) { wrap.style.display = 'none'; grid.innerHTML = ''; return; }
+  wrap.style.display = '';
+  grid.innerHTML = html;
 }
 
 // ══════════════════════════════════════════════════════
@@ -9344,6 +9500,7 @@ const MAMC_TO      = 'SWK-MAMCLFCOORD@mod.gov.uk';
 const MAMC_KEY     = 'SKY_MAMC_CONTACT';
 const MAMC_OP_ID   = 'GBR-OP-7MWQNLBLCHHH';
 const MAMC_OA      = 'PDRA01-22337 (PDRA-01)';
+const MAMC_OA_OPEN = 'None - flown in the Open category';
 const MAMC_CEILING = '110m  Above Ground Level (AGL)';
 const MAMC_AREA    = '2 nm radius';
 
@@ -9423,7 +9580,7 @@ function mamcBuild() {
     '',
     'Operator: Oxygen Conservation',
     `Operator ID: ${MAMC_OP_ID}`,
-    `Operational Authorisation: ${MAMC_OA}`,
+    `Operational Authorisation: ${ocVal('mamc-category') === 'open' ? MAMC_OA_OPEN : MAMC_OA}`,
     `Contact: ${[name, phone, email].filter(Boolean).join(', ') || '[NAME, PH NUMBER, EMAIL]'}`,
     'Operation: Uncrewed Aircraft System (UAS) survey',
     `Aircraft: ${ocVal('mamc-aircraft') || '[DRONE MODEL]'}`,
@@ -9447,13 +9604,19 @@ function mamcBuild() {
 function mamcRefresh() {
   mamcSaveContact();
 
-  // Estate centre, straight from the site data, unless it has been typed over.
+  // Estate centre and what3words, straight from the site data, unless they
+  // have been typed over. `what3words` is read from staticdata.json; an
+  // estate without one just leaves the field empty to be filled by hand.
   const estate = ocVal('mamc-estate');
+  const e = (typeof estatesData === 'object' && estatesData[estate]) || {};
   const cEl = ocEl('mamc-centre');
   if (cEl && estate && !cEl.dataset.touched) {
-    const e = (typeof estatesData === 'object' && estatesData[estate]) || {};
     const lat = parseFloat(e.lat), lon = parseFloat(e.lon);
     cEl.value = (!isNaN(lat) && !isNaN(lon)) ? mamcDms(lat, lon) : '';
+  }
+  const wEl = ocEl('mamc-w3w');
+  if (wEl && estate && !wEl.dataset.touched) {
+    wEl.value = String(e.what3words || e.w3w || '').replace(/^\/+/, '');
   }
 
   // The deadline for the FIRST day of the range. No late warning - a
@@ -9497,33 +9660,104 @@ function mamcMailtoHref() {
   return `mailto:${m.to}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(body)}`;
 }
 
+// Outlook for iOS and Android registers the ms-outlook:// scheme, so this
+// opens the Outlook app itself rather than whatever holds the mailto
+// default (which on these iPads is Apple Mail). There is no way to ask a
+// device whether an app scheme is installed, so: try Outlook, and if the
+// page is still in front of us a moment later, fall back to mailto.
+function mamcOutlookHref() {
+  const m = mamcBuild();
+  const body = m.body.replace(/\r?\n/g, '\r\n');
+  return `ms-outlook://compose?to=${encodeURIComponent(m.to)}` +
+         `&subject=${encodeURIComponent(m.subject)}` +
+         `&body=${encodeURIComponent(body)}`;
+}
+
 function mamcOpenMail() {
-  // location.href rather than a synthesised click: iOS hands over to the
-  // mail app more reliably from a Home Screen app this way.
-  window.location.href = mamcMailtoHref();
+  const started = Date.now();
+  let handedOver = false;
+  const onHide = () => { if (document.hidden) handedOver = true; };
+  document.addEventListener('visibilitychange', onHide);
+
+  // location.href rather than a synthesised click: iOS hands over to an app
+  // more reliably from a Home Screen web app this way.
+  window.location.href = mamcOutlookHref();
+
+  setTimeout(() => {
+    document.removeEventListener('visibilitychange', onHide);
+    // Still here, and no time was lost to an app switch: Outlook did not
+    // take it. Hand it to whatever does handle mail.
+    if (!handedOver && !document.hidden && Date.now() - started < 2500) {
+      window.location.href = mamcMailtoHref();
+    }
+  }, 1200);
+}
+
+// The old fallback called document.execCommand('copy') and announced
+// success without looking at what it returned. On iOS that call routinely
+// fails on a hidden textarea, so the toast said "copied" while the
+// clipboard still held whatever was there before - after a tap on Open in
+// Outlook, that is the mailto: URL, which is where the %20s came from.
+// Nothing here claims success it has not verified.
+function mamcCopyFallback(text) {
+  let ok = false;
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.readOnly = false;
+  ta.contentEditable = 'true';
+  // Visible to the browser but not to the eye. display:none or a zero size
+  // makes iOS refuse to select it at all.
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;padding:0;border:0;opacity:0;font-size:16px';
+  document.body.appendChild(ta);
+  try {
+    const range = document.createRange();
+    range.selectNodeContents(ta);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    ta.setSelectionRange(0, text.length);
+    ok = document.execCommand('copy') === true;
+  } catch (e) { ok = false; }
+  ta.remove();
+  return ok;
 }
 
 async function mamcCopy() {
   const m = mamcBuild();
   const text = `To: ${m.to}\nSubject: ${m.subject}\n\n${m.body}`;
+
+  let ok = false;
   try {
     await navigator.clipboard.writeText(text);
+    ok = true;
+  } catch (e) { ok = false; }
+
+  // Read it back where the browser allows it. A clipboard holding something
+  // other than what we just wrote is a failure, however cleanly the write
+  // resolved.
+  if (ok && navigator.clipboard && navigator.clipboard.readText) {
+    try {
+      const back = await navigator.clipboard.readText();
+      if (back && back.indexOf('Operator ID:') === -1) ok = false;
+    } catch (e) { /* no read permission - take the write at its word */ }
+  }
+
+  if (!ok) ok = mamcCopyFallback(text);
+
+  if (ok) {
     skyToast('Notification copied. Paste it into an email to ' + MAMC_TO);
     return;
-  } catch (e) { /* fall through */ }
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
-    document.body.appendChild(ta);
-    ta.select();
-    ta.setSelectionRange(0, text.length);
-    document.execCommand('copy');
-    ta.remove();
-    skyToast('Notification copied. Paste it into an email to ' + MAMC_TO);
-  } catch (e2) {
-    skyToast('Could not copy on this device - use Preview and copy it by hand.');
   }
+
+  // Could not copy. Open the preview so there is something to select by
+  // hand, and say so rather than pretending.
+  const pre = ocEl('mamc-preview');
+  if (pre) {
+    pre.textContent = text;
+    pre.style.display = 'block';
+    pre.scrollIntoView({ block: 'center' });
+  }
+  skyToast('This device would not let Skylark copy. The text is shown below - select and copy it by hand.');
 }
 
 function mamcInit() {
@@ -9536,11 +9770,12 @@ function mamcInit() {
     });
     sel.dataset.built = '1';
   }
-  const centre = ocEl('mamc-centre');
-  if (centre && !centre.dataset.wired) {
-    centre.dataset.wired = '1';
-    centre.addEventListener('input', () => { centre.dataset.touched = '1'; });
-  }
+  ['mamc-centre', 'mamc-w3w'].forEach(id => {
+    const el = ocEl(id);
+    if (!el || el.dataset.wired) return;
+    el.dataset.wired = '1';
+    el.addEventListener('input', () => { el.dataset.touched = '1'; });
+  });
   const dt = ocEl('mamc-date');
   if (dt && !dt.value) {
     // Default to the next weekday - this is a day-before notification.
@@ -9681,6 +9916,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ocRenderQueue();
   mamcInit();
   ocLoadNotices();
+  ocRestoreStages();
 
   // Where to land. The home screen by default; the mode you were last in
   // if that was earlier the same day, so a reload mid-brief does not
