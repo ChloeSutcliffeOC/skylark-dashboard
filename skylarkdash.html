@@ -1471,11 +1471,11 @@
         <div class="data-cell"><div class="cell-label auto-label">Temperature</div><div class="cell-value" id="d-temp-pf">—</div></div>
         <div class="data-cell"><div class="cell-label auto-label">Dew Point</div><div class="cell-value" id="d-dewpoint">—</div></div>
         <div class="data-cell"><div class="cell-label auto-label">Kp-Index</div><div class="cell-value" id="d-space">—</div></div>
-        <div class="data-cell">
+        <div class="data-cell" id="pf-tide-high-cell" style="display:none">
           <div class="cell-label auto-label">Next High Tide</div>
           <input type="text" id="pf-tide-high" placeholder="e.g. 09:14 — 4.8m" style="margin-top:6px;background:transparent;border:none;padding:0;font-size:15px;font-weight:500;color:var(--text);width:100%;outline:none">
         </div>
-        <div class="data-cell">
+        <div class="data-cell" id="pf-tide-low-cell" style="display:none">
           <div class="cell-label auto-label">Next Low Tide</div>
           <input type="text" id="pf-tide-low" placeholder="e.g. 15:32 — 0.9m" style="margin-top:6px;background:transparent;border:none;padding:0;font-size:15px;font-weight:500;color:var(--text);width:100%;outline:none">
         </div>
@@ -4107,8 +4107,38 @@ let runId        = null;
 // ══════════════════════════════════════════════════════
 // PREFLIGHT — MODE SWITCH UPDATE
 // ══════════════════════════════════════════════════════
+// ── Tides — only shown at tidal (coastal / estuarine) estates ─────────────
+// An estate counts as tidal if staticdata.json marks it so ("tidal": true).
+// Until that flag exists in the static data, fall back to the list below.
+const TIDAL_ESTATES = ['firth of tay'];
+function isTidalEstate(name) {
+  if (!name) return false;
+  const e = estatesData[name] || {};
+  if (typeof e.tidal === 'boolean') return e.tidal;
+  const n = String(name).trim().toLowerCase();
+  return TIDAL_ESTATES.some(t => n.includes(t));
+}
+// Show or hide the two tide cells for the estate currently selected in the
+// pre-flight panel. Non-tidal estates get the fields cleared as well as
+// hidden, so a stale value can never reach the submitted record.
+function applyTideVisibility() {
+  const estate = document.getElementById('pf-estate-select')?.value || '';
+  const show   = isTidalEstate(estate);
+  ['pf-tide-high-cell', 'pf-tide-low-cell'].forEach(id => {
+    const cell = document.getElementById(id);
+    if (cell) cell.style.display = show ? '' : 'none';
+  });
+  if (!show) {
+    ['pf-tide-high', 'pf-tide-low'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  }
+}
+
 function onPreflightEstateChange() {
   const name = document.getElementById('pf-estate-select').value;
+  applyTideVisibility();
   if (!name) return;
   document.getElementById('header-estate').textContent = name;
   populateAirspaceFromEstate(name);
@@ -4265,9 +4295,10 @@ function checkAllCardTicks() {
     'tick-enviro':  (() => {
       const windOk   = (document.getElementById('d-wind')?.textContent || '').trim() !== '—';
       const urbanOk  = pfVal('pf-urban') !== '';
-      const tideHiOk = pfVal('pf-tide-high') !== '';
-      const tideLoOk = pfVal('pf-tide-low') !== '';
-      return windOk && urbanOk && tideHiOk && tideLoOk;
+      // Tides only gate the tick at tidal estates - elsewhere they are N/A
+      const tidal    = isTidalEstate(pfVal('pf-estate-select'));
+      const tideOk   = !tidal || (pfVal('pf-tide-high') !== '' && pfVal('pf-tide-low') !== '');
+      return windOk && urbanOk && tideOk;
     })(),
     'tick-objective': pfVal('pf-objective') !== '',
     'tick-roles':   !!(pfVal('pf-pilot') && pfVal('pf-payload-op')),
@@ -4862,7 +4893,13 @@ function buildPreflightRecord() {
     // all come through via ...base above
     wind_strength_at_operating_alti:  val('pf-wind-alt'),
     wind_shear_vortices_and_turbule:  val('pf-urban'),
-    tide_times:                       val('pf-tide-high') ? `High: ${val('pf-tide-high')}  Low: ${val('pf-tide-low')}` : '',
+    // Tides are only recorded at tidal estates; everywhere else the record
+    // says so explicitly rather than leaving the field blank.
+    tide_times:                       !isTidalEstate(val('pf-estate-select'))
+                                        ? 'Not applicable'
+                                        : (val('pf-tide-high')
+                                            ? `High: ${val('pf-tide-high')}  Low: ${val('pf-tide-low')}`
+                                            : ''),
     // ── Safety objectives ──────────────────────────────────────────────────
     objective:                        val('pf-objective'),
     // ── Mission timings ────────────────────────────────────────────────────
