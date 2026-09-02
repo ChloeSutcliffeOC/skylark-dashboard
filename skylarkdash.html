@@ -1094,8 +1094,8 @@
   /* ── Home: Skylark yellow accents ──
      Scoped to the home screen and the setup card so the PDRA-01 and
      Open category panels keep their semantic colours untouched. */
-  #panel-home .card,
-  #setup-card { border-color:var(--oc-accent-line); }
+  /* Card outlines stay the same grey as every other page; the yellow is
+     the rule under each header, not the frame. */
   #panel-home .card-header,
   #setup-card .card-header { border-bottom:3px solid var(--oc-accent-line); }
   #panel-home .field-label { color:var(--oc-accent-ink); }
@@ -1141,17 +1141,20 @@
   .oc-hours { display:flex; gap:6px; min-width:min-content; }
 
   .oc-hour {
-    flex:0 0 auto; width:64px;
+    flex:0 0 auto; width:58px;
     border:2px solid var(--border); border-radius:8px;
     background:var(--surface2); color:var(--muted);
-    padding:8px 4px; cursor:pointer; text-align:center;
+    padding:11px 4px; cursor:pointer; text-align:center;
     font-family:var(--mono); transition:all .12s;
     -webkit-tap-highlight-color:transparent; touch-action:manipulation;
   }
   .oc-hour-time { font-size:12px; font-weight:700; letter-spacing:.02em; }
-  .oc-hour-wind { font-size:9.5px; margin-top:3px; opacity:.8; white-space:nowrap; }
-  .oc-hour.sel      { box-shadow:0 0 0 3px rgba(0,0,0,.55); border-color:#000; background:var(--surface); color:var(--text); }
-  .oc-hour.past     { opacity:.4; }
+  .oc-hour.sel  {
+    background:var(--oc-accent-btn); border-color:var(--oc-accent-ink);
+    color:var(--oc-accent-ink); box-shadow:0 0 0 3px var(--oc-accent-tint);
+  }
+  .oc-hour.past { opacity:.4; }
+  .oc-hour.past.sel { opacity:1; }
 
   /* ── Open Category: the hard-stop confirmations ── */
   .oc-rule {
@@ -1540,7 +1543,7 @@
       <div id="oc-weather-source" style="display:none;background:#f0f7f0;border:1.5px solid #4caf70;border-radius:7px;padding:9px 13px;font-family:var(--mono);font-size:11px;color:#166a2a;line-height:1.6"></div>
 
       <div>
-        <div class="field-label">Pick Your Flight Hour <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--faint)">&mdash; wind speed under each time</span></div>
+        <div class="field-label">Pick Your Flight Hour</div>
         <div class="oc-hours-wrap">
           <div class="oc-hours" id="oc-hour-strip">
             <div style="font-family:var(--mono);font-size:12px;color:var(--faint);padding:10px 2px">Select an estate to load the forecast.</div>
@@ -8458,7 +8461,6 @@ function ocRenderHourStrip() {
     const sel  = i === ocHourIdx ? ' sel' : '';
     return `<button type="button" class="oc-hour${past}${sel}" onclick="ocSelectHour(${i})">
       <div class="oc-hour-time">${ocHhmm(d)}</div>
-      <div class="oc-hour-wind">${h.windMs != null ? h.windMs + ' m/s' : '–'}</div>
     </button>`;
   }).join('');
 }
