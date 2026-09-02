@@ -838,12 +838,13 @@
     font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #ca8a04;
-    opacity: 0.18;
+    color: #a16207;
+    opacity: 0.22;
     transition: color 0.25s, opacity 0.25s;
   }
-  #panel-indicator.pi-onsite .pi-label  { opacity: 0.22; }
-  #panel-indicator.pi-preflight .pi-label { opacity: 0.22; }
+  #panel-indicator.pi-onsite .pi-label    { opacity: 0.26; }
+  #panel-indicator.pi-preflight .pi-label { opacity: 0.26; }
+  #panel-indicator.pi-debrief .pi-label   { opacity: 0.26; }
 
   /* -- Header action buttons -- */
   .hdr-btn {
@@ -865,7 +866,6 @@
   /* ══════════════════════════════════════════════════════
      DEBRIEF PANEL
      ══════════════════════════════════════════════════════ */
-  #panel-indicator.pi-debrief .pi-label { opacity: 0.22; }
 
   .accordion-btn.debrief-active {
     background: #1a1a1a; border-color: #1a1a1a; color: #fff;
@@ -5803,8 +5803,10 @@ const DB_IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
 let dbRecInstance = null;
 let dbSession     = 0;        // guards against callbacks from a finished session
 let dbRec = null, dbRecTarget = null, dbWantListening = false, dbRestartTimer = null;
-let dbMicAsked = false;
-let dbLastError = '';
+let dbLastError    = '';
+let dbLastEnd      = '';
+let dbStartedAt    = 0;       // to tell a real pause from an instant failure
+let dbGotAnyResult = false;
 
 function dbSpeechInit() {
   dbRenderDiag();
@@ -5941,11 +5943,14 @@ function dbStartRec(target) {
   if (!dbRecInstance) dbRecInstance = new DB_SR();
   const rec = dbRecInstance;
 
-  rec.lang            = 'en-GB';
-  // Safari on iOS treats continuous as one-shot and will not restart
-  // without a fresh tap, so there it is push-to-talk by design.
-  rec.continuous      = !DB_IS_IOS;
-  rec.interimResults  = true;
+  rec.lang = 'en-GB';
+  // Continuous keeps the session open across pauses, which is what
+  // push-to-talk wants. iOS honours that; it just won't auto-restart
+  // after the session finally ends, so there we don't try.
+  rec.continuous = true;
+  // WebKit's interimResults support is patchy and can end a session early,
+  // so on iOS take finals only and show a plain listening indicator.
+  rec.interimResults  = !DB_IS_IOS;
   rec.maxAlternatives = 1;
 
   rec.onresult = e => {
@@ -5955,8 +5960,9 @@ function dbStartRec(target) {
       const t = e.results[i][0].transcript;
       if (e.results[i].isFinal) fin += t; else interim += t;
     }
-    if (fin.trim()) dbAppendSpeech(fin.trim());
-    dbSetInterim(interim);
+    if (fin.trim()) { dbGotAnyResult = true; dbAppendSpeech(fin.trim()); }
+    if (rec.interimResults) dbSetInterim(interim);
+    else if (!dbGotAnyResult) dbSpeechMsg(dbRecTarget, '● Listening…', false);
   };
 
   rec.onerror = e => {
@@ -5986,8 +5992,17 @@ function dbStartRec(target) {
     dbRecUi(false);
     dbRecTarget = null;
     dbFinishDictation(finishedTarget);
-    if (endedByItself && DB_IS_IOS) {
-      dbSpeechMsg(finishedTarget, '⏸ Paused — tap the mic again to add more.', false);
+    if (endedByItself) {
+      const ranFor = Date.now() - dbStartedAt;
+      dbLastEnd = ranFor + 'ms, ' + (dbGotAnyResult ? 'got speech' : 'no speech');
+      dbRenderDiag();
+      if (ranFor < 1500 && !dbGotAnyResult) {
+        // Not a pause — it never really started. Say so rather than
+        // pretending, and leave something actionable on screen.
+        dbSpeechMsg(finishedTarget, dbFastEndText(), true);
+      } else if (DB_IS_IOS) {
+        dbSpeechMsg(finishedTarget, '⏸ Paused — tap the mic again to add more.', false);
+      }
     }
   };
 
@@ -6001,11 +6016,17 @@ function dbStartRec(target) {
     return;
   }
   dbRec = rec;
+  dbStartedAt    = Date.now();
+  dbGotAnyResult = false;
   dbRecUi(true);
+}
 
-  // Confirm microphone permission alongside, never before: awaiting anything
-  // here would spend the tap that Safari requires to start recognition.
-  dbCheckMicPermission(target);
+function dbFastEndText() {
+  if (dbLastError === 'not-allowed' || dbLastError === 'service-not-allowed') return dbSpeechErrorText('not-allowed');
+  if (dbLastError === 'network') return dbSpeechErrorText('network');
+  return DB_IS_IOS
+    ? '⚠ Safari stopped listening straight away. Check Settings → General → Keyboard → Enable Dictation is on, then tap the mic and allow the microphone when Safari asks. See "Voice not working?" for details.'
+    : '⚠ Listening stopped straight away — check the microphone permission for this site, then tap again.';
 }
 
 function dbSpeechErrorText(code) {
@@ -6026,17 +6047,10 @@ function dbSpeechErrorText(code) {
   }
 }
 
-function dbCheckMicPermission(target) {
-  if (dbMicAsked || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
-  dbMicAsked = true;
-  navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(stream => { stream.getTracks().forEach(t => t.stop()); })
-    .catch(err => {
-      dbLastError = 'getUserMedia: ' + (err && err.name ? err.name : 'failed');
-      dbRenderDiag();
-      dbSpeechMsg(target, dbSpeechErrorText('not-allowed'), true);
-    });
-}
+// NOTE: deliberately no getUserMedia() permission probe. Asking for the
+// microphone while SpeechRecognition is holding it makes iOS hand the audio
+// to the second consumer, so recognition receives silence and ends within a
+// second. Safari's own permission prompt is enough.
 
 // A readout to fall back on when voice misbehaves on a specific device.
 function dbRenderDiag() {
@@ -6047,6 +6061,7 @@ function dbRenderDiag() {
     ['Platform',     DB_IS_IOS ? 'iOS / iPadOS — push-to-talk mode' : 'auto-restart mode'],
     ['Secure page',  window.isSecureContext ? 'yes' : 'no — speech needs HTTPS'],
     ['Last error',   dbLastError || 'none'],
+    ['Last session', dbLastEnd || 'none yet'],
     ['Browser',      (navigator.userAgent.match(/(CriOS|FxiOS|EdgiOS|Safari|Chrome)\/[\d.]+/) || ['unknown'])[0]],
   ];
   el.innerHTML = rows.map(([k, v]) => `<div><span>${k}</span><b>${dbEscape(v)}</b></div>`).join('')
