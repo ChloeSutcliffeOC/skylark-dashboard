@@ -7,23 +7,91 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ── OC / Skylark palette v1 ──────────────────────────────────────────
+     Source of truth: skylark/palette.css (private repo). Built for a tablet
+     used outdoors: anything you must READ uses a saturated `fill`, never a
+     pale `tint`, because glare flattens pale-on-pale towards white. Text is
+     the family `ink` on that fill — every pairing measures 5.20 or better.
+     Borders come from `ink`/`strong`, never from a fill difference.
+     ------------------------------------------------------------------- */
   :root {
-    --bg:            #f5f5f5;
-    --surface:       #ffffff;
-    --surface2:      #eeeeee;
-    --border:        #c0c0c0;
-    --border-strong: #888888;
-    --text:          #0a0a0a;
-    --muted:         #444444;
-    --faint:         #777777;
-    --ok:            #166a2a;
-    --ok-bg:         #d4edda;
-    --ok-border:     #4caf70;
-    --danger:        #991b1b;
-    --danger-bg:     #fdd9d7;
-    --danger-border: #e05c5c;
-    --warn:          #d45a00;
-    --warn-bg:       #fde9c0;
+    /* anchors */
+    --oc-ink:         #0a0a0a;
+    --oc-ink-2:       #3f3f46;
+    --oc-ink-3:       #71717a;
+    --oc-line:        #d4d4d8;
+    --oc-line-mid:    #b4b4bb;
+    --oc-line-strong: #71717a;
+    --oc-surface:     #ffffff;
+    --oc-surface-2:   #ebebed;
+    --oc-canvas:      #f4f4f5;
+
+    /* accent — Skylark yellow */
+    --oc-accent-ink:    #854d0e;
+    --oc-accent-strong: #eab308;
+    --oc-accent-line:   #fcd34d;
+    --oc-accent-tint:   #fef9c3;
+    --oc-accent-fill:   #fde047;
+    --oc-accent-btn:    #fef08a;
+    --oc-accent-canvas: #fefce8;
+    --oc-accent-deep:   #a16207;
+
+    /* go — green (Skylark original) */
+    --oc-ok-ink:    #166a2a;
+    --oc-ok-strong: #4caf70;
+    --oc-ok-tint:   #d4edda;
+    --oc-ok-fill:   #c8ecd1;
+    --oc-ok-ink-deep: #0f4a1e;   /* selected-toggle label */
+    --oc-ok-fill-hi:  #c0e8cb;   /* hover */
+    --oc-ok-canvas:   #f0f7f0;   /* pale confirm ground */
+
+    /* caution — orange */
+    --oc-warn-ink:    #9a3412;
+    --oc-warn-strong: #ea580c;
+    --oc-warn-line:   #fdba74;
+    --oc-warn-tint:   #ffedd5;
+    --oc-warn-fill:   #fed7aa;
+
+    /* no-go — crimson, 39 deg from orange so they never blur */
+    --oc-danger-ink:    #9f1239;
+    --oc-danger-strong: #e11d48;
+    --oc-danger-line:   #fda4af;
+    --oc-danger-tint:   #ffe4e6;
+    --oc-danger-fill:   #fecdd3;
+    --oc-danger-ink-deep: #881337; /* selected-toggle label */
+
+    /* neutral — sky: not required, not present, reference */
+    --oc-info-ink:    #075985;
+    --oc-info-strong: #0284c7;
+    --oc-info-line:   #7dd3fc;
+    --oc-info-tint:   #e0f2fe;
+    --oc-info-fill:   #bae6fd;
+
+    /* auto-filled — violet. A MEANING, not a brand colour: it marks data
+       Skylark fetched rather than data a person typed. Don't restyle. */
+    --oc-auto-ink:    #4c1d95;
+    --oc-auto-strong: #7c3aed;
+    --oc-auto-line:   #c4b5fd;
+    --oc-auto-tint:   #f5f3ff;
+    --oc-auto-fill:   #ede9fe;
+
+    /* ── Existing names, now aliases onto the palette ── */
+    --bg:            var(--oc-canvas);
+    --surface:       var(--oc-surface);
+    --surface2:      var(--oc-surface-2);
+    --border:        var(--oc-line-mid);
+    --border-strong: var(--oc-line-strong);
+    --text:          var(--oc-ink);
+    --muted:         var(--oc-ink-2);
+    --faint:         var(--oc-ink-3);
+    --ok:            var(--oc-ok-ink);
+    --ok-bg:         var(--oc-ok-fill);      /* fill, not tint: glare */
+    --ok-border:     var(--oc-ok-strong);
+    --danger:        var(--oc-danger-ink);
+    --danger-bg:     var(--oc-danger-fill);
+    --danger-border: var(--oc-danger-strong);
+    --warn:          var(--oc-warn-ink);
+    --warn-bg:       var(--oc-warn-fill);
     --mono:          'DM Mono', monospace;
     --sans:          'DM Sans', sans-serif;
   }
@@ -150,7 +218,7 @@
     background: var(--ok-bg);
   }
   .accordion-btn.complete:hover {
-    background: #c0e8cb;
+    background: var(--oc-ok-fill-hi);
     border-color: var(--ok);
   }
   .accordion-btn.complete.open {
@@ -336,26 +404,26 @@
 
   .toggle-btn:active { transform: scale(0.96); }
 
-  .toggle-btn.sel-yes         { background: #c8ecd1;  border-color: #166a2a; color: #0f4a1e; font-weight:700; }
-  .toggle-btn.sel-no          { background: #f5c6c6;  border-color: #991b1b; color: #6b1212; font-weight:700; }
-  .toggle-btn.sel-green       { background: #c8ecd1;  border-color: #166a2a; color: #0f4a1e; font-weight:700; }
-  .toggle-btn.sel-nr          { background: #c8d4e8;  border-color: #1a2b4a; color: #1a2b4a; font-weight:700; }
-  .toggle-btn.sel-borderline  { background: #fff0e0;  border-color: #d45a00; color: #8a3300; font-weight:700; }
+  .toggle-btn.sel-yes         { background: var(--oc-ok-fill);  border-color: var(--oc-ok-ink); color: var(--oc-ok-ink-deep); font-weight:700; }
+  .toggle-btn.sel-no          { background: var(--oc-danger-fill);  border-color: var(--oc-danger-ink); color: var(--oc-danger-ink-deep); font-weight:700; }
+  .toggle-btn.sel-green       { background: var(--oc-ok-fill);  border-color: var(--oc-ok-ink); color: var(--oc-ok-ink-deep); font-weight:700; }
+  .toggle-btn.sel-nr          { background: var(--oc-info-fill);  border-color: var(--oc-info-ink); color: var(--oc-info-ink); font-weight:700; }
+  .toggle-btn.sel-borderline  { background: var(--oc-warn-fill);  border-color: var(--oc-warn-strong); color: var(--oc-warn-ink); font-weight:700; }
   /* Present / Not Present — navy tint, no traffic light meaning */
-  .toggle-btn.sel-not-present { background: #c8d4e8;  border-color: #1a2b4a; color: #1a2b4a; font-weight:700; }
+  .toggle-btn.sel-not-present { background: var(--oc-info-fill);  border-color: var(--oc-info-ink); color: var(--oc-info-ink); font-weight:700; }
   /* Fit to fly — green/red */
-  .toggle-btn.sel-ftf-yes     { background: #c8ecd1;  border-color: #166a2a; color: #0f4a1e; font-weight:700; }
-  .toggle-btn.sel-ftf-no      { background: #f5c6c6;  border-color: #991b1b; color: #6b1212; font-weight:700; }
+  .toggle-btn.sel-ftf-yes     { background: var(--oc-ok-fill);  border-color: var(--oc-ok-ink); color: var(--oc-ok-ink-deep); font-weight:700; }
+  .toggle-btn.sel-ftf-no      { background: var(--oc-danger-fill);  border-color: var(--oc-danger-ink); color: var(--oc-danger-ink-deep); font-weight:700; }
   /* Hazard Yes — orange tint, No — green tint */
-  .toggle-btn.sel-hazard-yes  { background: #fff0e0;  border-color: #d45a00; color: #8a3300; font-weight:700; }
-  .toggle-btn.sel-hazard-no   { background: #c8ecd1;  border-color: #166a2a; color: #0f4a1e; font-weight:700; }
+  .toggle-btn.sel-hazard-yes  { background: var(--oc-warn-fill);  border-color: var(--oc-warn-strong); color: var(--oc-warn-ink); font-weight:700; }
+  .toggle-btn.sel-hazard-no   { background: var(--oc-ok-fill);  border-color: var(--oc-ok-ink); color: var(--oc-ok-ink-deep); font-weight:700; }
   /* Cordons Yes — orange tint, No — green tint */
-  .toggle-btn.sel-cord-yes    { background: #fff0e0;  border-color: #d45a00; color: #8a3300; font-weight:700; }
-  .toggle-btn.sel-cord-no     { background: #c8ecd1;  border-color: #166a2a; color: #0f4a1e; font-weight:700; }
+  .toggle-btn.sel-cord-yes    { background: var(--oc-warn-fill);  border-color: var(--oc-warn-strong); color: var(--oc-warn-ink); font-weight:700; }
+  .toggle-btn.sel-cord-no     { background: var(--oc-ok-fill);  border-color: var(--oc-ok-ink); color: var(--oc-ok-ink-deep); font-weight:700; }
   /* Space weather */
-  .toggle-btn.sel-kp-low      { background: #c8ecd1;  border-color: #166a2a; color: #0f4a1e; font-weight:700; }
-  .toggle-btn.sel-kp-mid      { background: #fff0e0;  border-color: #d45a00; color: #8a3300; font-weight:700; }
-  .toggle-btn.sel-kp-high     { background: #f5c6c6;  border-color: #991b1b; color: #6b1212; font-weight:700; }
+  .toggle-btn.sel-kp-low      { background: var(--oc-ok-fill);  border-color: var(--oc-ok-ink); color: var(--oc-ok-ink-deep); font-weight:700; }
+  .toggle-btn.sel-kp-mid      { background: var(--oc-warn-fill);  border-color: var(--oc-warn-strong); color: var(--oc-warn-ink); font-weight:700; }
+  .toggle-btn.sel-kp-high     { background: var(--oc-danger-fill);  border-color: var(--oc-danger-ink); color: var(--oc-danger-ink-deep); font-weight:700; }
 
   /* ── Crew block ── */
   .crew-block {
@@ -448,10 +516,10 @@
   }
 
   /* Category colours */
-  .info-cell.ic-contact  { border-left: 4px solid #1a2b4a; background: #f5f6fa; }
-  .info-cell.ic-airspace { border-left: 4px solid #1a6fa8; background: #f4f8fc; }
+  .info-cell.ic-contact  { border-left: 4px solid var(--oc-info-ink); background: var(--oc-info-tint); }
+  .info-cell.ic-airspace { border-left: 4px solid var(--oc-info-strong); background: var(--oc-info-tint); }
   .info-cell.ic-hazard   { border-left: 4px solid var(--danger); background: var(--danger-bg); }
-  .info-cell.ic-notam    { border-left: 4px solid #1a6fa8; background: #f4f8fc; }
+  .info-cell.ic-notam    { border-left: 4px solid var(--oc-info-strong); background: var(--oc-info-tint); }
   .info-cell.ic-default  { border-left: 4px solid var(--border-strong); }
 
   .info-cell .ic-header {
@@ -472,9 +540,9 @@
   }
 
   .info-cell.ic-hazard .ic-label { color: var(--danger); }
-  .info-cell.ic-notam  .ic-label { color: #1a6fa8; }
-  .info-cell.ic-contact .ic-label { color: #1a2b4a; }
-  .info-cell.ic-airspace .ic-label { color: #1a6fa8; }
+  .info-cell.ic-notam  .ic-label { color: var(--oc-info-strong); }
+  .info-cell.ic-contact .ic-label { color: var(--oc-info-ink); }
+  .info-cell.ic-airspace .ic-label { color: var(--oc-info-strong); }
 
   .info-cell .ic-value {
     font-size: 13px;
@@ -488,7 +556,7 @@
   .info-cell .ic-phone {
     font-size: 20px;
     font-weight: 700;
-    color: #1a2b4a;
+    color: var(--oc-info-ink);
     font-family: var(--mono);
     letter-spacing: 0.04em;
     margin-top: 2px;
@@ -506,7 +574,7 @@
     padding: 14px;
   }
 
-  .hazard-detail-box .field-label { color: #8a3300; }
+  .hazard-detail-box .field-label { color: var(--oc-warn-ink); }
 
   /* ── Final decision ── */
   .final-go   { background: var(--ok-bg);     border: 3px solid var(--ok);     border-radius: 10px; padding: 22px; text-align: center; }
@@ -564,7 +632,7 @@
 
   /* ── JSON preview ── */
   .json-preview {
-    background: #0a0a0a; color: #e0e0e0;
+    background: #0a0a0a; color: var(--oc-line);
     font-family: var(--mono); font-size: 12px;
     border-radius: 8px; padding: 16px;
     overflow-x: auto; white-space: pre;
@@ -576,46 +644,46 @@
 
   /* Auto-filled fields — clearly distinct from manual inputs */
   .auto-field {
-    background: #f5f3ff !important;
-    border-color: #7c3aed !important;
-    color: #4c1d95 !important;
+    background: var(--oc-auto-tint) !important;
+    border-color: var(--oc-auto-strong) !important;
+    color: var(--oc-auto-ink) !important;
     font-style: italic;
   }
-  .auto-field::placeholder { color: #7c3aed; font-style: italic; opacity: 0.7; }
+  .auto-field::placeholder { color: var(--oc-auto-strong); font-style: italic; opacity: 0.7; }
   /* ── Card completion tick ── */
-  .card-tick { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:#166a2a; color:#fff; font-size:11px; font-weight:700; margin-left:8px; vertical-align:middle; flex-shrink:0; }
+  .card-tick { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--oc-ok-ink); color:#fff; font-size:11px; font-weight:700; margin-left:8px; vertical-align:middle; flex-shrink:0; }
   /* ── Emergency Procedure cards ── */
   .ep-proc { border:1.5px solid var(--border); border-radius:10px; overflow:hidden; background:var(--surface); }
   .ep-proc-header { padding:12px 16px; display:flex; align-items:center; gap:10px; border-bottom:1.5px solid var(--border); }
-  .ep-danger { background:#fcebeb; border-bottom-color:#f7c1c1; }
-  .ep-warn   { background:#faeeda; border-bottom-color:#fac775; }
+  .ep-danger { background:var(--oc-danger-tint); border-bottom-color:var(--oc-danger-fill); }
+  .ep-warn   { background:var(--oc-warn-tint); border-bottom-color:var(--oc-warn-line); }
   .ep-icon { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; }
-  .ep-icon-danger { background:#f09595; }
-  .ep-icon-warn   { background:#ef9f27; }
+  .ep-icon-danger { background:var(--oc-danger-line); }
+  .ep-icon-warn   { background:var(--oc-warn-strong); }
   .ep-proc-title { font-size:14px; font-weight:600; color:var(--text); flex:1; }
   .ep-callout { font-family:var(--mono); font-size:15px; font-weight:700; padding:3px 8px; border-radius:4px; white-space:nowrap; flex-shrink:0; }
-  .ep-callout-danger { background:#f7c1c1; color:#791f1f; }
-  .ep-callout-warn   { background:#fac775; color:#633806; }
+  .ep-callout-danger { background:var(--oc-danger-fill); color:var(--oc-danger-ink); }
+  .ep-callout-warn   { background:var(--oc-warn-line); color:var(--oc-warn-ink); }
   .ep-proc-body { padding:14px 16px; display:flex; flex-direction:column; gap:12px; background:var(--surface); counter-reset:ep-step; }
   .ep-steps { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:6px; }
   .ep-steps li { font-size:14px; color:var(--text); line-height:1.5; display:flex; gap:10px; align-items:flex-start; counter-increment:ep-step; }
   .ep-num { min-width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; font-family:var(--mono); flex-shrink:0; margin-top:2px; }
-  .ep-num-danger { background:#fcebeb; color:#a32d2d; }
-  .ep-num-warn   { background:#faeeda; color:#854f0b; }
+  .ep-num-danger { background:var(--oc-danger-tint); color:var(--oc-danger-ink); }
+  .ep-num-warn   { background:var(--oc-warn-tint); color:var(--oc-warn-ink); }
   .ep-brief-btn { align-self:stretch; font-family:var(--mono); font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; padding:14px 20px; border-radius:8px; border:1.5px solid var(--border-strong); background:var(--surface); color:var(--muted); cursor:pointer; transition:all 0.15s; text-align:center; }
   .ep-brief-btn:hover { border-color:#000; color:#000; }
-  .ep-brief-btn.briefed { background:#c8ecd1; border-color:#166a2a; color:#0f4a1e; }
-  .ep-proc.ep-confirmed { border-color:#4caf70 !important; }
-  .ep-proc.ep-confirmed .ep-proc-header { background:#c8ecd1 !important; border-bottom-color:#4caf70 !important; }
-  .ep-proc.ep-confirmed .ep-proc-body { background:#f0f7f0; }
+  .ep-brief-btn.briefed { background:var(--oc-ok-fill); border-color:var(--oc-ok-ink); color:var(--oc-ok-ink-deep); }
+  .ep-proc.ep-confirmed { border-color:var(--oc-ok-strong) !important; }
+  .ep-proc.ep-confirmed .ep-proc-header { background:var(--oc-ok-fill) !important; border-bottom-color:var(--oc-ok-strong) !important; }
+  .ep-proc.ep-confirmed .ep-proc-body { background:var(--oc-ok-canvas); }
   /* Small "auto" badge shown via label */
   .auto-label::after {
     content: 'AUTO';
     font-size: 9px;
     font-family: var(--mono);
-    color: #4c1d95;
-    background: #ede9fe;
-    border: 1px solid #7c3aed;
+    color: var(--oc-auto-ink);
+    background: var(--oc-auto-fill);
+    border: 1px solid var(--oc-auto-strong);
     border-radius: 4px;
     padding: 1px 5px;
     margin-left: 6px;
@@ -638,7 +706,7 @@
   .cell-value.warn { color:var(--warn); }
   /* Airspace areas detail */
   .airspace-areas { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
-  .airspace-area { background:var(--surface2); border:1px solid var(--border); border-left:4px solid #1a6fa8; border-radius:0 8px 8px 0; padding:10px 14px; }
+  .airspace-area { background:var(--surface2); border:1px solid var(--border); border-left:4px solid var(--oc-info-strong); border-radius:0 8px 8px 0; padding:10px 14px; }
   .airspace-area.aa-danger     { border-left-color: var(--warn); }
   .airspace-area.aa-restricted { border-left-color: var(--danger); }
   .airspace-area.aa-clear      { border-left-color: var(--ok); }
@@ -659,14 +727,14 @@
   /* Base card — orange, fully rounded */
   .notam-item,
   .onsite-notam-card {
-    background: #fff0e0;
-    border: 2px solid #d45a00;
+    background: var(--oc-warn-fill);
+    border: 2px solid var(--oc-warn-strong);
     border-radius: 8px;
     padding: 10px 13px;
     font-size: 12px;
     line-height: 1.6;
     font-family: var(--mono);
-    color: #8a3300;
+    color: var(--oc-warn-ink);
   }
 
   /* Green — "none" or deactivated */
@@ -684,16 +752,16 @@
   /* Purple — loading/fetching state */
   .notam-item.notam-loading,
   .onsite-notam-card.notam-loading {
-    background: #f5f3ff;
-    border-color: #7c3aed;
-    color: #4c1d95;
+    background: var(--oc-auto-tint);
+    border-color: var(--oc-auto-strong);
+    color: var(--oc-auto-ink);
     font-family: var(--sans);
     font-weight: 500;
   }
   .notam-item.notam-loading .notam-ref,
-  .onsite-notam-card.notam-loading .notam-ref { color: #7c3aed; }
+  .onsite-notam-card.notam-loading .notam-ref { color: var(--oc-auto-strong); }
   .notam-item.notam-loading .notam-body,
-  .onsite-notam-card.notam-loading .notam-body { color: #4c1d95; font-family: var(--sans); }
+  .onsite-notam-card.notam-loading .notam-body { color: var(--oc-auto-ink); font-family: var(--sans); }
 
   /* Reference header inside a card */
   .notam-item .notam-ref,
@@ -701,7 +769,7 @@
     font-family: var(--mono);
     font-size: 11px;
     font-weight: 700;
-    color: #d45a00;
+    color: var(--oc-warn-strong);
     text-transform: uppercase;
     letter-spacing: 0.1em;
     margin-bottom: 5px;
@@ -711,7 +779,7 @@
   .onsite-notam-card .notam-body {
     font-family: var(--mono);
     font-size: 12px;
-    color: #8a3300;
+    color: var(--oc-warn-ink);
     line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-word;
@@ -838,7 +906,7 @@
     font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #a16207;
+    color: var(--oc-accent-deep);
     opacity: 0.22;
     transition: color 0.25s, opacity 0.25s;
   }
@@ -883,12 +951,12 @@
   .db-row-q { font-family:var(--mono); font-size:10px; color:var(--faint); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; }
   .db-row-body { padding:12px 13px; display:flex; flex-direction:column; gap:10px; }
   .db-row.db-filled { border-color:var(--ok-border); }
-  .db-row.db-filled .db-row-head { background:#f0f7f0; border-bottom-color:var(--ok-border); }
+  .db-row.db-filled .db-row-head { background:var(--oc-ok-canvas); border-bottom-color:var(--ok-border); }
   .db-row.db-filled .db-row-q { color:var(--ok); }
   .db-row textarea { min-height:74px; }
 
-  .db-dictated-tag { font-family:var(--mono); font-size:9.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:#8a6200; background:#fef9c3; border:1px solid #fcd34d; border-radius:4px; padding:2px 6px; white-space:nowrap; }
-  @keyframes dbFlash { 0% { background:#fef9c3; } 100% { background:var(--surface); } }
+  .db-dictated-tag { font-family:var(--mono); font-size:9.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--oc-accent-ink); background:var(--oc-accent-tint); border:1px solid var(--oc-accent-line); border-radius:4px; padding:2px 6px; white-space:nowrap; }
+  @keyframes dbFlash { 0% { background:var(--oc-accent-tint); } 100% { background:var(--surface); } }
   .db-flash { animation: dbFlash 1.8s ease-out; }
 
   /* ── Mic buttons ── */
@@ -902,20 +970,20 @@
   }
 
   /* ── Whole-debrief dictation ── */
-  .db-dump { border:2px dashed #fcd34d; border-radius:10px; background:#fefce8; padding:14px; display:flex; flex-direction:column; gap:12px; }
-  .db-dump.listening { border-style:solid; border-color:#facc15; background:#fef9c3; }
-  .db-dump-title { font-family:var(--mono); font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.09em; color:#8a6200; }
-  .db-big-mic { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:17px 20px; border-radius:10px; border:2px solid #fde047; background:#fde047; color:#3d2f00; font-family:var(--mono); font-size:13.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; cursor:pointer; transition:background .15s, border-color .15s; -webkit-tap-highlight-color:transparent; }
-  .db-big-mic:hover:not(:disabled) { background:#fcd34d; border-color:#fcd34d; }
+  .db-dump { border:2px dashed var(--oc-accent-line); border-radius:10px; background:var(--oc-accent-canvas); padding:14px; display:flex; flex-direction:column; gap:12px; }
+  .db-dump.listening { border-style:solid; border-color:var(--oc-accent-strong); background:var(--oc-accent-tint); }
+  .db-dump-title { font-family:var(--mono); font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.09em; color:var(--oc-accent-ink); }
+  .db-big-mic { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:17px 20px; border-radius:10px; border:2px solid var(--oc-accent-ink); background:var(--oc-accent-btn); color:var(--oc-accent-ink); font-family:var(--mono); font-size:13.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; cursor:pointer; transition:background .15s, border-color .15s; -webkit-tap-highlight-color:transparent; }
+  .db-big-mic:hover:not(:disabled) { background:var(--oc-accent-fill); border-color:var(--oc-accent-ink); }
   .db-big-mic.listening { background:var(--danger); border-color:var(--danger); color:#fff; animation:micPulse 1.2s infinite; }
   .db-big-mic:disabled { opacity:.35; cursor:not-allowed; }
   #db-transcript { min-height:104px; font-size:15px; line-height:1.6; background:#fff; }
-  #db-transcript-interim { font-family:var(--mono); font-size:12px; color:#8a6200; min-height:17px; font-style:italic; line-height:1.4; }
+  #db-transcript-interim { font-family:var(--mono); font-size:12px; color:var(--oc-accent-ink); min-height:17px; font-style:italic; line-height:1.4; }
   .db-hint { font-size:12.5px; color:var(--muted); line-height:1.6; }
-  .db-hint code { font-family:var(--mono); font-size:11.5px; background:#fef9c3; color:#8a6200; padding:1px 5px; border-radius:3px; }
-  .db-sort-summary { font-family:var(--mono); font-size:11.5px; line-height:1.75; color:#1f2937; background:#eef2ff; border:2px solid #4b5563; border-radius:8px; padding:11px 14px; display:none; }
+  .db-hint code { font-family:var(--mono); font-size:11.5px; background:var(--oc-accent-tint); color:var(--oc-accent-ink); padding:1px 5px; border-radius:3px; }
+  .db-sort-summary { font-family:var(--mono); font-size:11.5px; line-height:1.75; color:var(--oc-info-ink); background:var(--oc-info-tint); border:2px solid var(--oc-info-strong); border-radius:8px; padding:11px 14px; display:none; }
   .db-sort-summary.visible { display:block; }
-  .db-unsorted { background:var(--warn-bg); border:2px solid var(--warn); border-radius:8px; padding:11px 14px; font-size:13px; color:#8a3300; line-height:1.6; display:none; }
+  .db-unsorted { background:var(--warn-bg); border:2px solid var(--warn); border-radius:8px; padding:11px 14px; font-size:13px; color:var(--oc-warn-ink); line-height:1.6; display:none; }
   .db-unsorted.visible { display:block; }
   .db-unsorted strong { font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; display:block; margin-bottom:5px; }
   .mic-unsupported { background:var(--warn-bg); border:2px solid var(--warn); border-radius:8px; padding:11px 14px; font-family:var(--mono); font-size:11.5px; color:var(--warn); line-height:1.6; display:none; margin-bottom:12px; }
@@ -923,7 +991,7 @@
 
 
   /* ── Transcript sense check ── */
-  .db-corrections { display:none; flex-direction:column; gap:2px; background:#fff; border:2px solid #fcd34d; border-radius:8px; padding:11px 13px; }
+  .db-corrections { display:none; flex-direction:column; gap:2px; background:#fff; border:2px solid var(--oc-accent-line); border-radius:8px; padding:11px 13px; }
   .db-corrections.visible { display:flex; }
   .db-corr-row { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:7px; }
   .db-corr-label { font-family:var(--mono); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; }
@@ -933,21 +1001,21 @@
   .db-chips { display:flex; flex-wrap:wrap; gap:6px; }
   .db-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:20px; font-family:var(--mono); font-size:11.5px; cursor:pointer; transition:background .15s, border-color .15s; -webkit-tap-highlight-color:transparent; border:1.5px solid; }
   .db-chip-fixed { background:var(--ok-bg); border-color:var(--ok-border); color:var(--ok); }
-  .db-chip-fixed:hover { background:#c1e6cd; border-color:var(--ok); }
-  .db-chip-maybe { background:#fff; border-color:var(--warn); color:#8a3300; }
+  .db-chip-fixed:hover { background:var(--oc-ok-fill-hi); border-color:var(--ok); }
+  .db-chip-maybe { background:#fff; border-color:var(--warn); color:var(--oc-warn-ink); }
   .db-chip-maybe:hover { background:var(--warn-bg); }
   .db-chip-from { text-decoration:line-through; opacity:0.75; }
   .db-chip-maybe .db-chip-from { text-decoration:none; }
   .db-chip-arrow { opacity:0.6; }
   .db-chip-to { font-weight:700; }
   .db-chip-act { font-size:10px; opacity:0.7; margin-left:2px; }
-  .db-vocab-wrap { border-top:1.5px dashed #fde68a; padding-top:11px; margin-top:2px; }
+  .db-vocab-wrap { border-top:1.5px dashed var(--oc-accent-line); padding-top:11px; margin-top:2px; }
 
 
   /* ── Field dictation (onsite hazards, cordons, notes) ── */
   .mic-field-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
   .mic-btn-sm { width:30px; height:30px; font-size:12.5px; }
-  .mic-interim { font-family:var(--mono); font-size:11px; font-style:italic; color:#8a6200; line-height:1.4; margin-top:4px; }
+  .mic-interim { font-family:var(--mono); font-size:11px; font-style:italic; color:var(--oc-accent-ink); line-height:1.4; margin-top:4px; }
   .mic-corr { margin-top:8px; padding:9px 11px; }
   .mic-corr .db-corr-label { font-size:10px; }
   .mic-corr .db-corr-hint { font-size:10.5px; }
@@ -961,9 +1029,9 @@
     border-radius:6px; padding:7px 10px; margin-top:6px;
   }
   .mic-diag { font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:2px; }
-  .mic-diag summary { cursor:pointer; color:#8a6200; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; font-size:10.5px; }
+  .mic-diag summary { cursor:pointer; color:var(--oc-accent-ink); font-weight:600; text-transform:uppercase; letter-spacing:0.07em; font-size:10.5px; }
   .mic-diag summary:hover { color:var(--text); }
-  #db-diag { margin-top:8px; display:flex; flex-direction:column; gap:3px; background:#fff; border:1.5px solid #fcd34d; border-radius:7px; padding:9px 11px; }
+  #db-diag { margin-top:8px; display:flex; flex-direction:column; gap:3px; background:#fff; border:1.5px solid var(--oc-accent-line); border-radius:7px; padding:9px 11px; }
   #db-diag > div { display:flex; justify-content:space-between; gap:10px; }
   #db-diag span { color:var(--faint); }
   #db-diag b { color:var(--text); font-weight:600; text-align:right; }
@@ -1951,44 +2019,44 @@
             <div id="comms-carousel-inner" style="display:flex;transition:transform 0.25s ease;will-change:transform">
 
               <div class="ep-proc" style="min-width:100%;flex-shrink:0">
-                <div class="ep-proc-header" style="background:#f4f8fc;border-bottom-color:#1a6fa8">
-                  <div class="ep-icon" style="background:#ddeaf7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a6fa8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m0 0l-4 4m4-4l4 4"/></svg></div>
+                <div class="ep-proc-header" style="background:#e0f2fe;border-bottom-color:#0284c7">
+                  <div class="ep-icon" style="background:#e0f2fe"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m0 0l-4 4m4-4l4 4"/></svg></div>
                   <span class="ep-proc-title">Pre-flight</span>
-                  <span class="ep-callout" style="background:#ddeaf7;color:#1a6fa8;font-size:15px;font-weight:700">"Props clear"</span>
+                  <span class="ep-callout" style="background:#e0f2fe;color:#0284c7;font-size:15px;font-weight:700">"Props clear"</span>
                 </div>
                 <div class="ep-proc-body" style="padding:10px 16px"><span style="font-size:14px;color:var(--muted)">Said before motors are started</span></div>
               </div>
 
               <div class="ep-proc" style="min-width:100%;flex-shrink:0">
-                <div class="ep-proc-header" style="background:#f4f8fc;border-bottom-color:#1a6fa8">
-                  <div class="ep-icon" style="background:#ddeaf7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a6fa8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19l7-14 7 14M5 19h14"/></svg></div>
+                <div class="ep-proc-header" style="background:#e0f2fe;border-bottom-color:#0284c7">
+                  <div class="ep-icon" style="background:#e0f2fe"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19l7-14 7 14M5 19h14"/></svg></div>
                   <span class="ep-proc-title">Departure</span>
-                  <span class="ep-callout" style="background:#ddeaf7;color:#1a6fa8;font-size:15px;font-weight:700">"Taking off"</span>
+                  <span class="ep-callout" style="background:#e0f2fe;color:#0284c7;font-size:15px;font-weight:700">"Taking off"</span>
                 </div>
                 <div class="ep-proc-body" style="padding:10px 16px"><span style="font-size:14px;color:var(--muted)">Announced before departure</span></div>
               </div>
 
               <div class="ep-proc" style="min-width:100%;flex-shrink:0">
-                <div class="ep-proc-header" style="background:#f4f8fc;border-bottom-color:#1a6fa8">
-                  <div class="ep-icon" style="background:#ddeaf7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a6fa8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l7 14 7-14M5 5h14"/></svg></div>
+                <div class="ep-proc-header" style="background:#e0f2fe;border-bottom-color:#0284c7">
+                  <div class="ep-icon" style="background:#e0f2fe"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l7 14 7-14M5 5h14"/></svg></div>
                   <span class="ep-proc-title">Descent</span>
-                  <span class="ep-callout" style="background:#ddeaf7;color:#1a6fa8;font-size:15px;font-weight:700">"Landing"</span>
+                  <span class="ep-callout" style="background:#e0f2fe;color:#0284c7;font-size:15px;font-weight:700">"Landing"</span>
                 </div>
                 <div class="ep-proc-body" style="padding:10px 16px"><span style="font-size:14px;color:var(--muted)">Called before descent</span></div>
               </div>
 
               <div class="ep-proc" style="min-width:100%;flex-shrink:0">
-                <div class="ep-proc-header" style="background:#f4f8fc;border-bottom-color:#1a6fa8">
-                  <div class="ep-icon" style="background:#ddeaf7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a6fa8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+                <div class="ep-proc-header" style="background:#e0f2fe;border-bottom-color:#0284c7">
+                  <div class="ep-icon" style="background:#e0f2fe"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
                   <span class="ep-proc-title">Landed</span>
-                  <span class="ep-callout" style="background:#ddeaf7;color:#1a6fa8;font-size:15px;font-weight:700">"SOD"</span>
+                  <span class="ep-callout" style="background:#e0f2fe;color:#0284c7;font-size:15px;font-weight:700">"SOD"</span>
                 </div>
                 <div class="ep-proc-body" style="padding:10px 16px"><span style="font-size:14px;color:var(--muted)">Safely on deck — confirms aircraft is down safely</span></div>
               </div>
 
               <div class="ep-proc" style="min-width:100%;flex-shrink:0">
                 <div class="ep-proc-header ep-danger">
-                  <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a32d2d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+                  <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
                   <span class="ep-proc-title">Air Excursion</span>
                   <span class="ep-callout ep-callout-danger">"All stop, all stop, all stop"</span>
                 </div>
@@ -1997,7 +2065,7 @@
 
               <div class="ep-proc" style="min-width:100%;flex-shrink:0">
                 <div class="ep-proc-header ep-danger">
-                  <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a32d2d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 4-3 6-3 10a3 3 0 006 0c0-4-3-6-3-10z"/><path d="M9 17.5C7 17 5 15 5 12c0-2 1-4 2-5 0 3 2 5 2 8"/><path d="M15 17.5C17 17 19 15 19 12c0-2-1-4-2-5 0 3-2 5-2 8"/></svg></div>
+                  <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 4-3 6-3 10a3 3 0 006 0c0-4-3-6-3-10z"/><path d="M9 17.5C7 17 5 15 5 12c0-2 1-4 2-5 0 3 2 5 2 8"/><path d="M15 17.5C17 17 19 15 19 12c0-2-1-4-2-5 0 3-2 5-2 8"/></svg></div>
                   <span class="ep-proc-title">Fire</span>
                   <span class="ep-callout ep-callout-danger">"Fire, fire, fire"</span>
                 </div>
@@ -2006,7 +2074,7 @@
 
               <div class="ep-proc" style="min-width:100%;flex-shrink:0">
                 <div class="ep-proc-header ep-danger">
-                  <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a32d2d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.7 5.7l12.6 12.6"/></svg></div>
+                  <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.7 5.7l12.6 12.6"/></svg></div>
                   <span class="ep-proc-title">Loss of Control</span>
                   <span class="ep-callout ep-callout-danger">"Flyaway"</span>
                 </div>
@@ -2015,7 +2083,7 @@
 
               <div class="ep-proc" style="min-width:100%;flex-shrink:0">
                 <div class="ep-proc-header ep-warn">
-                  <div class="ep-icon ep-icon-warn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#633806" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M7 7a5 5 0 007 7M10.5 10.5A5 5 0 0117 17M5 12H3m4.2-7.8L6 3M12 5V3m6.8 1.2L20 3M19 12h2m-1.2 6.8L21 21M12 19v2m-6.8-1.2L3 21"/></svg></div>
+                  <div class="ep-icon ep-icon-warn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a3412" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M7 7a5 5 0 007 7M10.5 10.5A5 5 0 0117 17M5 12H3m4.2-7.8L6 3M12 5V3m6.8 1.2L20 3M19 12h2m-1.2 6.8L21 21M12 19v2m-6.8-1.2L3 21"/></svg></div>
                   <span class="ep-proc-title">Cordon Breach</span>
                   <span class="ep-callout ep-callout-warn">"Cordon breach"</span>
                 </div>
@@ -2127,7 +2195,7 @@
 
       <div class="ep-proc" id="ep-pilot-incap" data-key="ep-pilot-incap">
         <div class="ep-proc-header ep-danger">
-          <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a32d2d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="3"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><line x1="4" y1="4" x2="20" y2="20"/></svg></div>
+          <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="3"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><line x1="4" y1="4" x2="20" y2="20"/></svg></div>
           <span class="ep-proc-title">Pilot Incapacitation</span>
           <span class="ep-callout ep-callout-danger">"Terminate mission"</span>
         </div>
@@ -2145,7 +2213,7 @@
 
       <div class="ep-proc" id="ep-air-incursion" data-key="ep-air-incursion">
         <div class="ep-proc-header ep-danger">
-          <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a32d2d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10h4a2 2 0 010 4h-4l-4 7H9l2-7H7l-2 2H3l2-4-2-4h2l2 2h4L9 3h3l4 7z"/></svg></div>
+          <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10h4a2 2 0 010 4h-4l-4 7H9l2-7H7l-2 2H3l2-4-2-4h2l2 2h4L9 3h3l4 7z"/></svg></div>
           <span class="ep-proc-title">Air Incursion</span>
           <span class="ep-callout ep-callout-danger">"Air incursion"</span>
         </div>
@@ -2162,7 +2230,7 @@
 
       <div class="ep-proc" id="ep-ground-incursion" data-key="ep-ground-incursion">
         <div class="ep-proc-header ep-warn">
-          <div class="ep-icon ep-icon-warn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#633806" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="1"/><path d="M7 21l3-4 2 1 2-4m-2-4l1 4 4-2m-9-3l2-2 2 2 2-2"/></svg></div>
+          <div class="ep-icon ep-icon-warn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a3412" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="1"/><path d="M7 21l3-4 2 1 2-4m-2-4l1 4 4-2m-9-3l2-2 2 2 2-2"/></svg></div>
           <span class="ep-proc-title">Ground Incursion</span>
           <span class="ep-callout ep-callout-warn">"Cordon breach"</span>
         </div>
@@ -2178,7 +2246,7 @@
 
       <div class="ep-proc" id="ep-fire" data-key="ep-fire">
         <div class="ep-proc-header ep-danger">
-          <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a32d2d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 4-3 6-3 10a3 3 0 006 0c0-4-3-6-3-10z"/><path d="M9 17.5C7 17 5 15 5 12c0-2 1-4 2-5 0 3 2 5 2 8"/><path d="M15 17.5C17 17 19 15 19 12c0-2-1-4-2-5 0 3-2 5-2 8"/></svg></div>
+          <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 4-3 6-3 10a3 3 0 006 0c0-4-3-6-3-10z"/><path d="M9 17.5C7 17 5 15 5 12c0-2 1-4 2-5 0 3 2 5 2 8"/><path d="M15 17.5C17 17 19 15 19 12c0-2-1-4-2-5 0 3-2 5-2 8"/></svg></div>
           <span class="ep-proc-title">Fire</span>
           <span class="ep-callout ep-callout-danger">"Fire, fire, fire"</span>
         </div>
@@ -2196,7 +2264,7 @@
 
       <div class="ep-proc" id="ep-flyaway" data-key="ep-flyaway">
         <div class="ep-proc-header ep-danger">
-          <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a32d2d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.7 5.7l12.6 12.6"/></svg></div>
+          <div class="ep-icon ep-icon-danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.7 5.7l12.6 12.6"/></svg></div>
           <span class="ep-proc-title">Flyaway</span>
           <span class="ep-callout ep-callout-danger">"Flyaway"</span>
         </div>
@@ -2216,7 +2284,7 @@
 
       <div class="ep-proc" id="ep-bad-vis" data-key="ep-bad-vis">
         <div class="ep-proc-header ep-warn">
-          <div class="ep-icon ep-icon-warn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#633806" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.584 10.587a2 2 0 002.828 2.83M9.363 5.365A9.466 9.466 0 0112 5c4 0 7.333 2.333 10 7-1.496 2.576-3.18 4.457-5.063 5.638M7.134 7.134C4.787 8.54 2.965 10.568 1 13c2.667 4.667 6 7 10 7a9.5 9.5 0 005.14-1.47"/></svg></div>
+          <div class="ep-icon ep-icon-warn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a3412" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.584 10.587a2 2 0 002.828 2.83M9.363 5.365A9.466 9.466 0 0112 5c4 0 7.333 2.333 10 7-1.496 2.576-3.18 4.457-5.063 5.638M7.134 7.134C4.787 8.54 2.965 10.568 1 13c2.667 4.667 6 7 10 7a9.5 9.5 0 005.14-1.47"/></svg></div>
           <span class="ep-proc-title">Abnormal Weather — Visibility</span>
           <span class="ep-callout ep-callout-warn">"Bad vis"</span>
         </div>
@@ -2231,7 +2299,7 @@
 
       <div class="ep-proc" id="ep-wind" data-key="ep-wind">
         <div class="ep-proc-header ep-warn">
-          <div class="ep-icon ep-icon-warn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#633806" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h8.5a2.5 2.5 0 000-5A2.5 2.5 0 0011 6M5 12h11.5a2.5 2.5 0 010 5A2.5 2.5 0 0114 15M5 16h3a2 2 0 010 4"/></svg></div>
+          <div class="ep-icon ep-icon-warn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a3412" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h8.5a2.5 2.5 0 000-5A2.5 2.5 0 0011 6M5 12h11.5a2.5 2.5 0 010 5A2.5 2.5 0 0114 15M5 16h3a2 2 0 010 4"/></svg></div>
           <span class="ep-proc-title">Abnormal Weather — Wind</span>
           <span class="ep-callout ep-callout-warn">"Wind"</span>
         </div>
@@ -2750,9 +2818,9 @@ function showDataStatus(e) {
   if (!el) return;
   if (!txt) { el.style.display = 'none'; return; }
   el.style.display = '';
-  el.style.background = bad ? '#fde9c0' : '#e8f5e9';
-  el.style.border = '2px solid ' + (bad ? '#b45309' : '#4caf70');
-  el.style.color = bad ? '#7c3a06' : '#166a2a';
+  el.style.background = bad ? '#ffedd5' : '#d4edda';
+  el.style.border = '2px solid ' + (bad ? '#9a3412' : '#4caf70');
+  el.style.color = bad ? '#9a3412' : '#166a2a';
   el.textContent = (bad ? 'DESK DRAFT - NOT VERIFIED. Check every field yourself before using this for a PDRA-01. ' : 'Data status: ') + txt;
 }
 
@@ -3010,8 +3078,8 @@ function showFetchStatus(msg, cls) {
   bar.style.display = '';
   // purple = fetching, green = ok, red = error, warn = orange
   const styles = {
-    ok:   { bg: '#e8f5e9', border: '#4caf70', color: '#166a2a' },
-    error:{ bg: '#fde8e8', border: '#991b1b', color: '#6b1212' },
+    ok:   { bg: '#d4edda', border: '#4caf70', color: '#166a2a' },
+    error:{ bg: '#ffe4e6', border: '#9f1239', color: '#881337' },
     warn: { bg: '#f5f3ff', border: '#7c3aed', color: '#4c1d95' },
   };
   const s = styles[cls] || styles.warn;
@@ -3274,12 +3342,12 @@ function notamStatus(hasNotams) {
 function setAutoFieldColor(el, status) {
   if (!el) return;
   const styles = {
-    green:   { bg: '#e8f5e9', border: '#4caf70', color: '#166a2a' },
-    orange:  { bg: '#fff0e0', border: '#d45a00', color: '#8a3300' },
-    red:     { bg: '#fde8e8', border: '#991b1b', color: '#6b1212' },
-    info:    { bg: '#f4f8fc', border: '#1a6fa8', color: '#1a6fa8' },
+    green:   { bg: '#d4edda', border: '#4caf70', color: '#166a2a' },
+    orange:  { bg: '#fed7aa', border: '#ea580c', color: '#9a3412' },
+    red:     { bg: '#ffe4e6', border: '#9f1239', color: '#881337' },
+    info:    { bg: '#e0f2fe', border: '#0284c7', color: '#0284c7' },
     loading: { bg: '#f5f3ff', border: '#7c3aed', color: '#4c1d95' },
-    neutral: { bg: '#ffffff', border: '#d1d5db', color: '#374151' },
+    neutral: { bg: '#ffffff', border: '#d4d4d8', color: '#3f3f46' },
   };
   const s = styles[status] || styles.green;
   el.style.setProperty('background',   s.bg,     'important');
@@ -3296,10 +3364,10 @@ function setDataCellStyle(id, status) {
   const card = valueEl.closest('.data-cell');
   if (!card) return;
   const styles = {
-    green:  { bg: '#e8f5e9', border: '#4caf70', labelColor: '#166a2a', valueColor: '#0f4a1e', weight: '600' },
-    orange: { bg: '#fff0e0', border: '#d45a00', labelColor: '#8a3300', valueColor: '#8a3300', weight: '700' },
-    info:   { bg: '#f4f8fc', border: '#1a6fa8', labelColor: '#1a6fa8', valueColor: '#1a6fa8', weight: '500' },
-    red:    { bg: '#fde8e8', border: '#991b1b', labelColor: '#991b1b', valueColor: '#6b1212', weight: '700' },
+    green:  { bg: '#d4edda', border: '#4caf70', labelColor: '#166a2a', valueColor: '#0f4a1e', weight: '600' },
+    orange: { bg: '#fed7aa', border: '#ea580c', labelColor: '#9a3412', valueColor: '#9a3412', weight: '700' },
+    info:   { bg: '#e0f2fe', border: '#0284c7', labelColor: '#0284c7', valueColor: '#0284c7', weight: '500' },
+    red:    { bg: '#ffe4e6', border: '#9f1239', labelColor: '#9f1239', valueColor: '#881337', weight: '700' },
   };
   const s = styles[status];
   if (!s) return;
@@ -3443,9 +3511,9 @@ function applyOnsiteFetchData(d) {
       if (kpRaw === '') {
         // Action completed but no Kp data — show error
         display.value = 'Solar data unavailable — check manually';
-        display.style.setProperty('background',   '#fde8e8', 'important');
-        display.style.setProperty('border-color', '#991b1b', 'important');
-        display.style.setProperty('color',        '#6b1212', 'important');
+        display.style.setProperty('background',   '#ffe4e6', 'important');
+        display.style.setProperty('border-color', '#9f1239', 'important');
+        display.style.setProperty('color',        '#881337', 'important');
         display.dataset.status = 'red';
         allStatuses.push('red');
       } else {
@@ -3530,7 +3598,7 @@ function applyOnsiteFetchData(d) {
         <div class="ic-header">
           <span class="ic-icon">${isRequired ? '🔴' : '🟢'}</span>
           <span class="ic-label">Airspace Manager Notification Required?</span>
-          ${isTimeDependent ? '<span style="font-family:var(--mono);font-size:10px;background:#fff0e0;color:#8a3300;border:1px solid #d45a00;border-radius:4px;padding:1px 6px;margin-left:auto">TIME-DEPENDENT</span>' : ''}
+          ${isTimeDependent ? '<span style="font-family:var(--mono);font-size:10px;background:#fed7aa;color:#9a3412;border:1px solid #ea580c;border-radius:4px;padding:1px 6px;margin-left:auto">TIME-DEPENDENT</span>' : ''}
         </div>
         <div class="ic-value" style="font-weight:600">${d.notam_required}</div>
       `;
@@ -3554,9 +3622,9 @@ function applyOnsiteFetchData(d) {
     }
     if (atcIsRequired) {
       atcPrompt.style.display      = '';
-      atcPrompt.style.background   = '#fff0e0';
-      atcPrompt.style.borderColor  = '#d45a00';
-      atcPrompt.style.color        = '#8a3300';
+      atcPrompt.style.background   = '#fed7aa';
+      atcPrompt.style.borderColor  = '#ea580c';
+      atcPrompt.style.color        = '#9a3412';
       atcPrompt.textContent        = '⚠ Airspace manager notification required';
     } else {
       atcPrompt.style.display = 'none';
@@ -3623,11 +3691,11 @@ function reEvalWithinLimits() {
 const SPARK_COLOURS = ['#ffd700','#ffec6e','#ff9f43','#fff176','#ffe082','#a8e063','#7ec8e3','#ff6b9d'];
 
 const BIRD_SVG = `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="width:90px;height:90px;display:block">
-  <polygon points="401.373,139.385 441.037,98.224 441.786,138.636 479.379,153.488 426.934,176.228" fill="#4a3218"/>
+  <polygon points="401.373,139.385 441.037,98.224 441.786,138.636 479.379,153.488 426.934,176.228" fill="#854d0e"/>
   <path fill="#9a7448" d="M160.009,52.59l-13.256,17.525c-32.715,43.246-19.924,97.245-13.002,118.263c-3.868,6.493-8.88,16.466-12.06,28.73c-7.653,29.508-1.015,57.393,19.198,80.641c15.766,18.134,37.041,29.085,59.905,30.839c2.236,0.172,4.479,0.257,6.73,0.257c21.694,0,43.935-7.936,64.736-23.17c16.387-12.004,29.08-28.255,36.705-46.997l3.651-8.973L160.009,52.59z"/>
   <path fill="#7a5830" d="M314.885,251.975l-8.973,3.651c-18.745,7.626-34.997,20.32-46.999,36.706C242.1,315.289,234.178,340,236.002,363.795c1.752,22.864,12.705,44.138,30.84,59.906c16.98,14.764,36.434,22.286,57.19,22.285c7.659,0,15.497-1.025,23.451-3.087c12.265-3.182,22.237-8.193,28.73-12.06c21.018,6.925,75.017,19.714,118.263-13.002l17.525-13.256L314.885,251.975z"/>
   <path fill="#e8d5a8" d="M369.229,216.807l-3.111-5.049l-69.577-24.646l-7.407,6.471c-0.899,0.785-90.51,78.762-150.271,103.665c-32.553,12.625-71.312,18.284-71.694,18.338L0,325.181l109.646,39.277l-56.101,94.953l50.57-24.875c0.752-0.371,76.222-37.034,157.317-37.034c36.819,0,68.482-12.122,91.564-35.054c21.795-21.652,33.798-51.313,33.798-83.52C386.794,256.938,380.72,235.456,369.229,216.807z"/>
-  <path fill="#4a3218" d="M365.133,111.9c-49.351,0-89.501,40.149-89.501,89.5c0,1.179,0.044,2.349,0.09,3.517c-27.367,22.699-90.927,73.189-136.861,92.33c-32.553,12.625-71.312,18.284-71.694,18.338L0,325.181l109.646,39.277l-56.101,94.953l50.57-24.875c0.508-0.251,35.058-17.033,82.401-27.917c44.762-21.151,93.69-51.845,116.042-91.617c10.371-18.455,11.568-32.852,11.226-40.365c14.548,10.232,32.253,16.263,51.35,16.263c49.35,0,89.501-40.149,89.501-89.501C454.634,152.05,414.484,111.9,365.133,111.9z"/>
+  <path fill="#854d0e" d="M365.133,111.9c-49.351,0-89.501,40.149-89.501,89.5c0,1.179,0.044,2.349,0.09,3.517c-27.367,22.699-90.927,73.189-136.861,92.33c-32.553,12.625-71.312,18.284-71.694,18.338L0,325.181l109.646,39.277l-56.101,94.953l50.57-24.875c0.508-0.251,35.058-17.033,82.401-27.917c44.762-21.151,93.69-51.845,116.042-91.617c10.371-18.455,11.568-32.852,11.226-40.365c14.548,10.232,32.253,16.263,51.35,16.263c49.35,0,89.501-40.149,89.501-89.501C454.634,152.05,414.484,111.9,365.133,111.9z"/>
   <circle cx="384.562" cy="193.045" r="16.816" fill="#1a1008"/>
   <circle cx="379" cy="188" r="5" fill="#ffffff" opacity="0.8"/>
   <path fill="#c8a060" d="M415.232,127.272c-14.306-9.699-31.552-15.373-50.098-15.373c-26.277,0-49.944,11.385-66.332,29.48c13.915,11.925,31.981,19.144,51.744,19.144C377.207,160.524,400.792,147.398,415.232,127.272z"/>
@@ -3926,7 +3994,7 @@ function buildOpsCategory() {
     + '<option value="PDRA-01">PDRA-01 (Specific)</option>'
     + '<option value="Open A3">Open category A3</option>'
     + '</select>'
-    + '<div id="ops-category-note" style="display:none;margin-top:8px;border-radius:8px;padding:11px 14px;font-family:var(--mono);font-size:11px;line-height:1.5;background:#eef2ff;border:2px solid #4b5563;color:#1f2937"></div>';
+    + '<div id="ops-category-note" style="display:none;margin-top:8px;border-radius:8px;padding:11px 14px;font-family:var(--mono);font-size:11px;line-height:1.5;background:#e0f2fe;border:2px solid #0284c7;color:#075985"></div>';
   host.parentNode.insertBefore(wrap, host.nextSibling);
 }
 
@@ -4622,9 +4690,9 @@ function checkAllCardTicks() {
     } else {
       banner.innerHTML = '⚠ Incomplete sections: ' + incomplete.join(', ');
       banner.style.display = '';
-      banner.style.background = '#fdd9d7';
-      banner.style.border = '1.5px solid #e05c5c';
-      banner.style.color = '#7a1212';
+      banner.style.background = '#ffe4e6';
+      banner.style.border = '1.5px solid #e11d48';
+      banner.style.color = '#9f1239';
     }
   }
   if (saveBtn) saveBtn.disabled = !allDone;
@@ -4808,7 +4876,7 @@ function renderAirspaceAreas(airspace, estate, notamRefs) {
     return 'aa-clear';
   };
   const typeBadge = (t, disabled) => {
-    if (disabled) return `<span class="airspace-area-badge" style="background:#e5e7eb;color:#6b7280;border:1px solid #d1d5db;text-decoration:line-through">${t || 'Area'}</span><span class="airspace-area-badge" style="background:#dcfce7;color:#166a2a;border:1px solid #4caf70;margin-left:4px">DISABLED BY NOTAM</span>`;
+    if (disabled) return `<span class="airspace-area-badge" style="background:#ebebed;color:#71717a;border:1px solid #d4d4d8;text-decoration:line-through">${t || 'Area'}</span><span class="airspace-area-badge" style="background:#d4edda;color:#166a2a;border:1px solid #4caf70;margin-left:4px">DISABLED BY NOTAM</span>`;
     if (!t) return '<span class="airspace-area-badge badge-clear">Clear</span>';
     const u = t.toUpperCase();
     if (u.includes('RESTRICTED') || u.includes('PROHIBITED') || u.includes('FRZ'))
@@ -4823,7 +4891,7 @@ function renderAirspaceAreas(airspace, estate, notamRefs) {
     const notamId      = refs[desig] || refs[a.designator] || null;
     const isDisabled   = !!notamId;
     const disabledNote = isDisabled
-      ? `<div style="margin-top:6px;padding:6px 10px;background:#dcfce7;border:1px solid #4caf70;border-radius:5px;font-size:11px;font-family:var(--mono);color:#166a2a">
+      ? `<div style="margin-top:6px;padding:6px 10px;background:#d4edda;border:1px solid #4caf70;border-radius:5px;font-size:11px;font-family:var(--mono);color:#166a2a">
            ✓ Disabled by NOTAM ${notamId !== 'NOTAM' ? notamId : ''} — see active NOTAMs above for full details
          </div>`
       : '';
@@ -4993,7 +5061,7 @@ function buildAirspaceRefGrid(e, airspace, notamRefs) {
     const notamId     = refs[desig] || refs[a.designator] || null;
     const isDisabled  = !!notamId;
     const badge       = isDisabled
-      ? `<span style="display:inline-block;margin-top:6px;font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:2px 7px;border-radius:4px;background:#dcfce7;color:#166a2a;border:1px solid #4caf70">✓ Disabled by NOTAM ${notamId !== 'NOTAM' ? notamId : ''}</span>`
+      ? `<span style="display:inline-block;margin-top:6px;font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:2px 7px;border-radius:4px;background:#d4edda;color:#166a2a;border:1px solid #4caf70">✓ Disabled by NOTAM ${notamId !== 'NOTAM' ? notamId : ''}</span>`
       : '';
     const meta = [
       a.lower && a.upper ? `<strong>Vertical:</strong> ${a.lower}–${a.upper}${a.upper_notam ? ` (up to ${a.upper_notam} by NOTAM)` : ''}` : '',
@@ -5277,10 +5345,10 @@ function calcWindProfile() {
     if (hidden) hidden.value = '';
     if (badge && display) {
       badge.style.display   = '';
-      badge.style.background    = '#fde8e8';
-      badge.style.borderColor   = '#991b1b';
+      badge.style.background    = '#ffe4e6';
+      badge.style.borderColor   = '#9f1239';
       display.style.fontSize    = '14px';
-      display.style.color       = '#991b1b';
+      display.style.color       = '#9f1239';
       display.textContent       = '⚠ Alt below roughness length';
     }
     return;
@@ -5293,9 +5361,9 @@ function calcWindProfile() {
 
   if (badge && display) {
     const colours = {
-      green:  { bg: '#e8f5e9', border: '#4caf70', text: '#166a2a' },
-      orange: { bg: '#fff0e0', border: '#d45a00', text: '#8a3300' },
-      red:    { bg: '#fde8e8', border: '#991b1b', text: '#6b1212' },
+      green:  { bg: '#d4edda', border: '#4caf70', text: '#166a2a' },
+      orange: { bg: '#fed7aa', border: '#ea580c', text: '#9a3412' },
+      red:    { bg: '#ffe4e6', border: '#9f1239', text: '#881337' },
     };
     const level = vAltMs < 10 ? 'green' : vAltMs <= 12 ? 'orange' : 'red';
     const c = colours[level];
