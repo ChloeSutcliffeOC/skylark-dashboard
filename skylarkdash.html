@@ -1194,6 +1194,32 @@
     background:#fff0e0; border:1.5px solid #d45a00; color:#8a3300;
   }
 
+  /* ── Home: noticeboard ── */
+  .notice-list { display:flex; flex-direction:column; gap:9px; }
+  .notice {
+    border:1.5px solid var(--border); border-left-width:4px; border-radius:0 8px 8px 0;
+    padding:11px 14px; background:var(--surface);
+  }
+  .notice-title { font-family:var(--mono); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+  .notice-body  { font-size:13px; line-height:1.6; color:var(--muted); margin-top:5px; }
+  .notice-meta  { font-family:var(--mono); font-size:10px; color:var(--faint); margin-top:6px; }
+  .notice-info   { border-left-color:var(--oc-line-strong); }
+  .notice-info   .notice-title { color:var(--oc-ink-2); }
+  .notice-action { border-left-color:var(--oc-accent-ink); background:var(--oc-accent-canvas); }
+  .notice-action .notice-title { color:var(--oc-accent-ink); }
+  .notice-urgent { border-left-color:var(--oc-danger-strong); background:var(--oc-danger-tint); }
+  .notice-urgent .notice-title { color:var(--oc-danger-ink); }
+
+  /* ── Home: MAMC deadline line ── */
+  .mamc-deadline {
+    display:none; border-radius:8px; padding:10px 13px;
+    font-family:var(--mono); font-size:11px; line-height:1.6;
+    border:1.5px solid var(--border); background:var(--surface2); color:var(--muted);
+  }
+  .mamc-deadline.visible { display:block; }
+  .mamc-deadline.ok   { background:var(--oc-ok-fill);     border-color:var(--oc-ok-strong);     color:var(--oc-ok-ink); }
+  .mamc-deadline.late { background:var(--oc-danger-tint); border-color:var(--oc-danger-strong); color:var(--oc-danger-ink); }
+
   /* ── Open Category: upload queue ── */
   .oc-queue {
     border-radius:8px; padding:11px 14px; margin-bottom:4px;
@@ -1324,6 +1350,17 @@
     </div>
   </div>
 
+  <!-- ── Noticeboard ── -->
+  <div class="card" id="notice-card" style="display:none">
+    <div class="card-header">
+      <h2>Noticeboard</h2>
+      <span class="timestamp" id="notice-age"></span>
+    </div>
+    <div class="card-body">
+      <div class="notice-list" id="notice-list"></div>
+    </div>
+  </div>
+
   <!-- ── 24-hour offline cache ── -->
   <div class="card">
     <div class="card-header"><h2>Download the Next 24 Hours</h2></div>
@@ -1346,6 +1383,81 @@
         <div class="field-label" style="margin-bottom:9px">On this device</div>
         <div class="cache-list" id="oc-cache-list"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ── MAMC low-flying notification ── -->
+  <div class="card">
+    <div class="card-header"><h2>MAMC Notification</h2></div>
+    <div class="card-body">
+
+      <div class="two-col">
+        <div>
+          <div class="field-label">Estate</div>
+          <select id="mamc-estate" onchange="mamcRefresh()">
+            <option value="">&mdash; Select estate &mdash;</option>
+          </select>
+        </div>
+        <div>
+          <div class="field-label">Date of Flight</div>
+          <input type="date" id="mamc-date" onchange="mamcRefresh()">
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="field-label">Aircraft</div>
+          <select id="mamc-aircraft" onchange="mamcRefresh()">
+            <option value="">&mdash; Select aircraft &mdash;</option>
+          </select>
+        </div>
+        <div>
+          <div class="field-label">Times (UTC)</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="time" id="mamc-from" value="09:00" style="flex:1" onchange="mamcRefresh()">
+            <span style="font-family:var(--mono);font-size:12px;color:var(--faint)">to</span>
+            <input type="time" id="mamc-to" value="17:00" style="flex:1" onchange="mamcRefresh()">
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="field-label">what3words</div>
+          <input type="text" id="mamc-w3w" placeholder="what.three.words" oninput="mamcRefresh()">
+        </div>
+        <div>
+          <div class="field-label auto-label">Centre</div>
+          <input type="text" id="mamc-centre" placeholder="from the site data" oninput="mamcRefresh()">
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+        <div class="field-label" style="margin-bottom:9px">Contact &mdash; remembered on this device</div>
+        <div class="two-col">
+          <div>
+            <div class="field-label" style="font-size:11px">Name</div>
+            <input type="text" id="mamc-name" placeholder="Full name" oninput="mamcRefresh()">
+          </div>
+          <div>
+            <div class="field-label" style="font-size:11px">Phone</div>
+            <input type="text" id="mamc-phone" placeholder="07000 000000" oninput="mamcRefresh()">
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="field-label" style="font-size:11px">Email</div>
+          <input type="text" id="mamc-email" placeholder="name@oxygenconservation.com" oninput="mamcRefresh()">
+        </div>
+      </div>
+
+      <div class="mamc-deadline" id="mamc-deadline"></div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="submit-btn" type="button" id="mamc-send" style="flex:1;min-width:200px" onclick="mamcOpenMail()">Open in Mail</button>
+        <button class="secondary-btn" type="button" style="flex:1;min-width:150px;margin:0" onclick="mamcCopy()">Copy Text</button>
+      </div>
+      <button class="secondary-btn" type="button" style="margin:0" onclick="mamcTogglePreview()">Preview</button>
+      <pre class="json-preview" id="mamc-preview"></pre>
     </div>
   </div>
 
@@ -7861,6 +7973,8 @@ function goHome() {
   ocSetMode('home');
   ocRenderCacheList();
   ocRenderQueue();
+  mamcInit();
+  ocLoadNotices();
   window.scrollTo({ top: 0 });
 }
 
@@ -9142,6 +9256,268 @@ function ocPreviewJson() {
 }
 
 // ══════════════════════════════════════════════════════
+// NOTICEBOARD
+// ══════════════════════════════════════════════════════
+// Notices come from notices.json in the private skylark repo, so a new
+// notice needs an edit to one small file and nothing else. Cached on the
+// device like the site data, and there is a built-in fallback so the board
+// is never blank if the file has not been created yet.
+
+const NOTICE_KEY = 'SKY_NOTICES_CACHE';
+
+const NOTICE_FALLBACK = [{
+  title: 'MAMC notification',
+  body: 'Submit a MAMC low-flying notification before 20:00 the day before any weekday mission. Use the card below.',
+  level: 'action',
+}];
+
+function ocRenderNotices(notices, ageHours) {
+  const card = ocEl('notice-card');
+  const list = ocEl('notice-list');
+  const age  = ocEl('notice-age');
+  if (!card || !list) return;
+  const items = Array.isArray(notices) ? notices.filter(n => n && (n.title || n.body)) : [];
+  if (!items.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  if (age) age.textContent = (ageHours != null && isFinite(ageHours)) ? ocAgeText(ageHours) : '';
+  list.innerHTML = items.map(n => {
+    const lvl = ['info', 'action', 'urgent'].includes(n.level) ? n.level : 'info';
+    return `<div class="notice notice-${lvl}">
+      ${n.title ? `<div class="notice-title">${ocEsc(n.title)}</div>` : ''}
+      ${n.body  ? `<div class="notice-body">${ocEsc(n.body)}</div>` : ''}
+      ${n.updated ? `<div class="notice-meta">Updated ${ocEsc(n.updated)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function ocLoadNotices() {
+  // Show whatever is on the device first, so the board is populated even
+  // with no signal, then replace it if a live copy arrives.
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem(NOTICE_KEY) || 'null'); } catch (e) { cached = null; }
+  if (cached && Array.isArray(cached.notices)) {
+    ocRenderNotices(cached.notices, (Date.now() - new Date(cached.at).getTime()) / 3600000);
+  } else {
+    ocRenderNotices(NOTICE_FALLBACK, null);
+  }
+
+  if (!CONFIG.GITHUB_TOKEN || !CONFIG.GITHUB_OWNER || navigator.onLine === false) return;
+  const file = await ocGhGetFile('notices.json');
+  if (!file || !file.content) return;          // not created yet - fallback stands
+  let parsed = null;
+  try { parsed = JSON.parse(ocDecodeB64(file.content)); } catch (e) { return; }
+  const notices = Array.isArray(parsed) ? parsed : (parsed && parsed.notices);
+  if (!Array.isArray(notices)) return;
+  try { localStorage.setItem(NOTICE_KEY, JSON.stringify({ at: new Date().toISOString(), notices })); }
+  catch (e) { /* storage full - the live copy still renders */ }
+  ocRenderNotices(notices, 0);
+}
+
+// ══════════════════════════════════════════════════════
+// MAMC LOW-FLYING NOTIFICATION
+// ══════════════════════════════════════════════════════
+// The page cannot send mail itself, and should not: this goes to the MOD
+// and a person signs it off. It writes the whole thing and hands it to the
+// mail app with the address, subject and body filled in.
+
+const MAMC_TO      = 'SWK-MAMCLFCOORD@mod.gov.uk';
+const MAMC_KEY     = 'SKY_MAMC_CONTACT';
+const MAMC_OP_ID   = 'GBR-OP-7MWQNLBLCHHH';
+const MAMC_OA      = 'PDRA01-22337 (PDRA-01)';
+const MAMC_CEILING = '110m  Above Ground Level (AGL)';
+const MAMC_AREA    = '2 nm radius';
+
+const MAMC_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// 55.1234, -3.9876 -> 55°7'24" N, 3°59'15" W
+function mamcDms(lat, lon) {
+  const one = (v, pos, neg) => {
+    const hemi = v < 0 ? neg : pos;
+    const a = Math.abs(v);
+    const d = Math.floor(a);
+    const m = Math.floor((a - d) * 60);
+    const s = Math.round((((a - d) * 60) - m) * 60);
+    return `${d}°${m}'${s}" ${hemi}`;
+  };
+  return `${one(lat, 'N', 'S')}, ${one(lon, 'E', 'W')}`;
+}
+
+function mamcParseDate(v) {
+  if (!v) return null;
+  const [y, m, d] = v.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+}
+
+function mamcSaveContact() {
+  try {
+    localStorage.setItem(MAMC_KEY, JSON.stringify({
+      name: ocVal('mamc-name'), phone: ocVal('mamc-phone'), email: ocVal('mamc-email'),
+    }));
+  } catch (e) { /* not worth failing over */ }
+}
+
+function mamcRestoreContact() {
+  let c = null;
+  try { c = JSON.parse(localStorage.getItem(MAMC_KEY) || 'null'); } catch (e) { c = null; }
+  if (!c) return;
+  [['mamc-name', c.name], ['mamc-phone', c.phone], ['mamc-email', c.email]].forEach(([id, v]) => {
+    const el = ocEl(id);
+    if (el && v && !el.value) el.value = v;
+  });
+}
+
+// The deadline OC works to: 20:00 the day before, for weekday missions.
+function mamcDeadline(flight) {
+  if (!flight) return null;
+  const dow = flight.getDay();
+  if (dow === 0 || dow === 6) return null;              // weekend mission
+  const by = new Date(flight);
+  by.setDate(by.getDate() - 1);
+  by.setHours(20, 0, 0, 0);
+  return by;
+}
+
+function mamcBuild() {
+  const estate = ocVal('mamc-estate');
+  const d      = mamcParseDate(ocVal('mamc-date'));
+  const w3w    = ocVal('mamc-w3w').replace(/^\/+/, '');
+  const centre = ocVal('mamc-centre');
+  const name   = ocVal('mamc-name');
+  const phone  = ocVal('mamc-phone');
+  const email  = ocVal('mamc-email');
+
+  const dSub = d ? `${ocPad(d.getDate())} ${MAMC_MONTHS[d.getMonth()]} ${d.getFullYear()}` : '[DATE]';
+  const dRow = d ? `${ocPad(d.getDate())} ${ocPad(d.getMonth() + 1)} ${d.getFullYear()}`  : '[DD MM YYYY]';
+
+  const body = [
+    'I wish to notify any low flying aircraft of the following UAS activity:',
+    '',
+    'Operator: Oxygen Conservation',
+    `Operator ID: ${MAMC_OP_ID}`,
+    `Operational Authorisation: ${MAMC_OA}`,
+    `Contact: ${[name, phone, email].filter(Boolean).join(', ') || '[NAME, PH NUMBER, EMAIL]'}`,
+    'Operation: Uncrewed Aircraft System (UAS) survey',
+    `Aircraft: ${ocVal('mamc-aircraft') || '[DRONE MODEL]'}`,
+    `Ceiling: ${MAMC_CEILING}`,
+    'Visual Line of Sight (VLOS) operation',
+    `Location: ${estate || '[ESTATE NAME]'} ${w3w ? '///' + w3w : '[///what.three.words]'}`,
+    `Centre: ${centre || '[0°0\'0" N, 0°0\'0" W]'}`,
+    `Area: ${MAMC_AREA}`,
+    `Date: ${dRow}`,
+    `Times: ${ocVal('mamc-from') || '[0900]'} to ${ocVal('mamc-to') || '[1700]'} UTC (Coordinated Universal Time)`,
+    '',
+    'Please confirm the reference by reply. If any of the requested parameters are unworkable, please advise and I will resubmit.',
+    '',
+    'Kind Regards,',
+    name || '[NAME]',
+  ].join('\n');
+
+  return { to: MAMC_TO, subject: `UAS activity for ${dSub}`, body };
+}
+
+function mamcRefresh() {
+  mamcSaveContact();
+
+  // Estate centre, straight from the site data, unless it has been typed over.
+  const estate = ocVal('mamc-estate');
+  const cEl = ocEl('mamc-centre');
+  if (cEl && estate && !cEl.dataset.touched) {
+    const e = (typeof estatesData === 'object' && estatesData[estate]) || {};
+    const lat = parseFloat(e.lat), lon = parseFloat(e.lon);
+    cEl.value = (!isNaN(lat) && !isNaN(lon)) ? mamcDms(lat, lon) : '';
+  }
+
+  const d  = mamcParseDate(ocVal('mamc-date'));
+  const by = mamcDeadline(d);
+  const dl = ocEl('mamc-deadline');
+  if (dl) {
+    dl.classList.remove('visible', 'ok', 'late');
+    if (by) {
+      const when = `${MAMC_MONTHS[by.getMonth()]} ${by.getDate()} at 20:00`;
+      const late = Date.now() > by.getTime();
+      dl.classList.add('visible', late ? 'late' : 'ok');
+      dl.textContent = late
+        ? `This should have gone by ${when}. Send it anyway and say it is late.`
+        : `Send by ${when} - 20:00 the day before, for weekday missions.`;
+    }
+  }
+
+  const pre = ocEl('mamc-preview');
+  if (pre && pre.style.display === 'block') {
+    const m = mamcBuild();
+    pre.textContent = `To: ${m.to}\nSubject: ${m.subject}\n\n${m.body}`;
+  }
+}
+
+function mamcTogglePreview() {
+  const pre = ocEl('mamc-preview');
+  if (!pre) return;
+  if (pre.style.display === 'block') { pre.style.display = 'none'; return; }
+  const m = mamcBuild();
+  pre.textContent = `To: ${m.to}\nSubject: ${m.subject}\n\n${m.body}`;
+  pre.style.display = 'block';
+}
+
+function mamcOpenMail() {
+  const m = mamcBuild();
+  const href = `mailto:${m.to}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}`;
+  // location.href rather than a synthesised click: iOS handles the handover
+  // to Mail more reliably from a Home Screen app this way.
+  window.location.href = href;
+}
+
+async function mamcCopy() {
+  const m = mamcBuild();
+  const text = `To: ${m.to}\nSubject: ${m.subject}\n\n${m.body}`;
+  try {
+    await navigator.clipboard.writeText(text);
+    skyToast('Notification copied. Paste it into an email to ' + MAMC_TO);
+    return;
+  } catch (e) { /* fall through */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    document.execCommand('copy');
+    ta.remove();
+    skyToast('Notification copied. Paste it into an email to ' + MAMC_TO);
+  } catch (e2) {
+    skyToast('Could not copy on this device - use Preview and copy it by hand.');
+  }
+}
+
+function mamcInit() {
+  const sel = ocEl('mamc-aircraft');
+  if (sel && !sel.dataset.built) {
+    Object.keys(OC_AIRCRAFT).forEach(name => {
+      const o = document.createElement('option');
+      o.value = o.textContent = name;
+      sel.appendChild(o);
+    });
+    sel.dataset.built = '1';
+  }
+  const centre = ocEl('mamc-centre');
+  if (centre && !centre.dataset.wired) {
+    centre.dataset.wired = '1';
+    centre.addEventListener('input', () => { centre.dataset.touched = '1'; });
+  }
+  const dt = ocEl('mamc-date');
+  if (dt && !dt.value) {
+    // Default to the next weekday - this is a day-before notification.
+    const n = new Date();
+    n.setDate(n.getDate() + 1);
+    while (n.getDay() === 0 || n.getDay() === 6) n.setDate(n.getDate() + 1);
+    dt.value = `${n.getFullYear()}-${ocPad(n.getMonth() + 1)}-${ocPad(n.getDate())}`;
+  }
+  mamcRestoreContact();
+  mamcRefresh();
+}
+
+// ══════════════════════════════════════════════════════
 // PANEL INIT
 // ══════════════════════════════════════════════════════
 function ocBuildAircraftSelect() {
@@ -9189,7 +9565,7 @@ togglePanel = function (panel) {
 const _ocOrigPopulateEstateSelect = populateEstateSelect;
 populateEstateSelect = function (names) {
   _ocOrigPopulateEstateSelect(names);
-  ['oc-estate', 'oc-cache-estate'].forEach(id => {
+  ['oc-estate', 'oc-cache-estate', 'mamc-estate'].forEach(id => {
     const sel = ocEl(id);
     if (!sel) return;
     const keep = sel.value;
@@ -9263,6 +9639,8 @@ document.addEventListener('DOMContentLoaded', () => {
   ocBuildAircraftSelect();
   ocRenderCacheList();
   ocRenderQueue();
+  mamcInit();
+  ocLoadNotices();
 
   // Where to land. The home screen by default; the mode you were last in
   // if that was earlier the same day, so a reload mid-brief does not
