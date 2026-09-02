@@ -988,6 +988,8 @@
   .db-unsorted strong { font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; display:block; margin-bottom:5px; }
   .mic-unsupported { background:var(--warn-bg); border:2px solid var(--warn); border-radius:8px; padding:11px 14px; font-family:var(--mono); font-size:11.5px; color:var(--warn); line-height:1.6; display:none; margin-bottom:12px; }
   .mic-unsupported.visible { display:block; }
+  .mic-keyboard-hint { background:var(--oc-info-fill); border:2px solid var(--oc-info-ink); border-radius:8px; padding:11px 14px; font-family:var(--mono); font-size:11.5px; color:var(--oc-info-ink); line-height:1.6; display:none; margin-bottom:12px; }
+  .mic-keyboard-hint.visible { display:block; }
 
 
   /* ── Transcript sense check ── */
@@ -2426,6 +2428,7 @@
       <h2>Voice Debrief <span class="card-tick" id="tick-db-voice" style="display:none">&#10003;</span></h2>
     </div>
     <div class="card-body">
+      <div class="mic-keyboard-hint" id="db-keyboard-hint">&#127908; <strong>Use the keyboard&rsquo;s microphone key on this iPad.</strong> Tap a field, then tap the mic key at the bottom right of the on-screen keyboard and speak. Tap it again to finish, then <strong>Sort into rows</strong> as usual. In-page dictation cannot get the microphone in a Home Screen app.</div>
       <div class="mic-unsupported" id="db-mic-unsupported">&#9888; Speech to text isn&rsquo;t available in this browser. On iPad or iPhone use <strong>Safari</strong> &mdash; Chrome and Edge on iOS cannot do it. Otherwise use Chrome on a laptop, or type straight into the fields.</div>
       <div class="db-dump" id="db-dump">
         <div class="db-dump-title">&#127908; Dictate the whole debrief</div>
@@ -5865,6 +5868,24 @@ const DB_SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const DB_IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+// A Home Screen web app gets no microphone for SpeechRecognition on iOS.
+// The session opens and ends inside a second having heard nothing, and no
+// permission dialog is ever offered, because there is no address bar to
+// offer it from. Safari proper is fine. navigator.standalone is the iOS
+// signal; display-mode covers installed web apps elsewhere.
+const DB_IS_STANDALONE = (navigator.standalone === true)
+  || !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+
+// Keyboard mode: don't touch the Web Speech API at all, point at the iOS
+// keyboard's own mic key instead. That is an OS keyboard feature rather
+// than a web API, so it works in a Home Screen app, in any browser, and
+// with no data connection dependency of ours to explain.
+//
+// Certain on iOS standalone, so we start there. On iOS in Safari we start
+// optimistic and switch after one fast-fail, so a device where speech
+// genuinely works keeps the nicer in-page flow.
+let DB_KEYBOARD_MODE = DB_IS_IOS && DB_IS_STANDALONE;
+
 // One recogniser for the life of the page. Creating a fresh instance per
 // dictation is what makes iOS chime, fail the first attempt, and stop
 // early; a singleton is markedly more stable there.
@@ -5878,6 +5899,7 @@ let dbGotAnyResult = false;
 
 function dbSpeechInit() {
   dbRenderDiag();
+  if (DB_KEYBOARD_MODE) { dbApplyKeyboardModeUi(); return; }
   if (DB_SR) return;
   const warn = document.getElementById('db-mic-unsupported');
   if (warn) warn.classList.add('visible');
@@ -5994,7 +6016,62 @@ function dbStopRec(quiet) {
   if (finishedTarget && !quiet) dbFinishDictation(finishedTarget);
 }
 
+// iOS keyboard dictation needs a focused text field and nothing else, so
+// the whole job here is: put the caret where the words should land, and
+// say which key to press.
+function dbKeyboardPrompt(target) {
+  // Same three target shapes dbAppendSpeech handles: an explicit field id,
+  // the whole-debrief transcript, or a debrief row key whose textarea is
+  // dbtext-<key>. Getting this wrong sends the caret to the wrong box.
+  const fieldId = dbTargetFieldId(target)
+    || (target === 'dump' ? 'db-transcript' : 'dbtext-' + target);
+  const el = document.getElementById(fieldId);
+  if (el) {
+    // focus() must stay inside the tap's own task or iOS will not raise
+    // the keyboard at all, so no timeouts or awaits before this point.
+    el.focus();
+    if (typeof el.setSelectionRange === 'function') {
+      const n = (el.value || '').length;
+      try { el.setSelectionRange(n, n); } catch (e) { /* not a text input */ }
+    }
+    if (typeof el.scrollIntoView === 'function') {
+      try { el.scrollIntoView({ block: 'center' }); } catch (e) { el.scrollIntoView(); }
+    }
+  }
+  dbSpeechMsg(target, el
+    ? '\u25cf Now tap the mic key on the keyboard, bottom right, and speak. Tap it again to finish.'
+    : '\u25cf Tap into the field, then use the mic key on the keyboard.', false);
+}
+
+// Switch this device over for the rest of the session and relabel the UI,
+// so nobody taps a button that cannot work twice.
+function dbEnterKeyboardMode() {
+  if (DB_KEYBOARD_MODE) return;
+  DB_KEYBOARD_MODE = true;
+  dbApplyKeyboardModeUi();
+  dbRenderDiag();
+}
+
+function dbApplyKeyboardModeUi() {
+  if (!DB_KEYBOARD_MODE) return;
+  const big = document.getElementById('db-big-mic');
+  if (big) {
+    big.disabled = false;
+    big.classList.remove('listening');
+    big.innerHTML = '&#127908; Dictate with the keyboard mic';
+  }
+  document.querySelectorAll('.mic-btn').forEach(b => {
+    b.disabled = false;
+    b.innerHTML = '&#127908;';
+    b.title = 'Tap here, then use the mic key on the keyboard';
+  });
+  const banner = document.getElementById('db-keyboard-hint');
+  if (banner) banner.classList.add('visible');
+}
+
 function dbStartRec(target) {
+  // Keyboard mode never opens a recogniser — see DB_KEYBOARD_MODE above.
+  if (DB_KEYBOARD_MODE) { dbKeyboardPrompt(target); return; }
   if (!DB_SR) {
     dbSpeechMsg(target, '⚠ This browser cannot do speech to text. On iPad or iPhone use Safari; type into the field otherwise.', true);
     return;
@@ -6065,8 +6142,16 @@ function dbStartRec(target) {
       dbLastEnd = ranFor + 'ms, ' + (dbGotAnyResult ? 'got speech' : 'no speech');
       dbRenderDiag();
       if (ranFor < 1500 && !dbGotAnyResult) {
-        // Not a pause — it never really started. Say so rather than
-        // pretending, and leave something actionable on screen.
+        // Not a pause — it never really started. On iOS that is the
+        // standalone/permission wall rather than anything we can retry,
+        // so stop offering a button that fails and move to the keyboard
+        // mic, which works regardless.
+        if (DB_IS_IOS) {
+          dbEnterKeyboardMode();
+          dbKeyboardPrompt(finishedTarget);
+          dbRenderDiag();
+          return;
+        }
         dbSpeechMsg(finishedTarget, dbFastEndText(), true);
       } else if (DB_IS_IOS) {
         dbSpeechMsg(finishedTarget, '⏸ Paused — tap the mic again to add more.', false);
@@ -6126,16 +6211,26 @@ function dbRenderDiag() {
   if (!el) return;
   const rows = [
     ['Speech API',   DB_SR ? 'available' : 'NOT available in this browser'],
-    ['Platform',     DB_IS_IOS ? 'iOS / iPadOS — push-to-talk mode' : 'auto-restart mode'],
+    ['Launched as',  DB_IS_STANDALONE ? 'Home Screen web app' : 'browser tab'],
+    ['Dictation',    DB_KEYBOARD_MODE ? 'keyboard mic key' : (DB_IS_IOS ? 'in-page mic, push-to-talk' : 'in-page mic, auto-restart')],
+    ['Platform',     DB_IS_IOS ? 'iOS / iPadOS' : 'desktop / Android'],
     ['Secure page',  window.isSecureContext ? 'yes' : 'no — speech needs HTTPS'],
     ['Last error',   dbLastError || 'none'],
     ['Last session', dbLastEnd || 'none yet'],
     ['Browser',      (navigator.userAgent.match(/(CriOS|FxiOS|EdgiOS|Safari|Chrome)\/[\d.]+/) || ['unknown'])[0]],
   ];
   el.innerHTML = rows.map(([k, v]) => `<div><span>${k}</span><b>${dbEscape(v)}</b></div>`).join('')
-    + (DB_IS_IOS ? '<p>On iPad, dictation runs one phrase at a time: tap the mic, say it, tap again for more. '
-        + 'Chrome and Edge on iPad cannot do speech to text at all — use Safari. '
-        + 'Also check Settings &rarr; General &rarr; Keyboard &rarr; Enable Dictation.</p>' : '');
+    + (DB_KEYBOARD_MODE
+        ? '<p>This iPad is using the keyboard&rsquo;s own microphone key. A Home Screen web app is not given the '
+          + 'microphone for in-page speech to text, and Chrome and Edge on iOS cannot do it at all &mdash; but the '
+          + 'keyboard mic works everywhere. Tap a field, tap the mic key at the bottom right of the keyboard, speak, '
+          + 'then tap it again. Sorting into rows works exactly the same. '
+          + 'If Enable Dictation is off, turn it on in Settings &rarr; General &rarr; Keyboard.</p>'
+        : DB_IS_IOS
+          ? '<p>On iPad, in-page dictation runs one phrase at a time: tap the mic, say it, tap again for more. '
+            + 'If it stops instantly, Skylark switches to the keyboard&rsquo;s mic key automatically. '
+            + 'Also check Settings &rarr; General &rarr; Keyboard &rarr; Enable Dictation.</p>'
+          : '');
 }
 
 // Don't leave a mic running when the app is backgrounded
