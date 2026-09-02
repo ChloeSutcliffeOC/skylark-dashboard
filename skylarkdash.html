@@ -2902,7 +2902,11 @@ function toggleCrewDetail(role, show) {
 }
 
 function showHazardDetail(key) { document.getElementById(`hd-${key}`)?.classList.remove('hidden'); }
-function hideHazardDetail(key) { document.getElementById(`hd-${key}`)?.classList.add('hidden'); }
+function hideHazardDetail(key) {
+  // Don't leave a mic running inside a box that just disappeared
+  if (dbRec && dbTargetFieldId(dbRecTarget) === `hd-${key}-text`) dbStopRec();
+  document.getElementById(`hd-${key}`)?.classList.add('hidden');
+}
 
 function showOnsiteCarriedData(r) {
   const fields = [
@@ -5797,27 +5801,65 @@ function dbSetInterim(text) {
 function dbRecUi(on) {
   const dump = document.getElementById('db-dump');
   const big  = document.getElementById('db-big-mic');
+  // Deliberately NOT disabled while another mic runs: a tap on any mic
+  // switches to it. A disabled button is a dead end if state ever desyncs.
   document.querySelectorAll('.mic-btn').forEach(b => {
     b.classList.remove('listening');
-    b.disabled = on;
+    b.disabled = !DB_SR;          // stays disabled where speech isn't available
+    b.innerHTML = '&#127908;';
   });
   if (big) { big.classList.remove('listening'); big.disabled = on && dbRecTarget !== 'dump'; }
   if (dump) dump.classList.toggle('listening', !!(on && dbRecTarget === 'dump'));
   if (big)  big.innerHTML = (on && dbRecTarget === 'dump') ? '&#9209; Stop and sort into rows' : '&#127908; Start dictating';
   if (on) {
     const ctl = dbMicControl(dbRecTarget);
-    if (ctl) { ctl.classList.add('listening'); ctl.disabled = false; }
+    if (ctl) {
+      ctl.classList.add('listening');
+      ctl.disabled = false;
+      if (ctl.classList.contains('mic-btn')) ctl.innerHTML = '&#9209;';   // stop square
+      ctl.title = 'Stop dictating';
+    }
   } else {
+    document.querySelectorAll('.mic-btn').forEach(b => { b.title = 'Dictate this field'; });
     const t = document.getElementById('db-transcript-interim');
     if (t) t.textContent = '';
     document.querySelectorAll('.mic-interim').forEach(el => { el.textContent = ''; });
   }
 }
 
+// What to do once a dictation has actually finished.
+function dbFinishDictation(target) {
+  const field = dbTargetFieldId(target);
+  if (field) { dbFieldSenseCheck(field); return; }
+  if (target === 'dump' && (document.getElementById('db-transcript').value || '').trim()) {
+    dbCheckAndSort();   // vocabulary pass, then sort
+  }
+  updateDebriefProgress();
+}
+
+// Stopping must never depend on onend firing. Chrome ends the stream on
+// every pause in speech, and we restart it 250ms later; a stop landing in
+// that gap calls .stop() on an already-ended recogniser, which fires no
+// onend at all. Previously that left dbRec set and the UI stuck listening
+// with no way back. So tear everything down here, synchronously, and make
+// it safe to call twice.
 function dbStopRec() {
   dbWantListening = false;
   if (dbRestartTimer) { clearTimeout(dbRestartTimer); dbRestartTimer = null; }
-  if (dbRec) { try { dbRec.stop(); } catch (e) { /* already stopped */ } }
+
+  const rec            = dbRec;
+  const finishedTarget = dbRecTarget;
+
+  dbRec = null;
+  dbRecUi(false);
+  dbRecTarget = null;
+
+  if (rec) {
+    rec.onend = rec.onresult = rec.onerror = null;   // no late callbacks
+    try { rec.stop();  } catch (e) { /* already ended */ }
+    try { rec.abort(); } catch (e) { /* already ended */ }
+  }
+  if (finishedTarget) dbFinishDictation(finishedTarget);
 }
 
 function dbStartRec(target) {
@@ -5861,17 +5903,12 @@ function dbStartRec(target) {
       }, 250);
       return;
     }
+    if (dbRec !== rec) return;          // dbStopRec already cleaned up
     const finishedTarget = dbRecTarget;
     dbRec = null;
     dbRecUi(false);
     dbRecTarget = null;
-    const finishedField = dbTargetFieldId(finishedTarget);
-    if (finishedField) {
-      dbFieldSenseCheck(finishedField);
-    } else if (finishedTarget === 'dump' && (document.getElementById('db-transcript').value || '').trim()) {
-      dbCheckAndSort();   // vocabulary pass, then sort
-    }
-    updateDebriefProgress();
+    dbFinishDictation(finishedTarget);
   };
 
   try { rec.start(); } catch (err) { dbWantListening = false; return; }
@@ -5911,7 +5948,12 @@ function toggleDumpDictation() {
 }
 
 function toggleRowDictation(key) {
-  if (dbRec) { dbStopRec(); return; }
+  if (dbRec && dbRecTarget === key) { dbStopRec(); return; }
+  if (dbRec) {
+    dbStopRec();
+    setTimeout(() => dbStartRec(key), 300);
+    return;
+  }
   dbStartRec(key);
 }
 
@@ -6731,7 +6773,13 @@ function dbResort() {
 const dbFieldCorr = {};   // fieldId -> { applied: [], suggested: [] }
 
 function dictateField(fieldId) {
-  if (dbRec) { dbStopRec(); return; }      // one mic at a time
+  const current = dbTargetFieldId(dbRecTarget);
+  if (dbRec && current === fieldId) { dbStopRec(); return; }   // same mic: stop
+  if (dbRec) {                                                 // other mic: switch
+    dbStopRec();
+    setTimeout(() => dbStartRec({ field: fieldId }), 300);
+    return;
+  }
   dbStartRec({ field: fieldId });
 }
 
