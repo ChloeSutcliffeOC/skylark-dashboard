@@ -1485,9 +1485,18 @@
 
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="submit-btn" type="button" id="mamc-send" style="flex:1;min-width:200px" onclick="mamcOpenMail()">Open in Outlook</button>
-            <button class="secondary-btn" type="button" style="flex:1;min-width:150px;margin:0" onclick="mamcCopy()">Copy Text</button>
+            <button class="secondary-btn" type="button" style="flex:1;min-width:140px;margin:0" onclick="mamcCopy('body')">Copy Body</button>
+            <button class="secondary-btn" type="button" style="flex:1;min-width:140px;margin:0" onclick="mamcCopy('subject')">Copy Subject</button>
           </div>
+
+          <div id="mamc-copybox" style="display:none">
+            <div class="field-label" style="margin-bottom:6px">Copy From Here</div>
+            <div id="mamc-copynote" style="font-family:var(--mono);font-size:11px;color:var(--danger);line-height:1.55;margin-bottom:7px"></div>
+            <textarea id="mamc-copytext" readonly style="min-height:150px;font-family:var(--mono);font-size:12px"></textarea>
+          </div>
+
           <button class="secondary-btn" type="button" style="margin:0" onclick="mamcTogglePreview()">Preview</button>
+          <button class="secondary-btn" type="button" style="margin:0;font-size:11px" onclick="mamcOpenDefaultMail()">No Outlook on this device? Open the default mail app</button>
           <pre class="json-preview" id="mamc-preview"></pre>
         </div>
       </div>
@@ -9673,24 +9682,17 @@ function mamcOutlookHref() {
          `&body=${encodeURIComponent(body)}`;
 }
 
+// One tap, one app. There used to be an automatic mailto fallback here for
+// devices without Outlook, fired if no app switch was detected inside 1.2 s.
+// iOS takes longer than that to hand over, so the fallback ran anyway and
+// Mail opened on top of Outlook. There is no reliable way to detect the
+// handover, so the fallback is a button of its own instead of a guess.
 function mamcOpenMail() {
-  const started = Date.now();
-  let handedOver = false;
-  const onHide = () => { if (document.hidden) handedOver = true; };
-  document.addEventListener('visibilitychange', onHide);
-
-  // location.href rather than a synthesised click: iOS hands over to an app
-  // more reliably from a Home Screen web app this way.
   window.location.href = mamcOutlookHref();
+}
 
-  setTimeout(() => {
-    document.removeEventListener('visibilitychange', onHide);
-    // Still here, and no time was lost to an app switch: Outlook did not
-    // take it. Hand it to whatever does handle mail.
-    if (!handedOver && !document.hidden && Date.now() - started < 2500) {
-      window.location.href = mamcMailtoHref();
-    }
-  }, 1200);
+function mamcOpenDefaultMail() {
+  window.location.href = mamcMailtoHref();
 }
 
 // The old fallback called document.execCommand('copy') and announced
@@ -9722,42 +9724,61 @@ function mamcCopyFallback(text) {
   return ok;
 }
 
-async function mamcCopy() {
+// Show the text in a real, visible, already-selected box so iOS's own Copy
+// works when the programmatic one will not. A visible box that the pilot
+// can copy from beats a hidden one that silently fails.
+function mamcShowCopyBox(text, note) {
+  const box = ocEl('mamc-copybox');
+  const ta  = ocEl('mamc-copytext');
+  if (!box || !ta) return;
+  ta.value = text;
+  box.style.display = '';
+  const msg = ocEl('mamc-copynote');
+  if (msg) msg.textContent = note || '';
+  ta.focus();
+  ta.setSelectionRange(0, text.length);
+  box.scrollIntoView({ block: 'center' });
+}
+
+// what: 'body' pastes straight into an open compose window - no To/Subject
+// lines to delete afterwards. 'subject' is the subject on its own.
+async function mamcCopy(what) {
   const m = mamcBuild();
-  const text = `To: ${m.to}\nSubject: ${m.subject}\n\n${m.body}`;
+  const text = what === 'subject' ? m.subject : m.body;
+  const label = what === 'subject' ? 'Subject' : 'Notification';
+
+  // Fired before anything is awaited, so the tap's user activation is still
+  // live - iOS refuses a clipboard write that has lost it.
+  let writePromise = null;
+  try { writePromise = navigator.clipboard.writeText(text); } catch (e) { writePromise = null; }
 
   let ok = false;
-  try {
-    await navigator.clipboard.writeText(text);
-    ok = true;
-  } catch (e) { ok = false; }
-
-  // Read it back where the browser allows it. A clipboard holding something
-  // other than what we just wrote is a failure, however cleanly the write
-  // resolved.
-  if (ok && navigator.clipboard && navigator.clipboard.readText) {
-    try {
-      const back = await navigator.clipboard.readText();
-      if (back && back.indexOf('Operator ID:') === -1) ok = false;
-    } catch (e) { /* no read permission - take the write at its word */ }
+  if (writePromise) {
+    try { await writePromise; ok = true; } catch (e) { ok = false; }
   }
-
   if (!ok) ok = mamcCopyFallback(text);
 
-  if (ok) {
-    skyToast('Notification copied. Paste it into an email to ' + MAMC_TO);
+  // Read it back where the browser allows it, and say what is actually
+  // there. A write that resolves is not proof the clipboard changed.
+  let onClipboard = null;
+  if (ok && navigator.clipboard && navigator.clipboard.readText) {
+    try { onClipboard = await navigator.clipboard.readText(); } catch (e) { onClipboard = null; }
+  }
+
+  if (onClipboard !== null && onClipboard !== text) {
+    // Something else is on the clipboard - most likely a link from an
+    // earlier tap. Do not claim success; show the text to copy by hand.
+    mamcShowCopyBox(text, 'This device put something else on the clipboard: "' +
+      onClipboard.slice(0, 40).replace(/\s+/g, ' ') + '…". Copy from the box below instead.');
     return;
   }
 
-  // Could not copy. Open the preview so there is something to select by
-  // hand, and say so rather than pretending.
-  const pre = ocEl('mamc-preview');
-  if (pre) {
-    pre.textContent = text;
-    pre.style.display = 'block';
-    pre.scrollIntoView({ block: 'center' });
+  if (ok) {
+    skyToast(label + ' copied - plain text, ready to paste.');
+    return;
   }
-  skyToast('This device would not let Skylark copy. The text is shown below - select and copy it by hand.');
+
+  mamcShowCopyBox(text, 'This device would not let Skylark copy. The text is selected below - use Copy.');
 }
 
 function mamcInit() {
