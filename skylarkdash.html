@@ -953,6 +953,22 @@
   .mic-corr .db-corr-hint { font-size:10.5px; }
   .mic-corr .db-chip { font-size:11px; padding:4px 8px; }
 
+
+  /* ── Dictation messages and diagnostics ── */
+  .mic-interim.mic-msg-error, #db-transcript-interim.mic-msg-error {
+    font-style:normal; color:var(--danger); font-weight:500;
+    background:var(--danger-bg); border:1.5px solid var(--danger-border);
+    border-radius:6px; padding:7px 10px; margin-top:6px;
+  }
+  .mic-diag { font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:2px; }
+  .mic-diag summary { cursor:pointer; color:#8a6200; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; font-size:10.5px; }
+  .mic-diag summary:hover { color:var(--text); }
+  #db-diag { margin-top:8px; display:flex; flex-direction:column; gap:3px; background:#fff; border:1.5px solid #fcd34d; border-radius:7px; padding:9px 11px; }
+  #db-diag > div { display:flex; justify-content:space-between; gap:10px; }
+  #db-diag span { color:var(--faint); }
+  #db-diag b { color:var(--text); font-weight:600; text-align:right; }
+  #db-diag p { margin-top:7px; font-family:var(--sans); font-size:12px; line-height:1.55; color:var(--muted); }
+
   /* ── Narrow screens: three accordion buttons ── */
   @media (max-width: 560px) {
     .accordion-bar { gap:6px; padding:10px 10px; }
@@ -2342,7 +2358,7 @@
       <h2>Voice Debrief <span class="card-tick" id="tick-db-voice" style="display:none">&#10003;</span></h2>
     </div>
     <div class="card-body">
-      <div class="mic-unsupported" id="db-mic-unsupported">&#9888; Speech recognition isn&rsquo;t available in this browser. Use Chrome or Safari for voice, or type straight into the rows below.</div>
+      <div class="mic-unsupported" id="db-mic-unsupported">&#9888; Speech to text isn&rsquo;t available in this browser. On iPad or iPhone use <strong>Safari</strong> &mdash; Chrome and Edge on iOS cannot do it. Otherwise use Chrome on a laptop, or type straight into the fields.</div>
       <div class="db-dump" id="db-dump">
         <div class="db-dump-title">&#127908; Dictate the whole debrief</div>
         <p class="db-hint">Talk through the debrief as you normally would, naming each area as you reach it &mdash; <code>weather</code>, <code>timings</code>, <code>objectives</code>, <code>safe flight</code>, <code>cordon</code>, <code>airspace</code>, <code>comms</code>, <code>phases of the operation</code>, <code>what went well</code>, <code>what could be improved</code>, <code>questions</code>. Skylark drops each part into the matching row and sets the Yes/No answers where it can. Before sorting, Skylark checks the transcript against OC vocabulary and shows you every word it changed. Always read the rows back before saving. Voice needs a data connection &mdash; with no signal on site, type straight into the rows.</p>
@@ -2356,6 +2372,10 @@
         <div class="db-corrections" id="db-corrections"></div>
         <div class="db-sort-summary" id="db-sort-summary"></div>
         <div class="db-unsorted" id="db-unsorted"></div>
+        <details class="mic-diag">
+          <summary>Voice not working?</summary>
+          <div id="db-diag"></div>
+        </details>
         <div class="db-vocab-wrap">
           <div class="field-label" style="margin-bottom:5px">Custom vocabulary</div>
           <input type="text" id="db-custom-vocab" placeholder="Words dictation keeps getting wrong — drone models, place names, crew"
@@ -5772,9 +5792,22 @@ function dbEscape(s) {
 // SPEECH TO TEXT (Web Speech API)
 // ══════════════════════════════════════════════════════
 const DB_SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+// iPadOS 13+ reports itself as MacIntel, so touch points are the giveaway.
+const DB_IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+// One recogniser for the life of the page. Creating a fresh instance per
+// dictation is what makes iOS chime, fail the first attempt, and stop
+// early; a singleton is markedly more stable there.
+let dbRecInstance = null;
+let dbSession     = 0;        // guards against callbacks from a finished session
 let dbRec = null, dbRecTarget = null, dbWantListening = false, dbRestartTimer = null;
+let dbMicAsked = false;
+let dbLastError = '';
 
 function dbSpeechInit() {
+  dbRenderDiag();
   if (DB_SR) return;
   const warn = document.getElementById('db-mic-unsupported');
   if (warn) warn.classList.add('visible');
@@ -5798,10 +5831,30 @@ function dbMicControl(target) {
   return document.getElementById('dbmic-' + target);
 }
 
+// Where the person dictating is actually looking. Errors used to go only
+// to the debrief status bar, so anything that went wrong while dictating
+// an onsite field failed completely silently.
+function dbMsgEl(target) {
+  const f = dbTargetFieldId(target);
+  return document.getElementById(f ? 'mic-int-' + f : 'db-transcript-interim');
+}
+
 function dbSetInterim(text) {
-  const f  = dbTargetFieldId(dbRecTarget);
-  const el = document.getElementById(f ? 'mic-int-' + f : 'db-transcript-interim');
-  if (el) el.textContent = text ? '… ' + text : '';
+  const el = dbMsgEl(dbRecTarget);
+  if (el) { el.classList.remove('mic-msg-error'); el.textContent = text ? '… ' + text : ''; }
+}
+
+function dbSpeechMsg(target, text, isError) {
+  const el = dbMsgEl(target);
+  if (el) {
+    el.textContent = text || '';
+    el.classList.toggle('mic-msg-error', !!isError);
+  }
+  // The debrief panel also has a status bar worth using
+  if (!dbTargetFieldId(target) && text) {
+    const bar = document.getElementById('db-submit-info');
+    if (bar) { bar.textContent = text; bar.className = 'info-bar visible warn'; }
+  }
 }
 
 function dbRecUi(on) {
@@ -5827,9 +5880,13 @@ function dbRecUi(on) {
     }
   } else {
     document.querySelectorAll('.mic-btn').forEach(b => { b.title = 'Dictate this field'; });
+    // Clear the live interim text, but leave an error on screen — onend
+    // fires right after onerror, and this used to wipe the explanation.
     const t = document.getElementById('db-transcript-interim');
-    if (t) t.textContent = '';
-    document.querySelectorAll('.mic-interim').forEach(el => { el.textContent = ''; });
+    if (t && !t.classList.contains('mic-msg-error')) t.textContent = '';
+    document.querySelectorAll('.mic-interim').forEach(el => {
+      if (!el.classList.contains('mic-msg-error')) el.textContent = '';
+    });
   }
 }
 
@@ -5846,11 +5903,11 @@ function dbFinishDictation(target) {
 // Stopping must never depend on onend firing. Chrome ends the stream on
 // every pause in speech, and we restart it 250ms later; a stop landing in
 // that gap calls .stop() on an already-ended recogniser, which fires no
-// onend at all. Previously that left dbRec set and the UI stuck listening
-// with no way back. So tear everything down here, synchronously, and make
-// it safe to call twice.
-function dbStopRec() {
+// onend at all. That left the UI stuck listening with no way back. So tear
+// everything down here, synchronously, and make it safe to call twice.
+function dbStopRec(quiet) {
   dbWantListening = false;
+  dbSession++;                        // any late callback is now ignored
   if (dbRestartTimer) { clearTimeout(dbRestartTimer); dbRestartTimer = null; }
 
   const rec            = dbRec;
@@ -5861,25 +5918,38 @@ function dbStopRec() {
   dbRecTarget = null;
 
   if (rec) {
-    rec.onend = rec.onresult = rec.onerror = null;   // no late callbacks
     try { rec.stop();  } catch (e) { /* already ended */ }
     try { rec.abort(); } catch (e) { /* already ended */ }
   }
-  if (finishedTarget) dbFinishDictation(finishedTarget);
+  if (finishedTarget && !quiet) dbFinishDictation(finishedTarget);
 }
 
 function dbStartRec(target) {
-  if (!DB_SR || dbRec) return;
+  if (!DB_SR) {
+    dbSpeechMsg(target, '⚠ This browser cannot do speech to text. On iPad or iPhone use Safari; type into the field otherwise.', true);
+    return;
+  }
+  if (dbRec) return;
+
   dbRecTarget     = target;
   dbWantListening = true;
+  const session   = ++dbSession;
 
-  const rec = new DB_SR();
+  const prev = dbMsgEl(target);          // clear any message from last time
+  if (prev) { prev.textContent = ''; prev.classList.remove('mic-msg-error'); }
+
+  if (!dbRecInstance) dbRecInstance = new DB_SR();
+  const rec = dbRecInstance;
+
   rec.lang            = 'en-GB';
-  rec.continuous      = true;
+  // Safari on iOS treats continuous as one-shot and will not restart
+  // without a fresh tap, so there it is push-to-talk by design.
+  rec.continuous      = !DB_IS_IOS;
   rec.interimResults  = true;
   rec.maxAlternatives = 1;
 
   rec.onresult = e => {
+    if (session !== dbSession) return;
     let fin = '', interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const t = e.results[i][0].transcript;
@@ -5890,37 +5960,105 @@ function dbStartRec(target) {
   };
 
   rec.onerror = e => {
-    if (e.error === 'no-speech' || e.error === 'aborted') return;   // onend will restart
+    if (session !== dbSession) return;
+    dbLastError = e.error || 'unknown';
+    dbRenderDiag();
+    if (e.error === 'no-speech' || e.error === 'aborted') return;   // onend decides
     dbWantListening = false;
-    const msg = e.error === 'not-allowed' || e.error === 'service-not-allowed'
-      ? '⚠ Microphone blocked. Allow mic access for this site, then try again.'
-      : e.error === 'network'
-        ? '⚠ Voice needs a data connection — Chrome sends the audio away to transcribe it. No signal on site? Type into the rows instead.'
-        : `⚠ Speech recognition error: ${e.error}`;
-    const bar = document.getElementById('db-submit-info');
-    if (bar) { bar.textContent = msg; bar.className = 'info-bar visible warn'; }
+    dbSpeechMsg(dbRecTarget, dbSpeechErrorText(e.error), true);
   };
 
   rec.onend = () => {
-    if (dbWantListening) {
-      // Chrome ends the stream after a pause — restart so a long debrief keeps recording
+    if (session !== dbSession) return;         // dbStopRec already cleaned up
+    if (dbWantListening && !DB_IS_IOS) {
+      // Chrome ends the stream after a pause — restart so a long dictation continues
       dbRestartTimer = setTimeout(() => {
-        try { rec.start(); } catch (err) { dbWantListening = false; dbRec = null; dbRecUi(false); }
+        if (session !== dbSession) return;
+        try { rec.start(); } catch (err) { dbStopRec(); }
       }, 250);
       return;
     }
-    if (dbRec !== rec) return;          // dbStopRec already cleaned up
+    const endedByItself  = dbWantListening;
     const finishedTarget = dbRecTarget;
+    dbWantListening = false;
+    dbSession++;
     dbRec = null;
     dbRecUi(false);
     dbRecTarget = null;
     dbFinishDictation(finishedTarget);
+    if (endedByItself && DB_IS_IOS) {
+      dbSpeechMsg(finishedTarget, '⏸ Paused — tap the mic again to add more.', false);
+    }
   };
 
-  try { rec.start(); } catch (err) { dbWantListening = false; return; }
+  try {
+    rec.start();
+  } catch (err) {
+    // Reusing the singleton can throw if it is still winding down
+    dbWantListening = false;
+    dbRecTarget = null;
+    dbSpeechMsg(target, '⚠ Could not start listening — wait a second and tap again.', true);
+    return;
+  }
   dbRec = rec;
   dbRecUi(true);
+
+  // Confirm microphone permission alongside, never before: awaiting anything
+  // here would spend the tap that Safari requires to start recognition.
+  dbCheckMicPermission(target);
 }
+
+function dbSpeechErrorText(code) {
+  switch (code) {
+    case 'not-allowed':
+    case 'service-not-allowed':
+      return DB_IS_IOS
+        ? '⚠ Microphone blocked. Safari: aA icon in the address bar → Website Settings → Microphone → Allow. Also check Settings → General → Keyboard → Enable Dictation is on.'
+        : '⚠ Microphone blocked. Allow mic access for this site, then try again.';
+    case 'network':
+      return '⚠ Voice needs a data connection — the audio is transcribed off-device. No signal on site? Type into the field instead.';
+    case 'language-not-supported':
+      return '⚠ en-GB speech is not available on this device.';
+    case 'audio-capture':
+      return '⚠ No microphone available.';
+    default:
+      return `⚠ Speech recognition stopped: ${code}. Tap to try again.`;
+  }
+}
+
+function dbCheckMicPermission(target) {
+  if (dbMicAsked || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+  dbMicAsked = true;
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => { stream.getTracks().forEach(t => t.stop()); })
+    .catch(err => {
+      dbLastError = 'getUserMedia: ' + (err && err.name ? err.name : 'failed');
+      dbRenderDiag();
+      dbSpeechMsg(target, dbSpeechErrorText('not-allowed'), true);
+    });
+}
+
+// A readout to fall back on when voice misbehaves on a specific device.
+function dbRenderDiag() {
+  const el = document.getElementById('db-diag');
+  if (!el) return;
+  const rows = [
+    ['Speech API',   DB_SR ? 'available' : 'NOT available in this browser'],
+    ['Platform',     DB_IS_IOS ? 'iOS / iPadOS — push-to-talk mode' : 'auto-restart mode'],
+    ['Secure page',  window.isSecureContext ? 'yes' : 'no — speech needs HTTPS'],
+    ['Last error',   dbLastError || 'none'],
+    ['Browser',      (navigator.userAgent.match(/(CriOS|FxiOS|EdgiOS|Safari|Chrome)\/[\d.]+/) || ['unknown'])[0]],
+  ];
+  el.innerHTML = rows.map(([k, v]) => `<div><span>${k}</span><b>${dbEscape(v)}</b></div>`).join('')
+    + (DB_IS_IOS ? '<p>On iPad, dictation runs one phrase at a time: tap the mic, say it, tap again for more. '
+        + 'Chrome and Edge on iPad cannot do speech to text at all — use Safari. '
+        + 'Also check Settings &rarr; General &rarr; Keyboard &rarr; Enable Dictation.</p>' : '');
+}
+
+// Don't leave a mic running when the app is backgrounded
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && dbRec) dbStopRec();
+});
 
 function dbAppendSpeech(chunk) {
   const fieldId = dbTargetFieldId(dbRecTarget);
