@@ -1048,6 +1048,151 @@
     .accordion-chevron { display:none; }
     .db-row-head { gap:8px; }
   }
+
+  /* ══════════════════════════════════════════════════════
+     HOME SCREEN + OPEN CATEGORY
+     ══════════════════════════════════════════════════════ */
+
+  /* ── Home: the two-way choice ── */
+  .home-intro { font-size:14px; color:var(--muted); line-height:1.6; }
+
+  .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:640px) { .mode-grid { grid-template-columns:1fr; } }
+
+  .mode-card {
+    display:flex; flex-direction:column; gap:9px;
+    text-align:left; width:100%;
+    background:var(--surface); border:2px solid var(--border);
+    border-radius:12px; padding:20px 18px; cursor:pointer;
+    font-family:var(--sans); color:var(--text);
+    transition:border-color .15s, background .15s, box-shadow .15s, transform .1s;
+    -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+  }
+  .mode-card:hover  { border-color:#000; background:var(--surface2); box-shadow:0 3px 12px rgba(0,0,0,.10); }
+  .mode-card:active { transform:scale(.99); }
+
+  .mode-card-top { display:flex; align-items:center; gap:11px; }
+  .mode-card-icon { font-size:24px; line-height:1; flex-shrink:0; }
+  .mode-card-title { font-size:17px; font-weight:700; letter-spacing:-.01em; }
+  .mode-card-tag {
+    margin-left:auto; flex-shrink:0;
+    font-family:var(--mono); font-size:10px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.08em;
+    padding:3px 8px; border-radius:4px;
+  }
+  .mode-tag-open { background:#e0f2fe; color:#075985; border:1px solid #0284c7; }
+  .mode-tag-pdra { background:#ede9fe; color:#4c1d95; border:1px solid #7c3aed; }
+  .mode-card-desc  { font-size:13px; color:var(--muted); line-height:1.55; }
+  .mode-card-steps { font-family:var(--mono); font-size:11px; color:var(--faint); line-height:1.6; }
+
+  /* ── Home: back button in the header ── */
+  .hdr-home { display:none; }
+  .hdr-home.visible { display:inline-block; }
+
+  /* ── Cache panel ── */
+  .cache-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+  .cache-row > div { flex:1; min-width:180px; }
+
+  .cache-status {
+    border-radius:8px; padding:11px 14px;
+    font-family:var(--mono); font-size:11px; line-height:1.6;
+    border:2px solid var(--border); background:var(--surface2); color:var(--muted);
+  }
+  .cache-status.fresh { background:var(--ok-bg);     border-color:var(--ok-border); color:var(--ok); }
+  .cache-status.aging { background:#fff0e0;          border-color:#d45a00;          color:#8a3300; }
+  .cache-status.stale { background:var(--danger-bg); border-color:var(--danger);    color:var(--danger); }
+  .cache-status.busy  { background:#f5f3ff;          border-color:#7c3aed;          color:#4c1d95; }
+
+  .cache-list { display:flex; flex-direction:column; gap:7px; }
+  .cache-item {
+    display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+    border:1.5px solid var(--border); border-left-width:4px; border-radius:0 8px 8px 0;
+    padding:9px 13px; font-size:13px; background:var(--surface);
+  }
+  .cache-item.fresh { border-left-color:var(--ok);     background:#f3faf5; }
+  .cache-item.aging { border-left-color:#d45a00;       background:#fffaf3; }
+  .cache-item.stale { border-left-color:var(--danger); background:#fff6f6; }
+  .cache-item-name { font-weight:600; }
+  .cache-item-age  { font-family:var(--mono); font-size:11px; color:var(--muted); margin-left:auto; }
+
+  /* ── Open Category: the hour strip ── */
+  .oc-hours-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:5px; }
+  .oc-hours { display:flex; gap:6px; min-width:min-content; }
+
+  .oc-hour {
+    flex:0 0 auto; width:56px;
+    border:2px solid var(--border); border-radius:8px;
+    background:var(--surface2); color:var(--muted);
+    padding:8px 4px; cursor:pointer; text-align:center;
+    font-family:var(--mono); transition:all .12s;
+    -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+  }
+  .oc-hour-time { font-size:12px; font-weight:700; letter-spacing:.02em; }
+  .oc-hour-wind { font-size:10px; margin-top:2px; opacity:.85; }
+  .oc-hour.h-green  { background:#e8f5e9; border-color:#4caf70; color:#166a2a; }
+  .oc-hour.h-orange { background:#fff0e0; border-color:#d45a00; color:#8a3300; }
+  .oc-hour.h-red    { background:#fde8e8; border-color:#991b1b; color:#6b1212; }
+  .oc-hour.sel      { box-shadow:0 0 0 3px rgba(0,0,0,.55); border-color:#000; }
+  .oc-hour.past     { opacity:.4; }
+
+  /* ── Open Category: the hard-stop confirmations ── */
+  .oc-rule {
+    display:flex; gap:12px; align-items:flex-start;
+    border:2px solid var(--border); border-radius:9px;
+    padding:13px 15px; background:var(--surface2);
+    cursor:pointer; user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+    transition:background .12s, border-color .12s;
+  }
+  .oc-rule input { display:none; }
+  .oc-rule-box {
+    flex-shrink:0; width:24px; height:24px; border-radius:6px;
+    border:2px solid var(--border-strong); background:var(--surface);
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700; color:transparent; margin-top:1px;
+  }
+  .oc-rule-text  { font-size:14px; line-height:1.5; color:var(--text); }
+  .oc-rule-sub   { font-size:12px; color:var(--muted); margin-top:3px; line-height:1.5; }
+  .oc-rule:has(input:checked) { background:var(--ok-bg); border-color:var(--ok-border); }
+  .oc-rule:has(input:checked) .oc-rule-box { background:var(--ok); border-color:var(--ok); color:#fff; }
+
+  /* ── Open Category: aircraft limits readout ── */
+  .oc-limits {
+    display:flex; gap:7px; flex-wrap:wrap; margin-top:9px;
+  }
+  .oc-limit-chip {
+    font-family:var(--mono); font-size:11px; font-weight:600;
+    padding:4px 9px; border-radius:5px;
+    background:var(--surface2); border:1.5px solid var(--border); color:var(--muted);
+  }
+  .oc-subcat-chip {
+    font-family:var(--mono); font-size:11px; font-weight:700;
+    padding:4px 9px; border-radius:5px; letter-spacing:.06em;
+    background:#ede9fe; border:1.5px solid #7c3aed; color:#4c1d95;
+  }
+  .oc-source-note {
+    margin-top:9px; border-radius:7px; padding:9px 13px;
+    font-family:var(--mono); font-size:11px; line-height:1.55;
+    background:#fff0e0; border:1.5px solid #d45a00; color:#8a3300;
+  }
+
+  /* ── Open Category: upload queue ── */
+  .oc-queue {
+    border-radius:8px; padding:11px 14px; margin-bottom:4px;
+    font-family:var(--mono); font-size:11px; line-height:1.6;
+    background:#fff0e0; border:2px solid #d45a00; color:#8a3300;
+    display:none;
+  }
+  .oc-queue.visible { display:block; }
+
+  @media (max-width:560px) {
+    .mode-card { padding:16px 15px; }
+    .mode-card-title { font-size:16px; }
+  }
+
+  #panel-indicator.pi-home .pi-label,
+  #panel-indicator.pi-open .pi-label { opacity:0.22; }
+
 </style>
 </head>
 <body>
@@ -1065,6 +1210,7 @@
   <div style="display:flex;align-items:center;gap:12px">
     <div id="header-estate">—</div>
     <div id="status-badge" style="display:none;font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:20px;background:#1c2330;border:1px solid #2a3441;color:#7d8590;letter-spacing:0.05em">● READY</div>
+    <button id="btn-home" class="hdr-btn hdr-home" type="button" onclick="goHome()" title="Back to the category choice">&#8962; Home</button>
     <button id="btn-reload" class="hdr-btn" type="button" onclick="reloadApp()" title="Fetch the latest published version - stays logged in">⟳ Reload</button>
     <button id="btn-logout" class="hdr-btn" type="button" style="display:none" onclick="logOut()" title="Clear saved credentials and return to the login screen">Log out</button>
   </div>
@@ -1115,6 +1261,309 @@
 
 <!-- MAIN -->
 <div id="main-content" style="display:none;flex-direction:column;gap:16px">
+<!-- ══════════════════════════════════════════════════════
+     HOME — choose the operating category
+     ══════════════════════════════════════════════════════ -->
+<div class="accordion-panel" id="panel-home">
+<div style="display:flex;flex-direction:column;gap:16px">
+
+  <div class="card">
+    <div class="card-header"><h2>What are you flying today?</h2></div>
+    <div class="card-body">
+      <p class="home-intro">Pick the category this flight is being flown under. Skylark then only asks for what that category needs.</p>
+      <div class="mode-grid">
+
+        <button class="mode-card" type="button" onclick="enterOpen()">
+          <div class="mode-card-top">
+            <span class="mode-card-icon">&#9201;&#65039;</span>
+            <span class="mode-card-title">Open Category</span>
+            <span class="mode-card-tag mode-tag-open">Short</span>
+          </div>
+          <div class="mode-card-desc">For OC staff flying the small aircraft under Open category rules on internal training. One short brief, a weather and NOTAM check, and a debrief note.</div>
+          <div class="mode-card-steps">Brief &middot; Fly &middot; Debrief note</div>
+        </button>
+
+        <button class="mode-card" type="button" onclick="enterPdra()">
+          <div class="mode-card-top">
+            <span class="mode-card-icon">&#128203;</span>
+            <span class="mode-card-title">PDRA-01</span>
+            <span class="mode-card-tag mode-tag-pdra">Full</span>
+          </div>
+          <div class="mode-card-desc">Specific category operations under the CAA Operational Authorisation. Requires a qualified remote pilot. The full three-step workflow.</div>
+          <div class="mode-card-steps">1 Onsite survey &middot; 2 Pre-flight &middot; 3 Debrief</div>
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 24-hour offline cache ── -->
+  <div class="card">
+    <div class="card-header"><h2>&#128229; Download the Next 24 Hours</h2></div>
+    <div class="card-body">
+      <p class="home-intro">
+        Do this <strong>before you lose signal</strong> &mdash; at the office, in the car park, wherever you still have data.
+        Skylark pulls the hourly forecast for the next 24 hours, the NOTAMs, the space weather and the daylight window,
+        and keeps them on this device so the brief can be filled in with no signal at all.
+      </p>
+
+      <div class="cache-row">
+        <div>
+          <div class="field-label">Estate</div>
+          <select id="oc-cache-estate">
+            <option value="">&mdash; Select estate &mdash;</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="submit-btn" type="button" id="oc-cache-btn" onclick="ocCacheEstate()">Download 24 Hours of Data</button>
+      <div class="cache-status" id="oc-cache-status" style="display:none"></div>
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+        <div class="field-label" style="margin-bottom:9px">On this device</div>
+        <div class="cache-list" id="oc-cache-list"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div><!-- end panel-home -->
+
+<!-- ══════════════════════════════════════════════════════
+     OPEN CATEGORY — the short brief
+     ══════════════════════════════════════════════════════ -->
+<div class="accordion-panel" id="panel-open">
+<div style="display:flex;flex-direction:column;gap:16px">
+
+  <!-- 1. The flight -->
+  <div class="card">
+    <div class="card-header"><h2>The Flight <span class="card-tick" id="tick-oc-flight" style="display:none">&#10003;</span></h2></div>
+    <div class="card-body">
+
+      <div class="two-col">
+        <div>
+          <div class="field-label">Estate</div>
+          <select id="oc-estate" onchange="ocOnEstateChange()">
+            <option value="">&mdash; Select estate &mdash;</option>
+          </select>
+        </div>
+        <div>
+          <div class="field-label">Pilot</div>
+          <select id="oc-pilot" onchange="ocOnPilotChange()">
+            <option value="">&mdash; Select &mdash;</option>
+            <option value="__other">Someone else &mdash; type the name</option>
+          </select>
+          <input type="text" id="oc-pilot-other" placeholder="Full name" style="margin-top:8px;display:none" oninput="ocRefresh()">
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="field-label">Aircraft</div>
+          <select id="oc-aircraft" onchange="ocOnAircraftChange()">
+            <option value="">&mdash; Select aircraft &mdash;</option>
+          </select>
+        </div>
+        <div>
+          <div class="field-label">What Is the Flight For?</div>
+          <input type="text" id="oc-task" placeholder="e.g. habitat photos, fence line check" oninput="ocRefresh()">
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="field-label auto-label">Time of Flight</div>
+          <input type="datetime-local" id="oc-datetime" onchange="ocOnTimeChange()">
+        </div>
+        <div>
+          <div class="field-label">Landing Time</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="time" id="oc-landing-time" style="flex:1" onchange="ocRefresh()">
+            <button class="secondary-btn" type="button" style="width:auto;padding:13px 14px;white-space:nowrap" onclick="ocStampLanding()">Landed now</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="oc-aircraft-info" style="display:none">
+        <div class="oc-limits" id="oc-limit-chips"></div>
+        <div class="oc-source-note" id="oc-source-note" style="display:none"></div>
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+        <div class="field-label">Take-Off and Landing Point</div>
+        <div class="two-col" style="margin-top:8px">
+          <div>
+            <div class="field-label" style="font-size:11px">Latitude</div>
+            <input type="number" id="oc-lat" placeholder="55.2345" step="0.0001" oninput="ocOnCoordChange()">
+          </div>
+          <div>
+            <div class="field-label" style="font-size:11px">Longitude</div>
+            <input type="number" id="oc-lon" placeholder="-2.8765" step="0.0001" oninput="ocOnCoordChange()">
+          </div>
+        </div>
+        <button id="oc-gps-btn" type="button" onclick="ocGetGps()" style="margin-top:10px;width:100%;font-family:var(--mono);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;padding:14px 20px;border-radius:8px;border:1.5px solid var(--border-strong);background:var(--surface);color:var(--muted);cursor:pointer;transition:all 0.15s">
+          &#128205; Get Location from Device GPS
+        </button>
+        <div id="oc-gps-status" style="font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:6px;display:none"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 2. Weather -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Weather <span class="card-tick" id="tick-oc-weather" style="display:none">&#10003;</span></h2>
+      <span class="timestamp" id="oc-weather-timestamp"></span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:12px;color:var(--faint);line-height:1.5;margin-bottom:2px">
+        <span style="color:var(--ok);font-weight:600">Green</span> &mdash; comfortably within this aircraft's limits &nbsp;&middot;&nbsp;
+        <span style="color:var(--warn);font-weight:600">Orange</span> &mdash; close to the limit, use caution &nbsp;&middot;&nbsp;
+        <span style="color:var(--danger);font-weight:600">Red</span> &mdash; outside limits, do not fly
+      </p>
+      <div id="oc-weather-source" style="display:none;background:#f0f7f0;border:1.5px solid #4caf70;border-radius:7px;padding:9px 13px;font-family:var(--mono);font-size:11px;color:#166a2a;line-height:1.6"></div>
+
+      <div>
+        <div class="field-label">Pick Your Flight Hour</div>
+        <div class="oc-hours-wrap">
+          <div class="oc-hours" id="oc-hour-strip">
+            <div style="font-family:var(--mono);font-size:12px;color:var(--faint);padding:10px 2px">Select an estate to load the forecast.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="data-grid" id="oc-weather-grid">
+        <div class="data-cell"><div class="cell-label auto-label">Wind</div><div class="cell-value" id="oc-d-wind">&mdash;</div></div>
+        <div class="data-cell"><div class="cell-label auto-label">Gusts</div><div class="cell-value" id="oc-d-gust">&mdash;</div></div>
+        <div class="data-cell"><div class="cell-label auto-label">Precipitation</div><div class="cell-value" id="oc-d-precip">&mdash;</div></div>
+        <div class="data-cell"><div class="cell-label auto-label">Temperature</div><div class="cell-value" id="oc-d-temp">&mdash;</div></div>
+        <div class="data-cell"><div class="cell-label auto-label">Visibility</div><div class="cell-value" id="oc-d-vis">&mdash;</div></div>
+        <div class="data-cell"><div class="cell-label auto-label">Cloud</div><div class="cell-value" id="oc-d-cloud">&mdash;</div></div>
+        <div class="data-cell"><div class="cell-label auto-label">Icing Risk</div><div class="cell-value" id="oc-d-icing">&mdash;</div></div>
+        <div class="data-cell"><div class="cell-label auto-label">Kp-Index</div><div class="cell-value" id="oc-d-kp">&mdash;</div></div>
+        <div class="data-cell"><div class="cell-label auto-label">Daylight</div><div class="cell-value" id="oc-d-daylight">&mdash;</div></div>
+      </div>
+
+      <div class="gate-card gate-pending" id="oc-gate-weather">
+        <div class="gate-indicator" id="oc-gate-weather-label">&mdash;</div>
+        <div class="gate-msg" id="oc-gate-weather-msg">Select an estate, an aircraft and a flight hour.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Airspace -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Airspace <span class="card-tick" id="tick-oc-airspace" style="display:none">&#10003;</span></h2>
+    </div>
+    <div class="card-body">
+      <div>
+        <div class="field-label auto-label">NOTAMs <span id="oc-notam-count" style="font-family:var(--mono);font-size:10px;color:var(--danger);font-weight:700;margin-left:4px"></span></div>
+        <div class="notam-list" id="oc-notam-list" style="margin-top:8px">
+          <div class="notam-item notam-loading">Select an estate to load NOTAMs.</div>
+        </div>
+      </div>
+      <div class="estate-info-grid" id="oc-airspace-grid" style="margin-top:10px"></div>
+      <div>
+        <div class="field-label">Is the Airspace Clear and Are You Happy to Fly It?</div>
+        <div class="toggle-group">
+          <button class="toggle-btn" type="button" onclick="ocSetToggle('oc-airspace-ok','Yes',this)">Yes</button>
+          <button class="toggle-btn" type="button" onclick="ocSetToggle('oc-airspace-ok','No',this)">No</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. The rules that must hold -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Open Category Rules <span class="card-tick" id="tick-oc-rules" style="display:none">&#10003;</span></h2>
+    </div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:2px">
+        These are the limits that make this flight legal without an Operational Authorisation.
+        Every one has to be true before take-off. If any of them cannot be, this is not an Open category flight
+        &mdash; stop, and speak to a qualified remote pilot.
+      </p>
+      <div id="oc-rules-list" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div class="gate-card gate-pending" id="oc-gate-rules">
+        <div class="gate-indicator" id="oc-gate-rules-label">&mdash;</div>
+        <div class="gate-msg" id="oc-gate-rules-msg">Select an aircraft to see the rules that apply.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Go / No go -->
+  <div class="card">
+    <div class="card-header"><h2>Go / No Go</h2></div>
+    <div class="card-body">
+      <div id="oc-final-pending" style="font-family:var(--mono);font-size:13px;color:var(--faint)">Complete the sections above to see the decision.</div>
+      <div id="oc-final-go" class="final-go hidden">
+        <h3>&#10003; GO</h3>
+        <p>Conditions are within limits and the Open category rules are confirmed. Fly the flight, then come back and fill in the debrief note.</p>
+      </div>
+      <div id="oc-final-nogo" class="final-nogo hidden">
+        <h3>&#10007; NO GO</h3>
+        <p id="oc-nogo-reasons" style="margin-top:8px;font-size:13px;font-family:var(--mono);line-height:1.7"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Debrief note -->
+  <div class="card">
+    <div class="card-header"><h2>Debrief Note <span class="card-tick" id="tick-oc-debrief" style="display:none">&#10003;</span></h2></div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:2px">
+        After you land. Anything that happened, anything that surprised you, anything the next person should know.
+        Short is fine &mdash; &ldquo;nothing to report&rdquo; is a valid answer, and a near miss written down badly beats one not written down at all.
+      </p>
+      <div class="mic-keyboard-hint" id="oc-keyboard-hint">&#127908; <strong>Use the keyboard's microphone key on this iPad.</strong> Tap the note, then tap the mic key at the bottom right of the on-screen keyboard and speak. In-page dictation cannot get the microphone in a Home Screen app.</div>
+
+      <div>
+        <div class="field-label">Did Anything Happen Worth Recording?</div>
+        <div class="toggle-group">
+          <button class="toggle-btn" type="button" onclick="ocSetToggle('oc-issues','Yes',this)">Yes</button>
+          <button class="toggle-btn" type="button" onclick="ocSetToggle('oc-issues','No',this)">Nothing to Report</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="mic-field-head">
+          <div class="field-label" style="margin:0">The Note</div>
+          <button class="mic-btn mic-btn-sm" type="button" id="mic-oc-debrief-note"
+                  title="Dictate this field" onclick="dictateField('oc-debrief-note')">&#127908;</button>
+        </div>
+        <textarea id="oc-debrief-note" style="min-height:130px" placeholder="What happened, in your own words." oninput="ocRefresh()"></textarea>
+        <div class="mic-interim" id="mic-int-oc-debrief-note"></div>
+        <div class="db-corrections mic-corr" id="mic-corr-oc-debrief-note"></div>
+      </div>
+
+      <div id="oc-occurrence-warn" style="display:none;border-radius:8px;padding:12px 15px;font-family:var(--mono);font-size:11px;line-height:1.65;background:#fde8e8;border:2px solid #991b1b;color:#6b1212">
+        &#9888; If this was an <strong>incident, accident or airprox</strong>, the note is not enough.
+        Tell the UAS operator as soon as you can. A mandatory occurrence report goes to ECCAIRS2 within 72 hours;
+        an airprox goes to the Airprox Board within 7 days. Section 2.16 of the operations manual has the detail.
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Save -->
+  <div class="card">
+    <div class="card-header"><h2>Save Flight Record</h2></div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+      <div class="oc-queue" id="oc-queue-banner"></div>
+      <div id="oc-completion-banner" style="display:none;padding:12px 16px;border-radius:8px;font-family:var(--mono);font-size:12px;line-height:1.6"></div>
+      <div id="oc-submit-info" class="info-bar"></div>
+      <button id="oc-submit-btn" class="submit-btn" type="button" onclick="ocSave()">Save Flight Record</button>
+      <button class="secondary-btn" type="button" onclick="ocDownload()" style="margin-top:4px">Download JSON</button>
+      <button class="secondary-btn" type="button" onclick="ocPreviewJson()">Preview JSON</button>
+      <pre class="json-preview" id="oc-json-preview"></pre>
+    </div>
+  </div>
+
+</div>
+</div><!-- end panel-open -->
+
 <div class="accordion-panel" id="panel-onsite">
 <div id="form-onsite" style="display:flex;flex-direction:column;gap:16px">
 
@@ -7202,6 +7651,1425 @@ function micTail(fieldId) {
   return `<div class="mic-interim" id="mic-int-${fieldId}"></div>
     <div class="db-corrections mic-corr" id="mic-corr-${fieldId}"></div>`;
 }
+
+
+// ══════════════════════════════════════════════════════
+// HOME SCREEN + OPEN CATEGORY
+// ══════════════════════════════════════════════════════
+// Two things live here.
+//
+// 1. A home screen. Skylark used to open straight into the PDRA-01
+//    onsite survey, which is the right first screen for exactly one
+//    kind of flight. Everything now starts with the choice.
+//
+// 2. An Open category brief, for OC staff who fly the small aircraft
+//    on internal training rather than a formal qualification. It is
+//    deliberately short: the long PDRA-01 workflow exists because a
+//    Specific category operation needs it, and pasting that burden
+//    onto a ten-minute Mini flight would get it skipped rather than
+//    read. What it does NOT shorten is the part that keeps people
+//    safe - the separation rules are hard stops, not advice.
+//
+// The whole Open category brief is designed to work with no signal.
+// Data is pulled once, before you leave, and read from this device
+// afterwards. Nothing here fetches at the moment you need an answer.
+// ══════════════════════════════════════════════════════
+
+// ── Aircraft ─────────────────────────────────────────────────────────────
+// windMs / precipMm / tMin / tMax are the environmental limits from
+// section 3.3 of the PDRA-01 operations manual v3.1. The two Mini
+// airframes are NOT in that manual's fleet list, so their figures are
+// DJI's published limits and are labelled as such on screen - a limit
+// the operations manual has not adopted should never look like one it
+// has.
+//
+// subcat is what the aircraft's mass allows under the Open category.
+// OC's own Open Category Operations Manual may be stricter, and where
+// it is, it wins.
+const OC_AIRCRAFT = {
+  'DJI Mini 2':       { mtom:'249 g',   windMs:10.7, precipMm:0, tMin:-10, tMax:40, subcat:'A1', inOm:false },
+  'DJI Mini 3':       { mtom:'249 g',   windMs:10.7, precipMm:0, tMin:-10, tMax:40, subcat:'A1', inOm:false },
+  'DJI Avata 360':    { mtom:'455 g',   windMs:10.7, precipMm:0, tMin:-10, tMax:40, subcat:'A3', inOm:true  },
+  'DJI Matrice 4TD':  { mtom:'1.23 kg', windMs:12,   precipMm:4, tMin:-20, tMax:50, subcat:'A3', inOm:true  },
+  'DJI Matrice 4T':   { mtom:'1.43 kg', windMs:12,   precipMm:4, tMin:-20, tMax:50, subcat:'A3', inOm:true  },
+  'DJI Matrice 30T':  { mtom:'4.07 kg', windMs:12,   precipMm:4, tMin:-20, tMax:50, subcat:'A3', inOm:true  },
+};
+
+// ── The rules that have to hold ──────────────────────────────────────────
+// Each one is a tick the pilot has to make deliberately. Worded as the
+// thing you can see out of the window, not as the regulation number.
+const OC_RULES = {
+  A1: [
+    { key:'a1-crowd',   text:'No assembly of people anywhere I will fly over',
+      sub:'A crowd you could not walk freely through. Never overfly one, whatever the aircraft weighs.' },
+    { key:'a1-vlos',    text:'I can see the aircraft with my own eyes the whole flight',
+      sub:'No binoculars, no screen only. If it goes out of sight, bring it back.' },
+    { key:'a1-height',  text:'I will stay at or below 120 m (400 ft) above the surface',
+      sub:'Measured from the ground below the aircraft, not from where I am standing.' },
+    { key:'a1-frz',     text:'I am outside any airport flight restriction zone, and it is daylight',
+      sub:'Check the airspace section above. If a FRZ covers this spot, you need permission first.' },
+    { key:'a1-ids',     text:'My Flyer ID is current and the Operator ID is on the aircraft',
+      sub:'Both are legal requirements. The Operator ID must be readable on the airframe.' },
+  ],
+  A3: [
+    { key:'a3-150',     text:'I am at least 150 m from any residential, commercial, industrial or recreational area',
+      sub:'Horizontally, for the whole flight. Houses, farm buildings in use, car parks, campsites, visitor areas.' },
+    { key:'a3-people',  text:'There are no uninvolved people in the area I am flying in, and none within 50 m',
+      sub:'Walkers, contractors, anyone not part of this flight. If someone arrives, land.' },
+    { key:'a3-vlos',    text:'I can see the aircraft with my own eyes the whole flight',
+      sub:'No binoculars, no screen only. If it goes out of sight, bring it back.' },
+    { key:'a3-height',  text:'I will stay at or below 120 m (400 ft) above the surface',
+      sub:'Measured from the ground below the aircraft, not from where I am standing.' },
+    { key:'a3-frz',     text:'I am outside any airport flight restriction zone, and it is daylight',
+      sub:'Check the airspace section above. If a FRZ covers this spot, you need permission first.' },
+    { key:'a3-ids',     text:'My Flyer ID is current and the Operator ID is on the aircraft',
+      sub:'Both are legal requirements. The Operator ID must be readable on the airframe.' },
+  ],
+};
+
+const OC_SUBCAT_NOTE = {
+  A1: 'Under 250 g, so this flies in subcategory A1. You may fly close to and over uninvolved people, but never over an assembly of people. Max 120 m AGL, always in sight.',
+  A3: 'At or over 250 g, so this flies in subcategory A3 only. At least 150 m from residential, commercial, industrial and recreational areas, and no uninvolved people in the area of operation. Max 120 m AGL, always in sight.',
+};
+
+// ── State ────────────────────────────────────────────────────────────────
+const ocToggleState = {};
+let   ocCache       = null;   // the cached bundle for the selected estate
+let   ocHours       = [];     // 24 normalised hourly forecasts
+let   ocHourIdx     = -1;     // which hour the pilot picked
+let   ocCacheBusy   = false;
+
+const OC_CACHE_PREFIX = 'SKY_OC_CACHE_';
+const OC_QUEUE_KEY    = 'SKY_OC_QUEUE';
+const OC_STATIC_KEY   = 'SKY_STATIC_CACHE';
+const OC_MODE_KEY     = 'SKY_MODE';
+const OC_MODE_DAY_KEY = 'SKY_MODE_DAY';
+
+const ocSlug = s => String(s || '').replace(/[^a-z0-9]/gi, '_');
+const ocEl   = id => document.getElementById(id);
+const ocVal  = id => { const e = ocEl(id); return e ? String(e.value || '').trim() : ''; };
+
+function ocPad(n) { return String(n).padStart(2, '0'); }
+function ocHhmm(d) { return ocPad(d.getHours()) + ':' + ocPad(d.getMinutes()); }
+
+// ══════════════════════════════════════════════════════
+// MODE SWITCHING
+// ══════════════════════════════════════════════════════
+function ocSetIndicator(label, cls) {
+  const ind = ocEl('panel-indicator');
+  if (!ind) return;
+  ind.className = cls;
+  const lab = ind.querySelector('.pi-label');
+  if (lab) lab.textContent = label;
+}
+
+function ocCloseAllPanels() {
+  ['home', 'open', 'onsite', 'preflight', 'debrief'].forEach(p => {
+    const panel = ocEl('panel-' + p);
+    if (panel) panel.classList.remove('open');
+    const btn = ocEl('btn-' + p);
+    if (btn) btn.classList.remove('open');
+  });
+}
+
+function ocSetMode(mode) {
+  try {
+    localStorage.setItem(OC_MODE_KEY, mode);
+    localStorage.setItem(OC_MODE_DAY_KEY, new Date().toDateString());
+  } catch (e) { /* private browsing - mode just won't persist */ }
+}
+
+function goHome() {
+  ocCloseAllPanels();
+  const panel = ocEl('panel-home');
+  if (panel) panel.classList.add('open');
+  const bar = document.querySelector('.accordion-bar');
+  if (bar) bar.style.display = 'none';
+  const homeBtn = ocEl('btn-home');
+  if (homeBtn) homeBtn.classList.remove('visible');
+  ocSetIndicator('Skylark', 'pi-home');
+  ocSetMode('home');
+  ocRenderCacheList();
+  window.scrollTo({ top: 0 });
+}
+
+function enterPdra() {
+  ocCloseAllPanels();
+  const bar = document.querySelector('.accordion-bar');
+  if (bar) bar.style.display = '';
+  const homeBtn = ocEl('btn-home');
+  if (homeBtn) homeBtn.classList.add('visible');
+  ocSetMode('pdra');
+  initAccordion();          // the existing logic picks onsite or pre-flight
+  window.scrollTo({ top: 0 });
+}
+
+function enterOpen() {
+  ocCloseAllPanels();
+  const bar = document.querySelector('.accordion-bar');
+  if (bar) bar.style.display = 'none';
+  const homeBtn = ocEl('btn-home');
+  if (homeBtn) homeBtn.classList.add('visible');
+  const panel = ocEl('panel-open');
+  if (panel) panel.classList.add('open');
+  ocSetIndicator('Open', 'pi-open');
+  ocSetMode('open');
+  ocOnPanelOpen();
+  window.scrollTo({ top: 0 });
+}
+
+// ══════════════════════════════════════════════════════
+// OFFLINE CACHE
+// ══════════════════════════════════════════════════════
+// Everything the brief needs, pulled once while there is still signal.
+//
+// Met Office hourly comes straight from the browser - it is a single
+// fast call and gives the whole forecast series, so all 24 hours are
+// stored rather than only the hour you happen to be standing in.
+//
+// NOTAMs, space weather, METAR/TAF and the daylight window come from
+// the Skylark Action, which takes about a minute. That is exactly why
+// this is a button you press before you leave, not something the brief
+// waits on in a field.
+
+const OC_MET_HOURLY = 'https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/hourly';
+
+function ocSigWxLabel(code) {
+  const map = {
+    0:'Clear night', 1:'Sunny', 2:'Partly cloudy', 3:'Partly cloudy',
+    5:'Mist', 6:'Fog', 7:'Overcast', 8:'Overcast',
+    9:'Light rain shower', 10:'Light rain shower', 11:'Drizzle', 12:'Light rain',
+    13:'Heavy rain shower', 14:'Heavy rain shower', 15:'Heavy rain',
+    16:'Sleet shower', 17:'Sleet shower', 18:'Sleet',
+    19:'Hail shower', 20:'Hail shower', 21:'Hail',
+    22:'Light snow shower', 23:'Light snow shower', 24:'Light snow',
+    25:'Heavy snow shower', 26:'Heavy snow shower', 27:'Heavy snow',
+    28:'Thunder shower', 29:'Thunder shower', 30:'Thunder',
+  };
+  if (code == null) return '';
+  return map[code] || '';
+}
+
+function ocCompass(deg) {
+  if (deg == null) return '';
+  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  return dirs[Math.round(deg / 22.5) % 16];
+}
+
+const ocRound1 = v => (v == null ? null : Math.round(v * 10) / 10);
+
+async function ocFetchMet24(lat, lon) {
+  if (!CONFIG.MET_KEY) throw new Error('No Met Office API key saved. Add it in setup.');
+  const resp = await fetch(
+    `${OC_MET_HOURLY}?latitude=${lat}&longitude=${lon}&apikey=${encodeURIComponent(CONFIG.MET_KEY)}`,
+    { headers: { 'accept': 'application/json' } }
+  );
+  if (!resp.ok) throw new Error(`Met Office API ${resp.status}`);
+  const data = await resp.json();
+  const ts   = data?.features?.[0]?.properties?.timeSeries;
+  if (!ts?.length) throw new Error('Met Office returned no forecast');
+
+  const cutoff = Date.now() - 60 * 60 * 1000;   // keep the hour we're in
+  return ts
+    .filter(e => new Date(e.time).getTime() >= cutoff)
+    .slice(0, 24)
+    .map(e => ({
+      time:       e.time,
+      windMs:     ocRound1(e.windSpeed10m),
+      gustMs:     ocRound1(e.windGustSpeed10m),
+      dirn:       ocCompass(e.windDirectionFrom10m),
+      tempC:      ocRound1(e.screenTemperature),
+      dewC:       ocRound1(e.screenDewPointTemperature),
+      precipProb: e.probOfPrecipitation ?? 0,
+      sigWx:      e.significantWeatherCode ?? null,
+      sigWxLabel: ocSigWxLabel(e.significantWeatherCode),
+      visM:       e.visibility ?? null,
+      cloud:      e.totalCloudCover ?? null,
+    }));
+}
+
+function ocCacheStatus(msg, cls) {
+  const el = ocEl('oc-cache-status');
+  if (!el) return;
+  el.style.display = '';
+  el.className = 'cache-status ' + (cls || '');
+  el.innerHTML = msg;
+}
+
+async function ocCacheEstate() {
+  if (ocCacheBusy) return;
+  const estate = ocVal('oc-cache-estate');
+  if (!estate) { ocCacheStatus('Pick an estate first.', 'stale'); return; }
+
+  const e   = (typeof estatesData === 'object' && estatesData[estate]) || {};
+  const lat = parseFloat(e.lat);
+  const lon = parseFloat(e.lon);
+  if (isNaN(lat) || isNaN(lon)) {
+    ocCacheStatus('&#9888; No coordinates on file for ' + estate + '. The site data needs a lat/lon before it can be cached.', 'stale');
+    return;
+  }
+
+  ocCacheBusy = true;
+  const btn = ocEl('oc-cache-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Downloading…'; }
+
+  const bundle = {
+    estate, lat, lon,
+    fetchedAt: new Date().toISOString(),
+    hours: [], notams: [], notamRefs: {},
+    kp: null, sunrise: '', sunset: '', metar: '', taf: '',
+    static: e,
+    partial: false,
+  };
+
+  // 1. Weather first - it is quick, and it is the part that most often
+  //    decides whether the flight happens at all.
+  ocCacheStatus('&#9203; Pulling 24 hours of hourly forecast…', 'busy');
+  try {
+    bundle.hours = await ocFetchMet24(lat, lon);
+    ocCacheStatus(`&#10003; ${bundle.hours.length} hours of forecast.<br>&#9203; Now fetching NOTAMs, space weather and daylight (about a minute)…`, 'busy');
+  } catch (err) {
+    bundle.partial = true;
+    ocCacheStatus(`&#9888; Weather failed: ${err.message}<br>&#9203; Still trying NOTAMs and daylight…`, 'aging');
+  }
+
+  // 2. NOTAMs, Kp, METAR/TAF, sunrise/sunset via the Skylark Action.
+  try {
+    const runId = `oc_${ocSlug(estate)}_${Date.now()}`;
+    const resp  = await fetch(
+      `https://api.github.com/repos/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/dispatches`,
+      { method: 'POST',
+        headers: {
+          'Authorization':        `Bearer ${CONFIG.GITHUB_TOKEN}`,
+          'Accept':               'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type':         'application/json',
+        },
+        body: JSON.stringify({
+          event_type: 'run_skylark_preflight',
+          client_payload: { estate_name: estate, lat, lon, run_id: runId },
+        }),
+      }
+    );
+    if (!resp.ok) throw new Error(`GitHub ${resp.status}`);
+    const d = await pollForResult(runId, 120, 5000);
+    if (d._status === 'error') throw new Error(d._error || 'Skylark returned an error');
+    bundle.notams    = d._notams_list || [];
+    bundle.notamRefs = d._notam_refs || {};
+    bundle.notamRequired       = d.notam_required || '';
+    bundle.notamRequiredReason = d._notam_required_reason || '';
+    bundle.kp      = d._space_weather_kp ?? null;
+    bundle.sunrise = d._sunrise || '';
+    bundle.sunset  = d._sunset  || '';
+    bundle.metar   = d._metar   || '';
+    bundle.taf     = d._taf     || '';
+  } catch (err) {
+    bundle.partial = true;
+    ocCacheStatus(`&#9888; NOTAMs and daylight could not be fetched: ${err.message}<br>Whatever did arrive has been saved. Try again while you still have signal.`, 'aging');
+  }
+
+  try {
+    localStorage.setItem(OC_CACHE_PREFIX + ocSlug(estate), JSON.stringify(bundle));
+  } catch (err) {
+    ocCacheStatus('&#9888; This device would not store the cache (storage full or private browsing). Nothing has been saved for offline use.', 'stale');
+    ocCacheBusy = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Download 24 Hours of Data'; }
+    return;
+  }
+
+  if (!bundle.partial) {
+    ocCacheStatus(
+      `&#10003; <strong>${estate} is ready to fly offline.</strong><br>` +
+      `${bundle.hours.length} hours of weather &middot; ${bundle.notams.length} NOTAM${bundle.notams.length === 1 ? '' : 's'} &middot; ` +
+      `Kp ${bundle.kp ?? '—'} &middot; daylight ${bundle.sunrise || '?'}–${bundle.sunset || '?'}`, 'fresh');
+  }
+
+  ocCacheBusy = false;
+  if (btn) { btn.disabled = false; btn.textContent = 'Download 24 Hours of Data'; }
+  ocRenderCacheList();
+
+  // If the pilot already has this estate open in the brief, refresh it.
+  if (ocVal('oc-estate') === estate) ocLoadCacheForEstate(estate);
+}
+
+function ocReadCache(estate) {
+  try {
+    const raw = localStorage.getItem(OC_CACHE_PREFIX + ocSlug(estate));
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function ocCacheAgeHours(bundle) {
+  if (!bundle || !bundle.fetchedAt) return Infinity;
+  return (Date.now() - new Date(bundle.fetchedAt).getTime()) / 3600000;
+}
+
+function ocAgeText(hrs) {
+  if (!isFinite(hrs)) return 'unknown age';
+  if (hrs < 1)  return Math.max(1, Math.round(hrs * 60)) + ' min old';
+  if (hrs < 24) return Math.round(hrs) + ' h old';
+  return Math.round(hrs / 24) + ' day' + (hrs >= 48 ? 's' : '') + ' old';
+}
+
+function ocAgeClass(hrs) {
+  if (hrs < 6)  return 'fresh';
+  if (hrs < 24) return 'aging';
+  return 'stale';
+}
+
+function ocRenderCacheList() {
+  const list = ocEl('oc-cache-list');
+  if (!list) return;
+  const items = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || k.indexOf(OC_CACHE_PREFIX) !== 0) continue;
+    try {
+      const b = JSON.parse(localStorage.getItem(k));
+      items.push(b);
+    } catch (e) { /* skip a corrupted entry rather than break the list */ }
+  }
+  if (!items.length) {
+    list.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--faint)">Nothing cached yet. Without a cache the brief needs a live connection.</div>';
+    return;
+  }
+  items.sort((a, b) => String(a.estate).localeCompare(String(b.estate)));
+  list.innerHTML = items.map(b => {
+    const hrs = ocCacheAgeHours(b);
+    const cls = ocAgeClass(hrs);
+    const bits = [];
+    if (b.hours && b.hours.length) bits.push(b.hours.length + 'h weather');
+    bits.push((b.notams ? b.notams.length : 0) + ' NOTAM' + ((b.notams && b.notams.length === 1) ? '' : 's'));
+    if (b.sunrise) bits.push('daylight');
+    return `<div class="cache-item ${cls}">
+      <span class="cache-item-name">${b.estate}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${bits.join(' · ')}</span>
+      <span class="cache-item-age">${ocAgeText(hrs)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// TRAFFIC LIGHTS - per aircraft, not one size fits all
+// ══════════════════════════════════════════════════════
+// A 12 m/s airframe and a 10.7 m/s airframe do not share a threshold,
+// and an aircraft rated 0 mm/hour of rain has no business showing
+// amber in drizzle. Limits come from the aircraft, every time.
+
+function ocWindStatus(ms, ac) {
+  if (ms == null || !ac) return 'green';
+  if (ms > ac.windMs)       return 'red';
+  if (ms >= ac.windMs - 2)  return 'orange';
+  return 'green';
+}
+
+function ocTempStatus(c, ac) {
+  if (c == null || !ac) return 'green';
+  if (c < ac.tMin || c > ac.tMax)             return 'red';
+  if (c < ac.tMin + 10 || c > ac.tMax - 10)   return 'orange';
+  return 'green';
+}
+
+function ocPrecipStatus(h, ac) {
+  if (!h || !ac) return 'green';
+  const label = h.sigWxLabel || '';
+  const wet   = /rain|drizzle|snow|sleet|hail|thunder/i.test(label);
+  const murk  = /fog|mist/i.test(label);
+  const prob  = Number(h.precipProb) || 0;
+  if (ac.precipMm === 0) {
+    // Not rated for any rain at all. Falling water is a stop, not a caution.
+    if (wet) return 'red';
+    if (murk || prob >= 40) return 'orange';
+    return 'green';
+  }
+  if (/heavy|thunder|hail|snow/i.test(label)) return 'red';
+  if (wet || murk || prob >= 40) return 'orange';
+  return 'green';
+}
+
+function ocVisStatus(m) {
+  if (m == null) return 'green';
+  if (m < 1000) return 'red';
+  if (m < 2000) return 'orange';
+  return 'green';
+}
+
+function ocVisText(m) {
+  if (m == null) return '—';
+  if (m >= 10000) return 'Excellent, over 10 km';
+  if (m >= 5000)  return 'Good, ' + Math.round(m / 1000) + ' km';
+  if (m >= 2000)  return 'Moderate, ' + (m / 1000).toFixed(1) + ' km';
+  if (m >= 1000)  return 'Poor, ' + (m / 1000).toFixed(1) + ' km';
+  return 'Very poor, under 1 km';
+}
+
+// The operations manual sets the icing limit at a calculated dew point
+// below 0 C. Taken literally that is red on most clear winter mornings,
+// which would teach people to ignore the light. So sub-zero dew point
+// with a tight spread - actual icing conditions - is red, and sub-zero
+// dew point on its own is amber with the manual's figure stated.
+function ocIcing(h) {
+  if (!h || h.dewC == null || h.tempC == null) return { status:'green', text:'—' };
+  const spread = Math.round((h.tempC - h.dewC) * 10) / 10;
+  if (h.dewC < 0 && spread <= 3) {
+    return { status:'red', text:`High — dew point ${h.dewC}°C, spread ${spread}°C` };
+  }
+  if (h.dewC < 0) {
+    return { status:'orange', text:`Dew point ${h.dewC}°C — below the manual's 0°C icing limit` };
+  }
+  return { status:'green', text:`Low — dew point ${h.dewC}°C` };
+}
+
+function ocKpStatus(kp) {
+  if (kp == null || kp === '') return 'green';
+  const v = parseFloat(kp);
+  if (isNaN(v)) return 'green';
+  if (v >= 5) return 'red';
+  if (v >= 4) return 'orange';
+  return 'green';
+}
+
+// Open category has no night provision in OC's internal training, so
+// daylight is a hard edge rather than a caution.
+function ocDaylight(hourIso, bundle) {
+  if (!hourIso || !bundle || !bundle.sunrise || !bundle.sunset) {
+    return { status:'orange', text:'Daylight window unknown — check before you fly' };
+  }
+  const d    = new Date(hourIso);
+  const mins = d.getHours() * 60 + d.getMinutes();
+  const toM  = s => { const m = String(s).match(/(\d{1,2}):(\d{2})/); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+  const up = toM(bundle.sunrise), down = toM(bundle.sunset);
+  if (up == null || down == null) return { status:'orange', text:'Daylight window unclear' };
+  const window = `${bundle.sunrise}–${bundle.sunset}`;
+  if (mins < up || mins > down)   return { status:'red',    text:`Outside daylight (${window})` };
+  if (mins > down - 30)           return { status:'orange', text:`Within 30 min of sunset (${window})` };
+  if (mins < up + 30)             return { status:'orange', text:`Just after sunrise (${window})` };
+  return { status:'green', text:`Daylight (${window})` };
+}
+
+const OC_RANK = { green: 0, orange: 1, red: 2 };
+function ocWorst(list) {
+  return list.reduce((a, b) => (OC_RANK[b] > OC_RANK[a] ? b : a), 'green');
+}
+
+// The colour of one hour on the strip - weather only, so the pilot can
+// see at a glance where the flyable windows are.
+function ocHourStatus(h, ac) {
+  if (!ac) return 'green';
+  return ocWorst([
+    ocWindStatus(h.windMs, ac),
+    ocWindStatus(h.gustMs, ac),
+    ocPrecipStatus(h, ac),
+    ocTempStatus(h.tempC, ac),
+    ocVisStatus(h.visM),
+  ]);
+}
+
+// ══════════════════════════════════════════════════════
+// RENDERING
+// ══════════════════════════════════════════════════════
+function ocCurrentAircraft() {
+  return OC_AIRCRAFT[ocVal('oc-aircraft')] || null;
+}
+
+function ocSetCell(id, text, status) {
+  const el = ocEl(id);
+  if (!el) return;
+  el.textContent = text;
+  if (typeof setDataCellStyle === 'function' && status) setDataCellStyle(id, status);
+}
+
+function ocOnAircraftChange() {
+  const ac   = ocCurrentAircraft();
+  const info = ocEl('oc-aircraft-info');
+  const note = ocEl('oc-source-note');
+  const chips = ocEl('oc-limit-chips');
+
+  if (!ac) {
+    if (info) info.style.display = 'none';
+    ocRenderRules();
+    ocRenderHourStrip();
+    ocRefresh();
+    return;
+  }
+
+  if (info) info.style.display = '';
+  if (chips) {
+    chips.innerHTML =
+      `<span class="oc-subcat-chip">Subcategory ${ac.subcat}</span>` +
+      `<span class="oc-limit-chip">${ac.mtom}</span>` +
+      `<span class="oc-limit-chip">Wind &le; ${ac.windMs} m/s</span>` +
+      `<span class="oc-limit-chip">Rain &le; ${ac.precipMm} mm/h</span>` +
+      `<span class="oc-limit-chip">${ac.tMin} to ${ac.tMax}°C</span>`;
+  }
+  if (note) {
+    if (!ac.inOm) {
+      note.style.display = '';
+      note.innerHTML = '&#9888; This airframe is not in the fleet list of PDRA-01 operations manual v3.1, so these are <strong>DJI’s published limits</strong>, not limits the manual has adopted. Check them against OC’s Open Category Operations Manual before relying on them.';
+    } else {
+      note.style.display = '';
+      note.style.background = '#f4f8fc';
+      note.style.borderColor = '#1a6fa8';
+      note.style.color = '#1a6fa8';
+      note.innerHTML = 'Limits from section 3.3 of the PDRA-01 operations manual v3.1. Where OC’s Open Category Operations Manual is stricter, that manual wins.';
+    }
+  }
+
+  ocRenderRules();
+  ocRenderHourStrip();
+  ocRenderConditions();
+  ocRefresh();
+}
+
+function ocRenderRules() {
+  const host = ocEl('oc-rules-list');
+  if (!host) return;
+  const ac = ocCurrentAircraft();
+  if (!ac) {
+    host.dataset.subcat = '';
+    host.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--faint)">Select an aircraft above and the rules for its subcategory appear here.</div>';
+    return;
+  }
+  const rules = OC_RULES[ac.subcat] || [];
+  // Rebuilding the list clears every checkbox, so remember what was
+  // confirmed and put it back. Switching between two aircraft in the
+  // same subcategory must not quietly un-tick the rules a pilot has
+  // already read and agreed to.
+  const wasChecked = {};
+  rules.forEach(r => { const b = ocEl('ocr-' + r.key); if (b) wasChecked[r.key] = b.checked; });
+  if (host.dataset.subcat === ac.subcat && host.querySelector('.oc-rule')) return;
+  host.dataset.subcat = ac.subcat;
+  const intro = `<div style="border-radius:8px;padding:11px 14px;margin-bottom:2px;font-family:var(--mono);font-size:11px;line-height:1.6;background:#ede9fe;border:1.5px solid #7c3aed;color:#4c1d95">${OC_SUBCAT_NOTE[ac.subcat]}</div>`;
+  host.innerHTML = intro + rules.map(r => `
+    <label class="oc-rule">
+      <input type="checkbox" id="ocr-${r.key}"${wasChecked[r.key] ? ' checked' : ''} onchange="ocRefresh()">
+      <span class="oc-rule-box">&#10003;</span>
+      <span>
+        <span class="oc-rule-text">${r.text}</span>
+        <span class="oc-rule-sub" style="display:block">${r.sub}</span>
+      </span>
+    </label>`).join('');
+}
+
+function ocRulesState() {
+  const ac = ocCurrentAircraft();
+  if (!ac) return { total: 0, done: 0, missing: [] };
+  const rules = OC_RULES[ac.subcat] || [];
+  const missing = rules.filter(r => { const b = ocEl('ocr-' + r.key); return !(b && b.checked); });
+  return { total: rules.length, done: rules.length - missing.length, missing };
+}
+
+function ocRenderHourStrip() {
+  const strip = ocEl('oc-hour-strip');
+  if (!strip) return;
+  const ac = ocCurrentAircraft();
+
+  if (!ocHours.length) {
+    strip.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--faint);padding:10px 2px">No forecast on this device for that estate. Download the next 24 hours from the home screen while you still have signal.</div>';
+    return;
+  }
+
+  const nowH = Date.now() - 60 * 60 * 1000;
+  strip.innerHTML = ocHours.map((h, i) => {
+    const d    = new Date(h.time);
+    const cls  = ac ? 'h-' + ocHourStatus(h, ac) : '';
+    const past = d.getTime() < nowH ? ' past' : '';
+    const sel  = i === ocHourIdx ? ' sel' : '';
+    return `<button type="button" class="oc-hour ${cls}${past}${sel}" onclick="ocSelectHour(${i})">
+      <div class="oc-hour-time">${ocHhmm(d)}</div>
+      <div class="oc-hour-wind">${h.windMs != null ? h.windMs : '–'}</div>
+    </button>`;
+  }).join('');
+}
+
+function ocSelectHour(i) {
+  ocHourIdx = i;
+  const h = ocHours[i];
+  if (h) {
+    const d  = new Date(h.time);
+    const dt = ocEl('oc-datetime');
+    if (dt) dt.value = `${d.getFullYear()}-${ocPad(d.getMonth() + 1)}-${ocPad(d.getDate())}T${ocPad(d.getHours())}:${ocPad(d.getMinutes())}`;
+  }
+  ocRenderHourStrip();
+  ocRenderConditions();
+  ocRefresh();
+}
+
+// Keep the hour strip and the time field agreeing with each other.
+function ocOnTimeChange() {
+  const v = ocVal('oc-datetime');
+  if (v && ocHours.length) {
+    const target = new Date(v).getTime();
+    let best = -1, bestGap = Infinity;
+    ocHours.forEach((h, i) => {
+      const gap = Math.abs(new Date(h.time).getTime() - target);
+      if (gap < bestGap) { bestGap = gap; best = i; }
+    });
+    if (best >= 0 && bestGap <= 90 * 60 * 1000) ocHourIdx = best;
+  }
+  ocRenderHourStrip();
+  ocRenderConditions();
+  ocRefresh();
+}
+
+function ocRenderConditions() {
+  const ac = ocCurrentAircraft();
+  const h  = ocHourIdx >= 0 ? ocHours[ocHourIdx] : null;
+  const ids = ['oc-d-wind','oc-d-gust','oc-d-precip','oc-d-temp','oc-d-vis','oc-d-cloud','oc-d-icing','oc-d-kp','oc-d-daylight'];
+
+  if (!h || !ac) {
+    ids.forEach(id => {
+      const el = ocEl(id);
+      if (el) el.textContent = '—';
+      if (typeof resetDataCellStyle === 'function') resetDataCellStyle(id);
+    });
+    ocEvalWeatherGate(null);
+    return;
+  }
+
+  const wS = ocWindStatus(h.windMs, ac);
+  const gS = ocWindStatus(h.gustMs, ac);
+  const pS = ocPrecipStatus(h, ac);
+  const tS = ocTempStatus(h.tempC, ac);
+  const vS = ocVisStatus(h.visM);
+  const ice = ocIcing(h);
+  const kS = ocKpStatus(ocCache ? ocCache.kp : null);
+  const day = ocDaylight(h.time, ocCache);
+
+  ocSetCell('oc-d-wind',  h.windMs != null ? `${h.dirn || ''} ${h.windMs} m/s`.trim() : '—', wS);
+  ocSetCell('oc-d-gust',  h.gustMs != null ? `${h.gustMs} m/s` : '—', gS);
+  ocSetCell('oc-d-precip', (h.sigWxLabel || 'Clear') + (h.precipProb ? ` · ${h.precipProb}% prob` : ''), pS);
+  ocSetCell('oc-d-temp',  h.tempC != null ? `${h.tempC}°C` : '—', tS);
+  ocSetCell('oc-d-vis',   ocVisText(h.visM), vS);
+  ocSetCell('oc-d-cloud', h.cloud != null ? `${h.cloud}/8 oktas` : '—', 'info');
+  ocSetCell('oc-d-icing', ice.text, ice.status);
+  ocSetCell('oc-d-kp',    (ocCache && ocCache.kp != null && ocCache.kp !== '') ? `Kp ${ocCache.kp}` : '—', kS);
+  ocSetCell('oc-d-daylight', day.text, day.status);
+
+  const worst = ocWorst([wS, gS, pS, tS, vS, ice.status, kS, day.status]);
+  ocEvalWeatherGate(worst);
+
+  const ts = ocEl('oc-weather-timestamp');
+  if (ts && ocCache) ts.textContent = 'forecast ' + ocAgeText(ocCacheAgeHours(ocCache));
+}
+
+function ocEvalWeatherGate(worst) {
+  const gate  = ocEl('oc-gate-weather');
+  const label = ocEl('oc-gate-weather-label');
+  const msg   = ocEl('oc-gate-weather-msg');
+  if (!gate || !label || !msg) return;
+  gate.classList.remove('gate-go', 'gate-nogo', 'gate-pending');
+  if (!worst) {
+    gate.classList.add('gate-pending');
+    label.textContent = '—';
+    msg.textContent = 'Select an estate, an aircraft and a flight hour.';
+    return;
+  }
+  if (worst === 'red') {
+    gate.classList.add('gate-nogo');
+    label.textContent = '✗ NO GO';
+    msg.textContent = 'One or more conditions are outside this aircraft’s limits at the hour you picked. Pick a different hour, or do not fly.';
+  } else if (worst === 'orange') {
+    gate.classList.add('gate-go');
+    label.textContent = '⚠ CAUTION';
+    msg.textContent = 'Within limits, but close to one. Watch it on site and be ready to land.';
+  } else {
+    gate.classList.add('gate-go');
+    label.textContent = '✓ GO';
+    msg.textContent = 'Comfortably within this aircraft’s limits at the hour you picked.';
+  }
+}
+
+function ocRenderAirspace() {
+  const list = ocEl('oc-notam-list');
+  const count = ocEl('oc-notam-count');
+  const grid = ocEl('oc-airspace-grid');
+
+  if (!ocCache) {
+    if (list) list.innerHTML = '<div class="notam-item notam-loading">Nothing cached for this estate. Download the next 24 hours from the home screen.</div>';
+    if (count) count.textContent = '';
+    if (grid) grid.innerHTML = '';
+    return;
+  }
+
+  const notams = ocCache.notams || [];
+  if (count) count.textContent = notams.length ? `${notams.length} active` : 'none';
+  if (list) {
+    if (!notams.length) {
+      list.innerHTML = '<div class="notam-item none">No NOTAMs within the operational area.</div>';
+    } else {
+      list.innerHTML = notams.map(n => {
+        const dead  = /deactivat|cancel|withdrawn|suspended|inactive/i.test(n);
+        const lines = String(n).trim().split('\n');
+        const refM  = lines[0].match(/^([A-Z]\d{4}\/\d{2,4}|[A-Z]{1,5}\d+\/\d{2,4})/i);
+        const ref   = refM ? lines[0] : '';
+        const body  = ref ? (lines.slice(1).join('\n') || lines[0]) : n;
+        return `<div class="notam-item${dead ? ' notam-deactivated' : ''}">${ref ? `<div class="notam-ref">&#128203; ${ref}</div>` : ''}<div class="notam-body">${body}</div></div>`;
+      }).join('');
+    }
+  }
+
+  // Reuse the pre-flight reference grid builder so the airspace and
+  // contact cards look and behave exactly as they do in PDRA-01.
+  if (grid && typeof buildAirspaceRefGrid === 'function') {
+    const e = ocCache.static || {};
+    const saveId = 'pf-airspace-ref-grid';
+    const real = ocEl(saveId);
+    // buildAirspaceRefGrid writes into the pre-flight grid by id, so
+    // borrow the id for the length of the call and hand the markup over.
+    if (real) real.id = saveId + '-parked';
+    grid.id = saveId;
+    try { buildAirspaceRefGrid(e, e.airspace || {}, ocCache.notamRefs || {}); }
+    catch (err) { /* a missing field in site data must not blank the panel */ }
+    grid.id = 'oc-airspace-grid';
+    if (real) real.id = saveId;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// ESTATE / PILOT / LOCATION
+// ══════════════════════════════════════════════════════
+function ocLoadCacheForEstate(estate) {
+  ocCache   = ocReadCache(estate);
+  ocHours   = (ocCache && ocCache.hours) || [];
+  ocHourIdx = -1;
+
+  const src = ocEl('oc-weather-source');
+  if (src) {
+    if (!ocCache) {
+      src.style.display = '';
+      src.style.background = '#fde8e8'; src.style.borderColor = '#991b1b'; src.style.color = '#6b1212';
+      src.innerHTML = '&#9888; <strong>No data cached for this estate.</strong> Go back to the home screen and download the next 24 hours while you have signal.';
+    } else {
+      const hrs = ocCacheAgeHours(ocCache);
+      const cls = ocAgeClass(hrs);
+      src.style.display = '';
+      if (cls === 'fresh') { src.style.background = '#f0f7f0'; src.style.borderColor = '#4caf70'; src.style.color = '#166a2a'; }
+      else if (cls === 'aging') { src.style.background = '#fff0e0'; src.style.borderColor = '#d45a00'; src.style.color = '#8a3300'; }
+      else { src.style.background = '#fde8e8'; src.style.borderColor = '#991b1b'; src.style.color = '#6b1212'; }
+      src.innerHTML =
+        `&#127780; Met Office DataHub &middot; &#9728; NOAA Kp &middot; NATS NOTAMs<br>` +
+        `Cached ${ocAgeText(hrs)}` +
+        (cls === 'stale' ? ' — <strong>too old to fly on. Refresh it before you rely on it.</strong>'
+         : cls === 'aging' ? ' — getting old, refresh if you can.' : '.');
+    }
+  }
+
+  // Default the take-off point to the estate centroid until GPS says otherwise.
+  const e = (typeof estatesData === 'object' && estatesData[estate]) || (ocCache && ocCache.static) || {};
+  if (!ocVal('oc-lat') && e.lat) ocEl('oc-lat').value = e.lat;
+  if (!ocVal('oc-lon') && e.lon) ocEl('oc-lon').value = e.lon;
+
+  // Pick the hour we are actually in, so the brief opens on "now".
+  if (ocHours.length) {
+    const now = Date.now();
+    let best = 0, gap = Infinity;
+    ocHours.forEach((h, i) => {
+      const g = Math.abs(new Date(h.time).getTime() - now);
+      if (g < gap) { gap = g; best = i; }
+    });
+    ocSelectHour(best);
+  } else {
+    ocRenderHourStrip();
+    ocRenderConditions();
+  }
+  ocRenderAirspace();
+  ocRefresh();
+}
+
+function ocOnEstateChange() {
+  const name = ocVal('oc-estate');
+  const hdr = ocEl('header-estate');
+  if (hdr) hdr.textContent = name || '—';
+  if (!name) { ocCache = null; ocHours = []; ocHourIdx = -1; ocRenderHourStrip(); ocRenderConditions(); ocRenderAirspace(); ocRefresh(); return; }
+  ocLoadCacheForEstate(name);
+}
+
+function ocOnPilotChange() {
+  const other = ocEl('oc-pilot-other');
+  if (other) other.style.display = ocVal('oc-pilot') === '__other' ? '' : 'none';
+  ocRefresh();
+}
+
+function ocPilotName() {
+  const v = ocVal('oc-pilot');
+  return v === '__other' ? ocVal('oc-pilot-other') : v;
+}
+
+function ocOnCoordChange() {
+  // A cached forecast is for the estate, not for a specific field corner.
+  // Moving the take-off point a few hundred metres does not invalidate it,
+  // so nothing is re-fetched here - it just gets recorded.
+  ocRefresh();
+}
+
+function ocGetGps() {
+  const btn = ocEl('oc-gps-btn');
+  const status = ocEl('oc-gps-status');
+  if (!navigator.geolocation) {
+    if (status) { status.textContent = '⚠ This browser cannot do location.'; status.style.display = ''; }
+    return;
+  }
+  if (btn) { btn.textContent = '⏳ Acquiring GPS fix…'; btn.disabled = true; }
+  if (status) status.style.display = 'none';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = Math.round(pos.coords.latitude * 10000) / 10000;
+      const lon = Math.round(pos.coords.longitude * 10000) / 10000;
+      ocEl('oc-lat').value = lat;
+      ocEl('oc-lon').value = lon;
+      if (status) {
+        status.textContent = `✓ Fixed — accuracy ±${Math.round(pos.coords.accuracy)}m`;
+        status.style.color = 'var(--ok)';
+        status.style.display = '';
+      }
+      if (btn) {
+        btn.textContent = '✓ Location Captured — Tap to Refresh';
+        btn.style.background = '#c8ecd1'; btn.style.borderColor = '#166a2a'; btn.style.color = '#0f4a1e';
+        btn.disabled = false;
+      }
+      ocRefresh();
+    },
+    err => {
+      if (status) { status.textContent = `⚠ ${err.message}`; status.style.color = 'var(--danger)'; status.style.display = ''; }
+      if (btn) { btn.textContent = '\u{1F4CD} Get Location from Device GPS'; btn.disabled = false; }
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+function ocStampLanding() {
+  const el = ocEl('oc-landing-time');
+  if (el) { el.value = ocHhmm(new Date()); ocRefresh(); }
+}
+
+// ══════════════════════════════════════════════════════
+// TOGGLES, TICKS AND THE DECISION
+// ══════════════════════════════════════════════════════
+function ocSetToggle(key, value, btn) {
+  if (btn.classList.contains('sel-yes') || btn.classList.contains('sel-no')) {
+    ocToggleState[key] = '';
+    btn.classList.remove('sel-yes', 'sel-no');
+    ocRefresh();
+    return;
+  }
+  ocToggleState[key] = value;
+  const group = btn.closest('.toggle-group');
+  if (group) group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('sel-yes', 'sel-no'));
+  btn.classList.add(value === 'Yes' ? 'sel-yes' : 'sel-no');
+  ocRefresh();
+}
+const ocGetToggle = key => ocToggleState[key] || '';
+
+function ocTick(id, done) {
+  const el = ocEl(id);
+  if (!el) return;
+  el.style.display = done ? 'inline-flex' : 'none';
+  const body = el.closest('.card') && el.closest('.card').querySelector('.card-body');
+  if (body) body.style.background = done ? '#f0f7f0' : '';
+}
+
+function ocWeatherWorst() {
+  const ac = ocCurrentAircraft();
+  const h  = ocHourIdx >= 0 ? ocHours[ocHourIdx] : null;
+  if (!ac || !h) return null;
+  return ocWorst([
+    ocWindStatus(h.windMs, ac),
+    ocWindStatus(h.gustMs, ac),
+    ocPrecipStatus(h, ac),
+    ocTempStatus(h.tempC, ac),
+    ocVisStatus(h.visM),
+    ocIcing(h).status,
+    ocKpStatus(ocCache ? ocCache.kp : null),
+    ocDaylight(h.time, ocCache).status,
+  ]);
+}
+
+function ocRefresh() {
+  const ac    = ocCurrentAircraft();
+  const rules = ocRulesState();
+  const worst = ocWeatherWorst();
+
+  const flightOk = !!(ocVal('oc-estate') && ocPilotName() && ac && ocVal('oc-task') && ocVal('oc-datetime'));
+  const wxOk     = worst !== null;
+  const airOk    = !!ocGetToggle('oc-airspace-ok');
+  const rulesOk  = rules.total > 0 && rules.missing.length === 0;
+  const issues   = ocGetToggle('oc-issues');
+  const dbOk     = issues === 'No' || (issues === 'Yes' && ocVal('oc-debrief-note').length > 0);
+
+  ocTick('tick-oc-flight',   flightOk);
+  ocTick('tick-oc-weather',  wxOk && worst !== 'red');
+  ocTick('tick-oc-airspace', ocGetToggle('oc-airspace-ok') === 'Yes');
+  ocTick('tick-oc-rules',    rulesOk);
+  ocTick('tick-oc-debrief',  dbOk);
+
+  // Rules gate
+  const rg = ocEl('oc-gate-rules');
+  if (rg) {
+    const lab = ocEl('oc-gate-rules-label');
+    const msg = ocEl('oc-gate-rules-msg');
+    rg.classList.remove('gate-go', 'gate-nogo', 'gate-pending');
+    if (!ac) {
+      rg.classList.add('gate-pending'); lab.textContent = '—';
+      msg.textContent = 'Select an aircraft to see the rules that apply.';
+    } else if (rulesOk) {
+      rg.classList.add('gate-go'); lab.textContent = '✓ CONFIRMED';
+      msg.textContent = `All ${rules.total} conditions for subcategory ${ac.subcat} confirmed.`;
+    } else {
+      rg.classList.add('gate-pending'); lab.textContent = `${rules.done} / ${rules.total}`;
+      msg.textContent = 'Every one has to be true before take-off.';
+    }
+  }
+
+  // Occurrence prompt - only once there is something to report
+  const warn = ocEl('oc-occurrence-warn');
+  if (warn) warn.style.display = issues === 'Yes' ? '' : 'none';
+
+  // The decision
+  const reasons = [];
+  if (!flightOk) reasons.push('The flight details are incomplete.');
+  if (!wxOk)     reasons.push('No weather for the hour you are flying — pick an hour, or cache the estate.');
+  else if (worst === 'red') reasons.push('Weather is outside this aircraft’s limits at that hour.');
+  if (ocGetToggle('oc-airspace-ok') === 'No') reasons.push('You have said the airspace is not clear.');
+  else if (!airOk) reasons.push('The airspace question has not been answered.');
+  if (!rulesOk && ac) reasons.push(`${rules.missing.length} of the ${rules.total} Open category rules are not confirmed.`);
+  if (!ac) reasons.push('No aircraft selected, so no limits can be applied.');
+
+  const go = reasons.length === 0;
+  const pend = ocEl('oc-final-pending');
+  const goEl = ocEl('oc-final-go');
+  const noEl = ocEl('oc-final-nogo');
+  const partial = !flightOk;
+  if (pend) pend.style.display = partial ? '' : 'none';
+  if (goEl) goEl.classList.toggle('hidden', !go);
+  if (noEl) noEl.classList.toggle('hidden', go || partial);
+  const rEl = ocEl('oc-nogo-reasons');
+  if (rEl) rEl.innerHTML = reasons.map(r => '• ' + r).join('<br>');
+
+  // Save button
+  const banner = ocEl('oc-completion-banner');
+  const btn    = ocEl('oc-submit-btn');
+  const canSave = flightOk;
+  if (btn) btn.disabled = !canSave;
+  if (banner) {
+    banner.style.display = '';
+    if (!canSave) {
+      banner.style.background = '#fdd9d7'; banner.style.border = '1.5px solid #e05c5c'; banner.style.color = '#7a1212';
+      banner.innerHTML = '⚠ Fill in the estate, pilot, aircraft, purpose and time before saving.';
+    } else if (!dbOk) {
+      banner.style.background = '#fff0e0'; banner.style.border = '1.5px solid #d45a00'; banner.style.color = '#8a3300';
+      banner.innerHTML = '⚠ You can save now, but the debrief note is empty. Come back and finish it after you land.';
+    } else {
+      banner.style.background = '#c8ecd1'; banner.style.border = '1.5px solid #4caf70'; banner.style.color = '#0f4a1e';
+      banner.innerHTML = '✓ Complete — ready to save.';
+    }
+  }
+
+  ocSaveDraft();
+}
+
+// ══════════════════════════════════════════════════════
+// THE RECORD
+// ══════════════════════════════════════════════════════
+function ocBuildRecord() {
+  const ac = ocCurrentAircraft();
+  const h  = ocHourIdx >= 0 ? ocHours[ocHourIdx] : null;
+  const rules = {};
+  if (ac) (OC_RULES[ac.subcat] || []).forEach(r => {
+    const b = ocEl('ocr-' + r.key);
+    rules[r.key] = b && b.checked ? 'Confirmed' : 'Not confirmed';
+  });
+  const worst = ocWeatherWorst();
+
+  return {
+    _type:            'open_category_flight',
+    _generated_at:    new Date().toISOString(),
+    // ── Flight log fields required by OM 2.14.3 ────────────────────────
+    date:             ocVal('oc-datetime').split('T')[0] || '',
+    estate:           ocVal('oc-estate'),
+    location:         (ocVal('oc-lat') && ocVal('oc-lon')) ? `${ocVal('oc-lat')}, ${ocVal('oc-lon')}` : '',
+    task:             ocVal('oc-task'),
+    flight_crew:      ocPilotName(),
+    remote_pilot:     ocPilotName(),
+    uas:              ocVal('oc-aircraft'),
+    take_off_time:    ocVal('oc-datetime').split('T')[1] || '',
+    landing_time:     ocVal('oc-landing-time'),
+    // ── Category ───────────────────────────────────────────────────────
+    operating_category: ac ? 'Open ' + ac.subcat : 'Open',
+    aircraft_mtom:      ac ? ac.mtom : '',
+    aircraft_limits:    ac ? `wind ${ac.windMs} m/s, precip ${ac.precipMm} mm/h, ${ac.tMin} to ${ac.tMax} C` : '',
+    limits_source:      ac ? (ac.inOm ? 'PDRA-01 OM v3.1 s3.3' : 'DJI published - not in OM v3.1') : '',
+    open_category_rules: rules,
+    all_rules_confirmed: ocRulesState().missing.length === 0 && !!ac ? 'Yes' : 'No',
+    // ── Conditions at the briefed hour ─────────────────────────────────
+    forecast_hour:    h ? h.time : '',
+    wind:             h && h.windMs != null ? `${h.dirn || ''} ${h.windMs} m/s`.trim() : '',
+    gusts:            h && h.gustMs != null ? `${h.gustMs} m/s` : '',
+    precipitation:    h ? ((h.sigWxLabel || 'Clear') + (h.precipProb ? ` (${h.precipProb}% prob)` : '')) : '',
+    temperature:      h && h.tempC != null ? `${h.tempC} C` : '',
+    dew_point:        h && h.dewC  != null ? `${h.dewC} C`  : '',
+    visibility:       h ? ocVisText(h.visM) : '',
+    cloud_cover:      h && h.cloud != null ? `${h.cloud}/8 oktas` : '',
+    space_weather_kp: ocCache && ocCache.kp != null ? String(ocCache.kp) : '',
+    sunrise:          ocCache ? ocCache.sunrise : '',
+    sunset:           ocCache ? ocCache.sunset  : '',
+    metar:            ocCache ? ocCache.metar   : '',
+    taf:              ocCache ? ocCache.taf     : '',
+    conditions_verdict: worst === 'red' ? 'Outside limits' : worst === 'orange' ? 'Within limits, close to one' : worst === 'green' ? 'Within limits' : 'Not assessed',
+    // ── Airspace ───────────────────────────────────────────────────────
+    notams_present:   ocCache ? ((ocCache.notams || []).length ? 'Yes' : 'No') : '',
+    notams_details:   ocCache ? (ocCache.notams || []).join('\n\n') : '',
+    airspace_clear:   ocGetToggle('oc-airspace-ok'),
+    // ── Decision ───────────────────────────────────────────────────────
+    decision:         ocEl('oc-final-go') && !ocEl('oc-final-go').classList.contains('hidden') ? 'GO' : 'NO GO',
+    // ── Debrief ────────────────────────────────────────────────────────
+    anything_to_report: ocGetToggle('oc-issues'),
+    debrief_note:       ocVal('oc-debrief-note'),
+    // ── Provenance ─────────────────────────────────────────────────────
+    _data_cached_at:  ocCache ? ocCache.fetchedAt : '',
+    _data_age_hours:  ocCache ? Math.round(ocCacheAgeHours(ocCache) * 10) / 10 : null,
+  };
+}
+
+function ocDraftKey() {
+  const d = new Date();
+  return `SKY_OC_DRAFT_${d.getFullYear()}-${ocPad(d.getMonth() + 1)}-${ocPad(d.getDate())}`;
+}
+
+function ocSaveDraft() {
+  try { localStorage.setItem(ocDraftKey(), JSON.stringify(ocCollectFormState())); }
+  catch (e) { /* storage full - the form still works, it just won't survive a reload */ }
+}
+
+function ocCollectFormState() {
+  const ac = ocCurrentAircraft();
+  const rules = {};
+  if (ac) (OC_RULES[ac.subcat] || []).forEach(r => {
+    const b = ocEl('ocr-' + r.key);
+    rules[r.key] = !!(b && b.checked);
+  });
+  return {
+    estate: ocVal('oc-estate'), pilot: ocVal('oc-pilot'), pilotOther: ocVal('oc-pilot-other'),
+    aircraft: ocVal('oc-aircraft'), task: ocVal('oc-task'),
+    datetime: ocVal('oc-datetime'), landing: ocVal('oc-landing-time'),
+    lat: ocVal('oc-lat'), lon: ocVal('oc-lon'),
+    hourIdx: ocHourIdx, toggles: Object.assign({}, ocToggleState),
+    rules, note: ocVal('oc-debrief-note'),
+  };
+}
+
+function ocRestoreDraft(s) {
+  if (!s) return;
+  const set = (id, v) => { const el = ocEl(id); if (el && v) el.value = v; };
+  set('oc-estate', s.estate); set('oc-pilot', s.pilot); set('oc-pilot-other', s.pilotOther);
+  set('oc-aircraft', s.aircraft); set('oc-task', s.task);
+  set('oc-datetime', s.datetime); set('oc-landing-time', s.landing);
+  set('oc-lat', s.lat); set('oc-lon', s.lon);
+  set('oc-debrief-note', s.note);
+  ocOnPilotChange();
+  ocOnAircraftChange();
+  if (s.estate) ocLoadCacheForEstate(s.estate);
+  if (typeof s.hourIdx === 'number' && s.hourIdx >= 0 && ocHours[s.hourIdx]) ocSelectHour(s.hourIdx);
+  Object.entries(s.toggles || {}).forEach(([k, v]) => {
+    if (!v) return;
+    ocToggleState[k] = v;
+    document.querySelectorAll(`#panel-open [onclick*="ocSetToggle('${k}'"]`).forEach(b => {
+      const want = b.getAttribute('onclick').indexOf(`'${v}'`) >= 0;
+      if (want) b.classList.add(v === 'Yes' ? 'sel-yes' : 'sel-no');
+    });
+  });
+  Object.entries(s.rules || {}).forEach(([k, v]) => {
+    const b = ocEl('ocr-' + k);
+    if (b) b.checked = !!v;
+  });
+  ocRefresh();
+}
+
+// ══════════════════════════════════════════════════════
+// SAVING - offline first
+// ══════════════════════════════════════════════════════
+// Records are written straight into the private repo with the Contents
+// API. No workflow to wait on, and no run to fail silently.
+//
+// With no signal the record goes into a queue on the device and the
+// panel says how many are waiting. Nothing is ever lost because a field
+// had no bars.
+
+function ocB64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(b => { bin += String.fromCharCode(b); });
+  return btoa(bin);
+}
+
+function ocQueue() {
+  try { return JSON.parse(localStorage.getItem(OC_QUEUE_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+
+function ocSetQueue(q) {
+  try { localStorage.setItem(OC_QUEUE_KEY, JSON.stringify(q)); } catch (e) { /* nothing more we can do */ }
+  ocRenderQueue();
+}
+
+function ocRenderQueue() {
+  const el = ocEl('oc-queue-banner');
+  if (!el) return;
+  const q = ocQueue();
+  if (!q.length) { el.classList.remove('visible'); return; }
+  el.classList.add('visible');
+  el.innerHTML = `&#128228; <strong>${q.length} flight record${q.length === 1 ? '' : 's'} waiting to upload.</strong> ` +
+    `Saved on this device. <button class="secondary-btn" type="button" style="width:auto;padding:6px 12px;margin-left:8px;display:inline-block" onclick="ocFlushQueue()">Upload now</button>`;
+}
+
+async function ocPutRecord(path, record) {
+  const resp = await fetch(
+    `https://api.github.com/repos/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/contents/${path}`,
+    { method: 'PUT',
+      headers: {
+        'Authorization':        `Bearer ${CONFIG.GITHUB_TOKEN}`,
+        'Accept':               'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type':         'application/json',
+      },
+      body: JSON.stringify({
+        message: `Open category flight record - ${record.estate || 'unknown estate'} ${record.date || ''}`.trim(),
+        content: ocB64(JSON.stringify(record, null, 2)),
+      }),
+    }
+  );
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => '');
+    throw new Error(`${resp.status} ${txt.slice(0, 180)}`);
+  }
+  return true;
+}
+
+function ocRecordPath(record) {
+  const stamp = new Date(record._generated_at || Date.now()).toISOString().replace(/[:.]/g, '-');
+  return `open_category/open_${ocSlug(record.estate) || 'flight'}_${stamp}.json`;
+}
+
+async function ocSave() {
+  const record = ocBuildRecord();
+  const bar = ocEl('oc-submit-info');
+  const btn = ocEl('oc-submit-btn');
+  const path = ocRecordPath(record);
+
+  if (btn) btn.disabled = true;
+  if (bar) { bar.textContent = '⏳ Saving…'; bar.className = 'info-bar visible ok'; }
+
+  try {
+    await ocPutRecord(path, record);
+    if (bar) { bar.textContent = '✓ Saved to the Skylark repository.'; bar.className = 'info-bar visible ok'; }
+    try { localStorage.removeItem(ocDraftKey()); } catch (e) { /* ignore */ }
+    if (typeof flyBird === 'function') [0, 500, 1000].forEach(d => setTimeout(flyBird, d));
+    ocFlushQueue();
+  } catch (err) {
+    const q = ocQueue();
+    q.push({ path, record });
+    ocSetQueue(q);
+    if (bar) {
+      bar.textContent = `✓ Saved on this device — upload will retry when you have signal. (${err.message})`;
+      bar.className = 'info-bar visible warn';
+    }
+  }
+  if (btn) btn.disabled = false;
+  ocRenderQueue();
+}
+
+async function ocFlushQueue() {
+  const q = ocQueue();
+  if (!q.length) return;
+  const left = [];
+  for (const item of q) {
+    try { await ocPutRecord(item.path, item.record); }
+    catch (e) { left.push(item); }
+  }
+  ocSetQueue(left);
+  const bar = ocEl('oc-submit-info');
+  if (bar && left.length < q.length) {
+    bar.textContent = `✓ Uploaded ${q.length - left.length} queued record${(q.length - left.length) === 1 ? '' : 's'}.`;
+    bar.className = 'info-bar visible ok';
+  }
+}
+
+function ocDownload() {
+  const record = ocBuildRecord();
+  const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = ocRecordPath(record).split('/').pop();
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+function ocPreviewJson() {
+  const pre = ocEl('oc-json-preview');
+  if (!pre) return;
+  if (pre.style.display === 'block') { pre.style.display = 'none'; return; }
+  pre.textContent = JSON.stringify(ocBuildRecord(), null, 2);
+  pre.style.display = 'block';
+}
+
+// ══════════════════════════════════════════════════════
+// PANEL INIT
+// ══════════════════════════════════════════════════════
+function ocBuildAircraftSelect() {
+  const sel = ocEl('oc-aircraft');
+  if (!sel || sel.dataset.built) return;
+  Object.keys(OC_AIRCRAFT).forEach(name => {
+    const ac = OC_AIRCRAFT[name];
+    const o = document.createElement('option');
+    o.value = name;
+    o.textContent = `${name} — ${ac.mtom} — ${ac.subcat}`;
+    sel.appendChild(o);
+  });
+  sel.dataset.built = '1';
+}
+
+function ocOnPanelOpen() {
+  ocBuildAircraftSelect();
+  const dt = ocEl('oc-datetime');
+  if (dt && !dt.value) {
+    const n = new Date();
+    dt.value = `${n.getFullYear()}-${ocPad(n.getMonth() + 1)}-${ocPad(n.getDate())}T${ocPad(n.getHours())}:${ocPad(n.getMinutes())}`;
+  }
+  ocRenderQueue();
+  ocRenderRules();
+  ocRefresh();
+  ocFlushQueue();
+}
+
+// ══════════════════════════════════════════════════════
+// HOOKS INTO THE EXISTING APP (wrapped, originals untouched)
+// ══════════════════════════════════════════════════════
+const _ocOrigTogglePanel = togglePanel;
+togglePanel = function (panel) {
+  if (panel === 'home') { goHome(); return; }
+  if (panel === 'open') { enterOpen(); return; }
+  const home = ocEl('panel-home');
+  const open = ocEl('panel-open');
+  if (home) home.classList.remove('open');
+  if (open) open.classList.remove('open');
+  _ocOrigTogglePanel(panel);
+};
+
+// The estate dropdowns in the Open category brief and the cache panel
+// fill from the same site data as everything else.
+const _ocOrigPopulateEstateSelect = populateEstateSelect;
+populateEstateSelect = function (names) {
+  _ocOrigPopulateEstateSelect(names);
+  ['oc-estate', 'oc-cache-estate'].forEach(id => {
+    const sel = ocEl(id);
+    if (!sel) return;
+    const keep = sel.value;
+    sel.querySelectorAll('option[value]:not([value=""])').forEach(o => {
+      if (o.value !== '__other') o.remove();
+    });
+    (names || []).forEach(n => {
+      const o = document.createElement('option');
+      o.value = o.textContent = n;
+      sel.appendChild(o);
+    });
+    if (keep) sel.value = keep;
+  });
+};
+
+// The pilot list passes through here, so the Open category dropdown is
+// filled and the list is remembered for the offline fallback below.
+let ocLastPilots = [];
+const _ocOrigPopulatePilotSelects = populatePilotSelects;
+populatePilotSelects = function (pilots) {
+  if (Array.isArray(pilots) && pilots.length) ocLastPilots = pilots;
+  _ocOrigPopulatePilotSelects(pilots);
+  const sel = ocEl('oc-pilot');
+  if (!sel || !Array.isArray(pilots)) return;
+  const other = sel.querySelector('option[value="__other"]');
+  const seen = new Set(Array.from(sel.options).map(o => o.value));
+  pilots.forEach(p => {
+    if (!p || !p.name || seen.has(p.name)) return;
+    const o = document.createElement('option');
+    o.value = o.textContent = p.name;
+    sel.insertBefore(o, other);
+  });
+};
+
+// Site data cached for offline use. The dashboard fails closed when
+// staticdata.json cannot be reached, which is right - but a device that
+// successfully loaded it an hour ago should not be left with an empty
+// estate list just because it is now in a valley.
+const _ocOrigLoadEstates = loadEstates;
+loadEstates = async function () {
+  await _ocOrigLoadEstates();
+  const loaded = typeof estatesData === 'object' && Object.keys(estatesData).length > 0;
+  if (loaded) {
+    try {
+      localStorage.setItem(OC_STATIC_KEY, JSON.stringify({
+        at: new Date().toISOString(),
+        estates: estatesData,
+        pilots: ocLastPilots || [],
+      }));
+    } catch (e) { /* storage full - live data still works */ }
+    return;
+  }
+  // Live fetch failed. Fall back to the last good copy, clearly labelled.
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem(OC_STATIC_KEY) || 'null'); } catch (e) { cached = null; }
+  if (!cached || !cached.estates) return;
+  estatesData = cached.estates;
+  populatePilotSelects(cached.pilots || []);
+  populateEstateSelect(Object.keys(estatesData));
+  const hrs = (Date.now() - new Date(cached.at).getTime()) / 3600000;
+  if (typeof showFetchStatus === 'function') {
+    showFetchStatus(`⚠ Working from site data cached on this device (${ocAgeText(hrs)}). Live data could not be reached. Verify anything time-sensitive before you fly.`, 'warn');
+  }
+};
+
+// The iPad keyboard-mic banner belongs on the Open category note too.
+if (typeof dbApplyKeyboardModeUi === 'function') {
+  const _ocOrigKeyboardUi = dbApplyKeyboardModeUi;
+  dbApplyKeyboardModeUi = function () {
+    _ocOrigKeyboardUi();
+    const hint = ocEl('oc-keyboard-hint');
+    if (hint) hint.classList.add('visible');
+  };
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  ocBuildAircraftSelect();
+  ocRenderCacheList();
+  ocRenderQueue();
+
+  // Where to land. The home screen by default; the mode you were last in
+  // if that was earlier the same day, so a reload mid-brief does not
+  // throw you back to the start.
+  let mode = 'home';
+  try {
+    if (localStorage.getItem(OC_MODE_DAY_KEY) === new Date().toDateString()) {
+      mode = localStorage.getItem(OC_MODE_KEY) || 'home';
+    }
+  } catch (e) { /* default to home */ }
+
+  if (mode === 'open') {
+    try {
+      const draft = localStorage.getItem(ocDraftKey());
+      enterOpen();
+      if (draft) ocRestoreDraft(JSON.parse(draft));
+    } catch (e) { enterOpen(); }
+  } else if (mode === 'pdra') {
+    enterPdra();
+  } else {
+    goHome();
+  }
+
+  // Anything queued goes up as soon as the device sees a network again.
+  window.addEventListener('online', () => ocFlushQueue());
+});
 
 </script>
 </body>
