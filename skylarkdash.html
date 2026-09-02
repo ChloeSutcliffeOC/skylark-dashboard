@@ -1375,28 +1375,15 @@
         </div>
         <div>
           <div class="field-label">Pilot</div>
-          <select id="oc-pilot" onchange="ocOnPilotChange()">
-            <option value="">&mdash; Select &mdash;</option>
-            <option value="__other">Someone else &mdash; type the name</option>
-          </select>
-          <input type="text" id="oc-pilot-other" placeholder="Full name" style="margin-top:8px;display:none" oninput="ocRefresh()">
+          <input type="text" id="oc-pilot" placeholder="Full name" oninput="ocRefresh()">
         </div>
       </div>
 
-      <div class="two-col">
-        <div>
-          <div class="field-label">Aircraft</div>
-          <select id="oc-aircraft" onchange="ocOnAircraftChange()">
-            <option value="">&mdash; Select aircraft &mdash;</option>
-          </select>
-        </div>
-        <div>
-          <div class="field-label">Landing Time</div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="time" id="oc-landing-time" style="flex:1" onchange="ocRefresh()">
-            <button class="secondary-btn" type="button" style="width:auto;padding:13px 14px;white-space:nowrap" onclick="ocStampLanding()">Landed now</button>
-          </div>
-        </div>
+      <div>
+        <div class="field-label">Aircraft</div>
+        <select id="oc-aircraft" onchange="ocOnAircraftChange()">
+          <option value="">&mdash; Select aircraft &mdash;</option>
+        </select>
       </div>
 
       <!-- The flight time is whatever hour you pick in the Weather card, and
@@ -1468,6 +1455,28 @@
         <div class="gate-indicator" id="oc-gate-weather-label">&mdash;</div>
         <div class="gate-msg" id="oc-gate-weather-msg">Select an estate, an aircraft and a flight hour.</div>
       </div>
+
+      <!-- Weather override. Offered only when the forecast is what is
+           stopping the flight, and only against a written reading. It sits
+           here, under the conditions it overrides, rather than at the
+           bottom of the brief. -->
+      <div id="oc-wx-override" style="display:none;border-top:1.5px dashed var(--oc-accent-line);padding-top:14px">
+        <div class="field-label" style="margin-bottom:7px">Override &mdash; Real Conditions On Site</div>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:9px">
+          The forecast is outside this aircraft&rsquo;s limits. If you have measured the conditions where you are standing
+          and they are <strong>inside</strong> those limits, write what you measured and override. It is saved with the record
+          against your name.
+        </p>
+        <textarea id="oc-wx-override-note" style="min-height:80px" placeholder="e.g. anemometer 6 m/s steady, gusting 8, dry, 11 C, vis good" oninput="ocRefresh()"></textarea>
+        <button class="secondary-btn" type="button" style="margin-top:9px" onclick="ocSetWxOverride()">I Choose to Override the NO GO on Real Conditions</button>
+        <div id="oc-wx-override-err" style="display:none;font-family:var(--mono);font-size:11px;color:var(--danger);margin-top:7px">Write what you measured before overriding.</div>
+      </div>
+
+      <div id="oc-wx-override-active" style="display:none;border-radius:8px;padding:12px 15px;font-family:var(--mono);font-size:11.5px;line-height:1.65;background:var(--oc-accent-tint);border:2px solid var(--oc-accent-ink);color:var(--oc-accent-ink)">
+        <strong>Weather NO GO overridden on measured conditions.</strong>
+        <div id="oc-wx-override-text" style="margin-top:6px"></div>
+        <button class="secondary-btn" type="button" style="width:auto;padding:6px 12px;margin-top:9px;display:inline-block" onclick="ocClearWxOverride()">Remove override</button>
+      </div>
     </div>
   </div>
 
@@ -1527,25 +1536,6 @@
         <p id="oc-nogo-reasons" style="margin-top:8px;font-size:13px;font-family:var(--mono);line-height:1.7"></p>
       </div>
 
-      <!-- Weather override. Offered only when the forecast is what is
-           stopping the flight, and only against a written reading. -->
-      <div id="oc-wx-override" style="display:none;margin-top:14px;border-top:1.5px dashed var(--oc-accent-line);padding-top:14px">
-        <div class="field-label" style="margin-bottom:7px">Real Conditions On Site</div>
-        <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:9px">
-          The forecast is outside this aircraft&rsquo;s limits. If you have measured the conditions where you are standing
-          and they are <strong>inside</strong> those limits, write what you measured and override. It is saved with the record
-          against your name.
-        </p>
-        <textarea id="oc-wx-override-note" style="min-height:80px" placeholder="e.g. anemometer 6 m/s steady, gusting 8, dry, 11 C, vis good" oninput="ocRefresh()"></textarea>
-        <button class="secondary-btn" type="button" style="margin-top:9px" onclick="ocSetWxOverride()">I Choose to Override on Real Conditions</button>
-        <div id="oc-wx-override-err" style="display:none;font-family:var(--mono);font-size:11px;color:var(--danger);margin-top:7px">Write what you measured before overriding.</div>
-      </div>
-
-      <div id="oc-wx-override-active" style="display:none;margin-top:14px;border-radius:8px;padding:12px 15px;font-family:var(--mono);font-size:11.5px;line-height:1.65;background:var(--oc-accent-tint);border:2px solid var(--oc-accent-ink);color:var(--oc-accent-ink)">
-        <strong>Weather overridden on measured conditions.</strong>
-        <div id="oc-wx-override-text" style="margin-top:6px"></div>
-        <button class="secondary-btn" type="button" style="width:auto;padding:6px 12px;margin-top:9px;display:inline-block" onclick="ocClearWxOverride()">Remove override</button>
-      </div>
     </div>
   </div>
 
@@ -8564,16 +8554,11 @@ function ocOnEstateChange() {
   ocLoadCacheForEstate(name);
 }
 
-function ocOnPilotChange() {
-  const other = ocEl('oc-pilot-other');
-  if (other) other.style.display = ocVal('oc-pilot') === '__other' ? '' : 'none';
-  ocRefresh();
-}
+// The pilot is typed, not picked - the Open category flights are flown by
+// staff who are not on the qualified-pilot list the dropdown was built from.
+function ocOnPilotChange() { ocRefresh(); }
 
-function ocPilotName() {
-  const v = ocVal('oc-pilot');
-  return v === '__other' ? ocVal('oc-pilot-other') : v;
-}
+function ocPilotName() { return ocVal('oc-pilot'); }
 
 function ocOnCoordChange() {
   // A cached forecast is for the estate, not for a specific field corner.
@@ -8615,11 +8600,6 @@ function ocGetGps() {
     },
     { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
   );
-}
-
-function ocStampLanding() {
-  const el = ocEl('oc-landing-time');
-  if (el) { el.value = ocHhmm(new Date()); ocRefresh(); }
 }
 
 // ══════════════════════════════════════════════════════
@@ -8826,7 +8806,8 @@ function ocBuildRecord() {
     remote_pilot:     ocPilotName(),
     uas:              ocVal('oc-aircraft'),
     take_off_time:    ocVal('oc-datetime').split('T')[1] || '',
-    landing_time:     ocVal('oc-landing-time'),
+    // Kept in the schema, no longer asked for on the form.
+    landing_time:     '',
     // ── Category ───────────────────────────────────────────────────────
     operating_category: ac ? 'Open ' + ac.subcat : 'Open',
     aircraft_mtom:      ac ? ac.mtom : '',
@@ -8888,9 +8869,9 @@ function ocCollectFormState() {
     rules[r.key] = !!(b && b.checked);
   });
   return {
-    estate: ocVal('oc-estate'), pilot: ocVal('oc-pilot'), pilotOther: ocVal('oc-pilot-other'),
+    estate: ocVal('oc-estate'), pilot: ocVal('oc-pilot'),
     aircraft: ocVal('oc-aircraft'),
-    datetime: ocVal('oc-datetime'), landing: ocVal('oc-landing-time'),
+    datetime: ocVal('oc-datetime'),
     lat: ocVal('oc-lat'), lon: ocVal('oc-lon'),
     hourIdx: ocHourIdx, toggles: Object.assign({}, ocToggleState),
     rules, note: ocVal('oc-debrief-note'),
@@ -8901,9 +8882,9 @@ function ocCollectFormState() {
 function ocRestoreDraft(s) {
   if (!s) return;
   const set = (id, v) => { const el = ocEl(id); if (el && v) el.value = v; };
-  set('oc-estate', s.estate); set('oc-pilot', s.pilot); set('oc-pilot-other', s.pilotOther);
+  set('oc-estate', s.estate); set('oc-pilot', s.pilot);
   set('oc-aircraft', s.aircraft);
-  set('oc-datetime', s.datetime); set('oc-landing-time', s.landing);
+  set('oc-datetime', s.datetime);
   set('oc-lat', s.lat); set('oc-lon', s.lon);
   set('oc-debrief-note', s.note); set('oc-wx-override-note', s.wxOverrideNote);
   ocOnPilotChange();
@@ -8973,27 +8954,79 @@ function ocRenderQueue(msg, kind) {
     `Saved on this device. <button class="secondary-btn" type="button" style="width:auto;padding:6px 12px;margin-left:8px;display:inline-block" onclick="ocFlushQueue(true)">Upload now</button>`;
 }
 
+const ocGhUrl = path =>
+  `https://api.github.com/repos/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/contents/${path}`;
+
+const ocGhHeaders = () => ({
+  'Authorization':        `Bearer ${CONFIG.GITHUB_TOKEN}`,
+  'Accept':               'application/vnd.github+json',
+  'X-GitHub-Api-Version': '2022-11-28',
+  'Content-Type':         'application/json',
+});
+
+// GitHub answers errors as {"message": "..."} - show that, not the whole body.
+function ocGhMessage(txt) {
+  try { const j = JSON.parse(txt); return j.message || ''; } catch (e) { return ''; }
+}
+
+async function ocGhGetFile(path) {
+  try {
+    const resp = await fetch(ocGhUrl(path), { headers: ocGhHeaders() });
+    if (!resp.ok) return null;
+    return await resp.json();
+  } catch (e) { return null; }
+}
+
+function ocDecodeB64(b64) {
+  try {
+    const bin = atob(String(b64 || '').replace(/\s/g, ''));
+    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch (e) { return ''; }
+}
+
+function ocPutOnce(path, message, json, sha) {
+  const body = { message, content: ocB64(json) };
+  if (sha) body.sha = sha;
+  return fetch(ocGhUrl(path), { method: 'PUT', headers: ocGhHeaders(), body: JSON.stringify(body) });
+}
+
 async function ocPutRecord(path, record) {
-  const resp = await fetch(
-    `https://api.github.com/repos/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/contents/${path}`,
-    { method: 'PUT',
-      headers: {
-        'Authorization':        `Bearer ${CONFIG.GITHUB_TOKEN}`,
-        'Accept':               'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type':         'application/json',
-      },
-      body: JSON.stringify({
-        message: `Open category flight record - ${record.estate || 'unknown estate'} ${record.date || ''}`.trim(),
-        content: ocB64(JSON.stringify(record, null, 2)),
-      }),
+  const json    = JSON.stringify(record, null, 2);
+  const message = `Open category flight record - ${record.estate || 'unknown estate'} ${record.date || ''}`.trim();
+
+  let resp = await ocPutOnce(path, message, json, null);
+
+  // 409 / 422 means a file is already sitting at this path. That almost
+  // always means an earlier attempt DID reach GitHub and only the answer
+  // got lost on the way back - which is exactly how a record ends up in
+  // the queue in the first place. Retrying the same create forever gets
+  // "sha wasn't supplied" forever, so look at what is actually there.
+  if (resp.status === 409 || resp.status === 422) {
+    const existing = await ocGhGetFile(path);
+    if (existing && existing.sha) {
+      if (ocDecodeB64(existing.content).trim() === json.trim()) {
+        return true;                                   // already uploaded
+      }
+      resp = await ocPutOnce(path, message, json, existing.sha);   // update in place
     }
-  );
+  }
+
   if (!resp.ok) {
     const txt = await resp.text().catch(() => '');
-    throw new Error(`${resp.status} ${txt.slice(0, 180)}`);
+    throw new Error(`${resp.status} ${ocGhMessage(txt) || txt.slice(0, 160)}`);
   }
   return true;
+}
+
+// Turn a status code into something a pilot can act on.
+function ocUploadHint(msg) {
+  const s = String(msg || '');
+  if (/^401/.test(s)) return 'The GitHub token on this device has expired or is wrong - set it up again.';
+  if (/^403/.test(s)) return `The token cannot write to ${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO} - it needs Contents: read and write.`;
+  if (/^404/.test(s)) return `${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO} was not found, or the token cannot see it.`;
+  if (/^(409|422)/.test(s)) return 'A file already exists at that path and could not be read back - try again in a moment.';
+  return '';
 }
 
 function ocRecordPath(record) {
@@ -9068,9 +9101,11 @@ async function ocFlushQueue(manual) {
     ocRenderQueue(`<strong>Uploaded ${done} record${done === 1 ? '' : 's'}.</strong> Nothing left waiting.`, 'ok');
     setTimeout(() => { if (!ocQueue().length) ocRenderQueue(); }, 8000);
   } else {
+    const hint = ocUploadHint(lastErr);
     ocRenderQueue(
       `<strong>${left.length} of ${q.length} could not be uploaded.</strong>` +
       (lastErr ? `<br>GitHub said: ${ocEsc(lastErr)}` : '') +
+      (hint    ? `<br>${ocEsc(hint)}` : '') +
       `<br><button class="secondary-btn" type="button" style="width:auto;padding:6px 12px;margin-top:9px;display:inline-block" onclick="ocFlushQueue(true)">Try again</button>`
     );
   }
@@ -9159,23 +9194,14 @@ populateEstateSelect = function (names) {
   });
 };
 
-// The pilot list passes through here, so the Open category dropdown is
-// filled and the list is remembered for the offline fallback below.
+// The PDRA-01 pilot dropdowns are still filled from the pilot list; the
+// Open category brief takes a typed name instead, so nothing is added to it
+// here. The list is still remembered for the offline fallback below.
 let ocLastPilots = [];
 const _ocOrigPopulatePilotSelects = populatePilotSelects;
 populatePilotSelects = function (pilots) {
   if (Array.isArray(pilots) && pilots.length) ocLastPilots = pilots;
   _ocOrigPopulatePilotSelects(pilots);
-  const sel = ocEl('oc-pilot');
-  if (!sel || !Array.isArray(pilots)) return;
-  const other = sel.querySelector('option[value="__other"]');
-  const seen = new Set(Array.from(sel.options).map(o => o.value));
-  pilots.forEach(p => {
-    if (!p || !p.name || seen.has(p.name)) return;
-    const o = document.createElement('option');
-    o.value = o.textContent = p.name;
-    sel.insertBefore(o, other);
-  });
 };
 
 // Site data cached for offline use. The dashboard fails closed when
