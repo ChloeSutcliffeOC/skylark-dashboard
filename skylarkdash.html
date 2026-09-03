@@ -98,7 +98,10 @@
     --oc-auto-fill:   #ede9fe;
 
     /* ── Existing names, now aliases onto the palette ── */
-    --bg:            var(--oc-canvas);
+    /* The page behind the cards is the accent now, so a white card reads as
+       a card. Anything that used to sit on --oc-accent-canvas to stand out
+       had to move off it - see .stage-head. */
+    --bg:            var(--oc-accent-canvas);
     --surface:       var(--oc-surface);
     --surface2:      var(--oc-surface-2);
     --border:        var(--oc-line-mid);
@@ -970,16 +973,15 @@
     font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    /* Yellow, not ink. These followed --oc-accent-deep, so turning that
-       black left them reading as grey. They are brand furniture, so they
-       take the brand colour and a higher opacity to carry it. */
-    color: var(--oc-accent-fill);
-    opacity: 0.85;
+    /* Grey. They sat in the brand yellow, which now belongs to the page
+       behind the cards - the words would disappear into it. */
+    color: var(--oc-line-strong);
+    opacity: 0.45;
     transition: color 0.25s, opacity 0.25s;
   }
-  #panel-indicator.pi-onsite .pi-label    { opacity: 0.95; }
-  #panel-indicator.pi-preflight .pi-label { opacity: 0.95; }
-  #panel-indicator.pi-debrief .pi-label   { opacity: 0.95; }
+  #panel-indicator.pi-onsite .pi-label    { opacity: 0.5; }
+  #panel-indicator.pi-preflight .pi-label { opacity: 0.5; }
+  #panel-indicator.pi-debrief .pi-label   { opacity: 0.5; }
 
   /* -- Header action buttons -- */
   .hdr-btn {
@@ -1201,7 +1203,9 @@
     text-transform:none;
   }
   #panel-home .card-sub {
-    background:var(--oc-accent-canvas);
+    /* One step up from the page, or the strip reads as a hole in the card
+       now that the page itself is accent-canvas. */
+    background:var(--oc-accent-tint);
     color:var(--oc-accent-ink);
     border-bottom:1.5px solid var(--oc-accent-line);
     font-size:12.5px; line-height:1.55;
@@ -1212,7 +1216,7 @@
     display:inline-flex; align-items:center; gap:7px;
     font-family:var(--mono); font-weight:700;
     letter-spacing:.1em;
-    color:#000; background:var(--oc-accent-fill);
+    color:#000; background:var(--oc-line);
     border-radius:999px; padding:6px 12px;
     font-size:0;                      /* hides the glyph in the markup */
     transition:background .15s;
@@ -1223,7 +1227,7 @@
     content:"\25BC"; font-size:9px; display:inline-block; transition:transform .15s;
   }
   #panel-home .card.collapsed .card-chevron::after { transform:rotate(-90deg); }
-  #panel-home .card-header:hover .card-chevron { background:var(--oc-accent-btn); }
+  #panel-home .card-header:hover .card-chevron { background:var(--oc-line-mid); }
 
   /* ── Home: a button has to look pressable ──
      Everything on this screen was the same pale yellow, so a button and a
@@ -1234,32 +1238,34 @@
   #panel-home .secondary-btn,
   #panel-open .secondary-btn,
   #setup-card .secondary-btn {
-    background:var(--oc-accent-btn);
-    color:var(--oc-accent-deep);
-    border:2px solid var(--oc-accent-strong);
-    box-shadow:0 2px 0 var(--oc-accent-strong);
+    background:var(--surface2);
+    color:var(--oc-ink);
+    border:2px solid var(--oc-line-mid);
+    box-shadow:0 2px 0 var(--oc-line-strong);
     font-weight:700;
     transition:background .12s, box-shadow .12s, transform .12s;
   }
   #panel-home .secondary-btn:hover,
   #panel-open .secondary-btn:hover,
   #setup-card .secondary-btn:hover {
-    background:var(--oc-accent-fill);
-    border-color:var(--oc-accent-strong);
-    color:var(--oc-accent-deep);
+    background:#e0e0e4;
+    border-color:var(--oc-line-strong);
+    color:var(--oc-ink);
   }
+  /* The primary action is a darker grey than the rest, not a colour. */
   #panel-home .submit-btn,
   #panel-open .submit-btn,
   #setup-card .submit-btn {
-    background:var(--oc-accent-fill);
-    border-color:var(--oc-accent-strong);
-    border-left-color:var(--oc-accent-strong);
-    box-shadow:0 3px 0 var(--oc-accent-strong);
+    background:var(--oc-line);
+    border-color:var(--oc-line-strong);
+    border-left-color:var(--oc-line-strong);
+    box-shadow:0 3px 0 var(--oc-line-strong);
+    color:var(--oc-ink);
     font-weight:700;
   }
   #panel-home .submit-btn:hover:not(:disabled),
   #panel-open .submit-btn:hover:not(:disabled),
-  #setup-card .submit-btn:hover:not(:disabled) { background:var(--oc-accent-btn); }
+  #setup-card .submit-btn:hover:not(:disabled) { background:var(--oc-line-mid); }
   /* Pressed: the shadow collapses under the button. */
   #panel-home .secondary-btn:active,
   #panel-open .secondary-btn:active,
@@ -1268,7 +1274,7 @@
   #panel-open .submit-btn:active:not(:disabled),
   #setup-card .submit-btn:active:not(:disabled) {
     transform:translateY(2px);
-    box-shadow:0 0 0 var(--oc-accent-strong);
+    box-shadow:0 0 0 var(--oc-line-strong);
   }
   /* The map's own controls sit on imagery, where white reads as a control. */
   #panel-home #mamc-map button { box-shadow:0 1px 3px rgba(0,0,0,.3); }
@@ -1276,23 +1282,23 @@
   /* Open in Outlook sits with the three copy buttons as one way of doing the
      same job, so it takes their lighter yellow rather than the primary fill. */
   #panel-home .submit-btn.mamc-outlook {
-    background:var(--oc-accent-btn);
-    box-shadow:0 2px 0 var(--oc-accent-strong);
+    background:var(--surface2);
+    box-shadow:0 2px 0 var(--oc-line-strong);
   }
-  #panel-home .submit-btn.mamc-outlook:hover:not(:disabled) { background:var(--oc-accent-fill); }
+  #panel-home .submit-btn.mamc-outlook:hover:not(:disabled) { background:#e0e0e4; }
   /* Preview and the no-Outlook fallback are neither the route to take first
      nor a decision, so they stay out of the accent entirely. */
   #panel-home .secondary-btn.btn-quiet,
   #panel-open .secondary-btn.btn-quiet {
-    background:var(--surface2);
+    background:var(--surface);
     color:var(--muted);
-    border-color:var(--oc-line-mid, var(--border));
-    box-shadow:0 2px 0 var(--border);
+    border-color:var(--oc-line);
+    box-shadow:none;
     font-weight:600;
   }
   #panel-home .secondary-btn.btn-quiet:hover,
   #panel-open .secondary-btn.btn-quiet:hover {
-    background:#e9e9ec; color:#000; border-color:#9a9aa2;
+    background:var(--surface2); color:#000; border-color:var(--oc-line-mid);
   }
 
   /* ── Cache panel ── */
@@ -1405,7 +1411,7 @@
   .stage-head {
     display:flex; align-items:center; gap:14px; width:100%;
     text-align:left; cursor:pointer; font-family:var(--sans);
-    background:var(--oc-accent-canvas);
+    background:var(--surface);
     border:2px solid var(--oc-accent-line);
     border-left:6px solid var(--oc-accent-strong);
     border-radius:10px; padding:15px 17px;
@@ -1575,7 +1581,7 @@
      they need the same weight as the rest, or the right-hand gutter reads as
      a smudge next to a solid SKYLARK on the left. */
   #panel-indicator.pi-home .pi-label,
-  #panel-indicator.pi-open .pi-label { opacity:0.85; }
+  #panel-indicator.pi-open .pi-label { opacity:0.45; }
 
 </style>
 </head>
@@ -1997,7 +2003,6 @@
         <div class="data-cell"><div class="cell-label auto-label">Precipitation</div><div class="cell-value" id="oc-d-precip">&mdash;</div></div>
         <div class="data-cell"><div class="cell-label auto-label">Temperature</div><div class="cell-value" id="oc-d-temp">&mdash;</div></div>
         <div class="data-cell"><div class="cell-label auto-label">Visibility</div><div class="cell-value" id="oc-d-vis">&mdash;</div></div>
-        <div class="data-cell"><div class="cell-label auto-label">Cloud</div><div class="cell-value" id="oc-d-cloud">&mdash;</div></div>
         <div class="data-cell"><div class="cell-label auto-label">Icing Risk</div><div class="cell-value" id="oc-d-icing">&mdash;</div></div>
         <div class="data-cell"><div class="cell-label auto-label">Kp-Index</div><div class="cell-value" id="oc-d-kp">&mdash;</div></div>
         <div class="data-cell"><div class="cell-label auto-label">Daylight</div><div class="cell-value" id="oc-d-daylight">&mdash;</div></div>
@@ -4265,8 +4270,8 @@ async function fetchMetOfficeDirect(lat, lon) {
   };
 
   const precipPct = best.probOfPrecipitation ?? 0;
-  // DataHub carries no cloud field - see ocMetarCloud for the detail - so
-  // the sky comes from the significant weather code alone here.
+  // DataHub carries no cloud field on any of its site-specific endpoints, so
+  // the sky here comes from the significant weather code alone.
   const cloudOktas = null;
   const sigWx      = best.significantWeatherCode;  // numeric code
 
@@ -8984,61 +8989,13 @@ function ocRenderNight() {
   return night;
 }
 
-// ── Cloud ────────────────────────────────────────────────────────────────
-// The Met Office DataHub site-specific API carries no cloud field at all -
-// not on hourly, not on three-hourly, not on daily. The code used to read
-// e.totalCloudCover, which never exists, so the Cloud cell has been empty
-// for every estate since it was written. Checked against the live API on
-// 3 Sep 2026; the hourly response has 19 fields and none of them mention
-// cloud.
-//
-// So cloud comes from what we do have, in order of how much it is worth:
-// the METAR when the Action returned one (an actual observation, with a
-// base height), and otherwise the sky state implied by the significant
-// weather code. Neither is invented, and both say where they came from.
-
-// FEW/SCT/BKN/OVC + height in hundreds of feet. Returns the lowest layer,
-// because the lowest is the one that matters for staying clear of cloud.
-function ocMetarCloud(metar) {
-  if (!metar) return null;
-  const t = String(metar).toUpperCase();
-  if (/\bCAVOK\b/.test(t)) return { text: 'No cloud below 5,000 ft (CAVOK)' };
-  if (/\b(NSC|NCD|SKC|CLR)\b/.test(t)) return { text: 'No significant cloud' };
-  // No trailing \b: a slash is not a word character, so VV/// never matched.
-  const vv = t.match(/\bVV(\d{3}|\/\/\/)(?=\s|$)/);
-  if (vv) return { text: vv[1] === '///' ? 'Sky obscured' : `Sky obscured, vertical visibility ${(+vv[1] * 100).toLocaleString()} ft` };
-  const layers = [...t.matchAll(/\b(FEW|SCT|BKN|OVC)(\d{3})\b/g)]
-    .map(m => ({ cover: m[1], ft: +m[2] * 100 }))
-    .sort((a, b) => a.ft - b.ft);
-  if (!layers.length) return null;
-  const l = layers[0];
-  const words = { FEW: 'Few', SCT: 'Scattered', BKN: 'Broken', OVC: 'Overcast' };
-  return { text: `${words[l.cover]} at ${l.ft.toLocaleString()} ft`, ft: l.ft, cover: l.cover };
-}
-
-// What the significant weather code implies about the sky. Qualitative on
-// purpose - the code does not carry an okta figure, so neither do we.
-function ocSkyFromCode(code) {
-  if (code == null) return '';
-  if (code === 0 || code === 1) return 'Clear';
-  if (code === 2 || code === 3) return 'Partly cloudy';
-  if (code === 5) return 'Mist';
-  if (code === 6) return 'Fog';
-  if (code === 7) return 'Cloudy';
-  if (code === 8) return 'Overcast';
-  if (code >= 9)  return 'Overcast with precipitation';
-  return '';
-}
-
-// The Cloud cell, and what it is honest about.
-function ocCloudCell(h, bundle) {
-  const icao = (bundle && bundle.static && (bundle.static.weather_icao || bundle.static.nearest_aerodrome_icao)) || '';
-  const m = ocMetarCloud(bundle && bundle.metar);
-  if (m) return { text: `${m.text}${icao ? ` · ${icao} observed` : ' · nearest METAR'}`, status: 'info' };
-  const sky = ocSkyFromCode(h && h.sigWx);
-  if (sky) return { text: `${sky} · from the weather code`, status: 'info' };
-  return { text: 'Not in this forecast', status: 'info' };
-}
+// Cloud is not shown in the Open category brief. The Met Office DataHub
+// site-specific API carries no cloud field on any endpoint - hourly,
+// three-hourly or daily - so the cell could only ever have shown the
+// aerodrome METAR or an inference from the weather code, neither of which is
+// cloud over the site. A cell that cannot answer its own question is worse
+// than no cell. The mapper still stores `cloud` from the pull in case the
+// API ever grows the field.
 
 const OC_RANK = { green: 0, orange: 1, red: 2 };
 function ocWorst(list) {
@@ -9211,7 +9168,7 @@ function ocOnTimeChange() {
 function ocRenderConditions() {
   const ac = ocCurrentAircraft();
   const h  = ocHourIdx >= 0 ? ocHours[ocHourIdx] : null;
-  const ids = ['oc-d-wind','oc-d-gust','oc-d-precip','oc-d-temp','oc-d-vis','oc-d-cloud','oc-d-icing','oc-d-kp','oc-d-daylight'];
+  const ids = ['oc-d-wind','oc-d-gust','oc-d-precip','oc-d-temp','oc-d-vis','oc-d-icing','oc-d-kp','oc-d-daylight'];
 
   if (!h || !ac) {
     ids.forEach(id => {
@@ -9239,8 +9196,6 @@ function ocRenderConditions() {
   ocSetCell('oc-d-precip', (h.sigWxLabel || 'Clear') + (h.precipProb ? ` · ${h.precipProb}% prob` : ''), pS);
   ocSetCell('oc-d-temp',  h.tempC != null ? `${h.tempC}°C` : '—', tS);
   ocSetCell('oc-d-vis',   ocVisText(h.visM), vS);
-  const cloudCell = ocCloudCell(h, ocCache);
-  ocSetCell('oc-d-cloud', cloudCell.text, cloudCell.status);
   ocSetCell('oc-d-icing', ice.text, ice.status);
   ocSetCell('oc-d-kp',    (ocCache && ocCache.kp != null && ocCache.kp !== '') ? `Kp ${ocCache.kp}` : '—', kS);
   ocSetCell('oc-d-daylight', day.text, day.status);
@@ -9872,7 +9827,6 @@ function ocBuildRecord() {
     temperature:      h && h.tempC != null ? `${h.tempC} C` : '',
     dew_point:        h && h.dewC  != null ? `${h.dewC} C`  : '',
     visibility:       h ? ocVisText(h.visM) : '',
-    cloud_cover:      h ? ocCloudCell(h, ocCache).text : '',
     space_weather_kp: ocCache && ocCache.kp != null ? String(ocCache.kp) : '',
     sunrise:          ocCache ? ocCache.sunrise : '',
     sunset:           ocCache ? ocCache.sunset  : '',
