@@ -2129,12 +2129,11 @@
   <!-- 4b. Emergency procedures -->
   <div class="card">
     <div class="card-header">
-      <h2>Emergency Procedures <span class="card-tick" id="tick-oc-ep" style="display:none">&#10003;</span></h2>
-      <span class="timestamp" id="oc-ep-count"></span>
+      <h2>Emergency Procedures</h2>
     </div>
     <div class="card-body">
       <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:2px">
-        Swipe through each one and confirm it has been briefed to everyone on site. The call-out in the
+        Swipe through these before you fly and brief them to everyone on site. The call-out in the
         corner is what you say out loud.
       </p>
       <div class="oc-ep-track" id="oc-ep-track"></div>
@@ -2142,10 +2141,6 @@
         <button class="oc-ep-arrow" type="button" onclick="ocEpStep(-1)" aria-label="Previous procedure">&#9664;</button>
         <div class="oc-ep-dots" id="oc-ep-dots"></div>
         <button class="oc-ep-arrow" type="button" onclick="ocEpStep(1)" aria-label="Next procedure">&#9654;</button>
-      </div>
-      <div class="gate-card gate-pending" id="oc-gate-ep">
-        <div class="gate-indicator" id="oc-gate-ep-label">&mdash;</div>
-        <div class="gate-msg" id="oc-gate-ep-msg">Confirm each procedure has been briefed.</div>
       </div>
     </div>
   </div>
@@ -9492,7 +9487,11 @@ const OC_EP = [
     'UAS will automatically land and shut motors off'] },
 ];
 
-const ocEpState = {};
+// The procedures are reference material, not a checklist. There used to be
+// a "briefed and understood by all crew" button on each card, with a count,
+// a tick and a gate behind it. Tapping seven buttons is not evidence that a
+// briefing happened, and the record is better without a claim it cannot
+// support. The cards, the swipe and the dots stay.
 let ocEpIdx = 0;
 
 function ocEpRender() {
@@ -9508,7 +9507,6 @@ function ocEpRender() {
         <ol class="ep-steps">
           ${p.steps.map((t, i) => `<li><span class="ep-num ep-num-${p.level}">${i + 1}</span><span>${ocEsc(t)}</span></li>`).join('')}
         </ol>
-        <button class="ep-brief-btn" type="button" onclick="ocEpBriefed('${p.key}', this)">Briefed and understood by all crew</button>
       </div>
     </div>`).join('');
   track.dataset.built = '1';
@@ -9525,7 +9523,7 @@ function ocEpDots() {
   const host = ocEl('oc-ep-dots');
   if (!host) return;
   host.innerHTML = OC_EP.map((p, i) =>
-    `<button type="button" class="oc-ep-dot${i === ocEpIdx ? ' here' : ''}${ocEpState[p.key] ? ' done' : ''}" ` +
+    `<button type="button" class="oc-ep-dot${i === ocEpIdx ? ' here' : ''}" ` +
     `onclick="ocEpGo(${i})" aria-label="${ocEsc(p.title)}"></button>`).join('');
 }
 
@@ -9538,17 +9536,6 @@ function ocEpGo(i) {
 }
 
 function ocEpStep(d) { ocEpGo(ocEpIdx + d); }
-
-function ocEpBriefed(key, btn) {
-  ocEpState[key] = !ocEpState[key];
-  const card = ocEl('oc-ep-' + key);
-  if (card) card.classList.toggle('ep-confirmed', !!ocEpState[key]);
-  if (btn) btn.textContent = ocEpState[key] ? '✓ Briefed to all crew' : 'Briefed and understood by all crew';
-  ocEpDots();
-  ocRefresh();
-}
-
-function ocEpDone() { return OC_EP.filter(p => ocEpState[p.key]).length; }
 
 // ══════════════════════════════════════════════════════
 // WEATHER OVERRIDE
@@ -9662,29 +9649,6 @@ function ocRefresh() {
   ocTick('tick-oc-rules',    rulesOk);
   ocTick('tick-oc-debrief',  dbOk);
 
-  // Emergency procedures. A tick and a gate, not a GO blocker - nothing
-  // here should stop a pilot filing a record of a flight that happened.
-  const epDone = ocEpDone();
-  const epAll  = epDone === OC_EP.length;
-  ocTick('tick-oc-ep', epAll);
-  const epCount = ocEl('oc-ep-count');
-  if (epCount) epCount.textContent = `${epDone} / ${OC_EP.length} briefed`;
-  const epGate = ocEl('oc-gate-ep');
-  if (epGate) {
-    epGate.classList.remove('gate-go', 'gate-nogo', 'gate-pending');
-    const lab = ocEl('oc-gate-ep-label');
-    const msg = ocEl('oc-gate-ep-msg');
-    if (epAll) {
-      epGate.classList.add('gate-go');
-      if (lab) lab.textContent = '\u2713 BRIEFED';
-      if (msg) msg.textContent = `All ${OC_EP.length} emergency procedures briefed to the crew.`;
-    } else {
-      epGate.classList.add('gate-pending');
-      if (lab) lab.textContent = `${epDone} / ${OC_EP.length}`;
-      if (msg) msg.textContent = 'Swipe through each one and confirm it has been briefed.';
-    }
-  }
-
   // Rules gate
   const rg = ocEl('oc-gate-rules');
   if (rg) {
@@ -9765,9 +9729,6 @@ function ocRefresh() {
     if (!canSave) {
       banner.style.background = '#fdd9d7'; banner.style.border = '1.5px solid #e05c5c'; banner.style.color = '#7a1212';
       banner.innerHTML = '⚠ Fill in the estate, pilot and aircraft before saving.';
-    } else if (!epAll) {
-      banner.style.background = 'var(--oc-accent-tint)'; banner.style.border = '1.5px solid var(--oc-accent-ink)'; banner.style.color = 'var(--oc-accent-ink)';
-      banner.innerHTML = `&#9888; You can save now, but ${OC_EP.length - epDone} emergency procedure${OC_EP.length - epDone === 1 ? ' has' : 's have'} not been confirmed as briefed.`;
     } else if (!dbOk) {
       banner.style.background = '#fff0e0'; banner.style.border = '1.5px solid #d45a00'; banner.style.color = '#8a3300';
       banner.innerHTML = '⚠ You can save now, but the debrief note is empty. Come back and finish it after you land.';
@@ -9817,8 +9778,6 @@ function ocBuildRecord() {
     aircraft_limits:    ac ? `wind ${ac.windMs} m/s, precip ${ac.precipMm} mm/h, ${ac.tMin} to ${ac.tMax} C` : '',
     limits_source:      ac ? (ac.inOm ? 'PDRA-01 OM v3.1 s3.3' : 'DJI published - not in OM v3.1') : '',
     open_category_rules: rules,
-    emergency_procedures: OC_EP.reduce((o, p) => { o[p.key] = ocEpState[p.key] ? 'Briefed' : 'Not briefed'; return o; }, {}),
-    all_emergency_procedures_briefed: ocEpDone() === OC_EP.length ? 'Yes' : 'No',
     operations_manual_read: (ocEl('ocr-manual') && ocEl('ocr-manual').checked) ? 'Yes' : 'No',
     all_rules_confirmed: ocRulesState().missing.length === 0 && !!ac ? 'Yes' : 'No',
     // ── Conditions at the briefed hour ─────────────────────────────────
@@ -9882,7 +9841,6 @@ function ocCollectFormState() {
     lat: ocVal('oc-lat'), lon: ocVal('oc-lon'),
     hourIdx: ocHourIdx, toggles: Object.assign({}, ocToggleState),
     rules, manual: !!(ocEl('ocr-manual') && ocEl('ocr-manual').checked),
-    ep: Object.assign({}, ocEpState),
     note: ocVal('oc-debrief-note'),
     wxOverride: ocWxOverride, wxOverrideNote: ocVal('oc-wx-override-note'),
   };
@@ -9897,16 +9855,6 @@ function ocRestoreDraft(s) {
   set('oc-lat', s.lat); set('oc-lon', s.lon);
   set('oc-debrief-note', s.note); set('oc-wx-override-note', s.wxOverrideNote);
   const man = ocEl('ocr-manual'); if (man) man.checked = !!s.manual;
-  Object.entries(s.ep || {}).forEach(([k, v]) => {
-    if (!v) return;
-    ocEpState[k] = true;
-    const card = ocEl('oc-ep-' + k);
-    if (card) {
-      card.classList.add('ep-confirmed');
-      const b = card.querySelector('.ep-brief-btn');
-      if (b) b.textContent = '\u2713 Briefed to all crew';
-    }
-  });
   ocEpDots();
   ocOnPilotChange();
   ocOnAircraftChange();
