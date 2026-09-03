@@ -1804,7 +1804,7 @@
           </div>
 
           <button class="secondary-btn btn-quiet" type="button" style="margin:0" onclick="mamcTogglePreview()">Preview</button>
-          <button class="secondary-btn btn-quiet" type="button" style="margin:0;font-size:11px" onclick="mamcOpenDefaultMail()">No Outlook on this device? Open the default mail app</button>
+          <button class="secondary-btn btn-quiet" type="button" id="mamc-default-mail" style="margin:0;font-size:11px" onclick="mamcOpenDefaultMail()">No Outlook on this device? Open the default mail app</button>
           <pre class="json-preview" id="mamc-preview"></pre>
         </div>
       </div>
@@ -10805,17 +10805,54 @@ function mamcOutlookHref() {
          `&body=${encodeURIComponent(body)}`;
 }
 
-// One tap, one app. There used to be an automatic mailto fallback here for
-// devices without Outlook, fired if no app switch was detected inside 1.2 s.
-// iOS takes longer than that to hand over, so the fallback ran anyway and
-// Mail opened on top of Outlook. There is no reliable way to detect the
-// handover, so the fallback is a button of its own instead of a guess.
+// Which scheme opens a filled-in draft depends on the device.
+//
+// Phones and tablets: ms-outlook://compose. Outlook for iOS and Android
+// registers it, and it is the only way past Apple Mail holding the mailto
+// default on these iPads.
+//
+// Windows and Mac desktops: mailto:. The desktop Outlook that registers
+// ms-outlook: opens the app but ignores the compose parameters, so the app
+// comes up with no draft in it - which is exactly what a pilot reported.
+// mailto: goes to whatever holds the mail default, which on the office
+// machines is Outlook, and it arrives with the address, subject and body
+// already in the compose window.
+function mamcIsMobile() {
+  const ua = navigator.userAgent || '';
+  if (/iPhone|iPad|iPod|Android/i.test(ua)) return true;
+  // iPadOS reports itself as a Mac; the touch points give it away.
+  return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+}
+
+// There used to be an automatic mailto fallback here for devices without
+// Outlook, fired if no app switch was detected inside 1.2 s. iOS takes
+// longer than that to hand over, so the fallback ran anyway and Mail opened
+// on top of Outlook. There is no reliable way to detect the handover, so on
+// mobile the fallback is a button of its own instead of a guess.
 function mamcOpenMail() {
-  window.location.href = mamcOutlookHref();
+  const href = mamcIsMobile() ? mamcOutlookHref() : mamcMailtoHref();
+  // Windows hands the URL to the mail client through a command line with a
+  // length limit, and a body that runs past it arrives cut in half. The
+  // notification is around 1,150 characters, so this only bites on a long
+  // date range or a long contact line - but a silently truncated
+  // notification is worse than being told to use the copy buttons.
+  if (!mamcIsMobile() && href.length > 1900) {
+    mamcW3wStatus('This notification is too long to hand to Outlook in one go, and would arrive cut short. ' +
+                  'Use the three <strong>copy</strong> buttons below instead.', 'bad');
+    return;
+  }
+  window.location.href = href;
 }
 
 function mamcOpenDefaultMail() {
   window.location.href = mamcMailtoHref();
+}
+
+// On a desktop the button above already goes through mailto:, so this one
+// would do exactly the same thing under a name that suggests otherwise.
+function mamcSyncMailButtons() {
+  const alt = ocEl('mamc-default-mail');
+  if (alt) alt.style.display = mamcIsMobile() ? '' : 'none';
 }
 
 // The old fallback called document.execCommand('copy') and announced
@@ -10933,6 +10970,7 @@ function mamcInit() {
   const dtEnd = ocEl('mamc-date-end');
   if (dtEnd) dtEnd.min = ocVal('mamc-date');
   mamcRestoreContact();
+  mamcSyncMailButtons();
   mamcRefresh();
 }
 
