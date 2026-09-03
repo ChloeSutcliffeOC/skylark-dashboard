@@ -63,12 +63,13 @@
     --oc-danger-fill:   #fecdd3;
     --oc-danger-ink-deep: #881337; /* selected-toggle label */
 
-    /* neutral — sky: not required, not present, reference */
-    --oc-info-ink:    #075985;
-    --oc-info-strong: #0284c7;
-    --oc-info-line:   #7dd3fc;
-    --oc-info-tint:   #e0f2fe;
-    --oc-info-fill:   #bae6fd;
+    /* neutral — was sky blue; now the same yellow as the Download 24 Hours
+       button, so the forms carry one accent colour rather than two. */
+    --oc-info-ink:    #6d6000;
+    --oc-info-strong: #6d6000;
+    --oc-info-line:   #fcd34d;
+    --oc-info-tint:   #fef08a;
+    --oc-info-fill:   #fde047;
 
     /* auto-filled — violet. A MEANING, not a brand colour: it marks data
        Skylark fetched rather than data a person typed. Don't restyle. */
@@ -494,9 +495,16 @@
 
   /* ── Estate info ── */
   .estate-info-grid {
-    display: flex;
+    /* Was display:flex with no wrap, so every card was squeezed into one
+       row - five hazard cards came out as five tall slivers. A wrapping
+       grid gives two or three per row and lets each one breathe. */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 10px;
-    align-items: flex-start;
+    align-items: start;
+  }
+  @media (max-width: 560px) {
+    .estate-info-grid { grid-template-columns: 1fr; }
   }
 
   .estate-info-col {
@@ -896,7 +904,27 @@
     -webkit-user-select: none;
     pointer-events: none;
   }
-  #panel-indicator .pi-label {
+  /* The brand mark mirrors the panel indicator down the left-hand gutter,
+     on the home screen only. The right-hand side names the panel you are
+     in; the left says whose app it is. */
+  #brand-indicator {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+  }
+  #brand-indicator.visible { display: flex; }
+  #brand-indicator .pi-label { writing-mode: vertical-lr; transform: rotate(180deg); }
+
+  #panel-indicator .pi-label,
+  #brand-indicator .pi-label {
     writing-mode: vertical-rl;
     font-family: var(--mono);
     /* Scales with the screen rather than sitting at a fixed 22px, which
@@ -1138,6 +1166,18 @@
   .cache-item.stale { border-left-color:var(--danger); background:#fff6f6; }
   .cache-item-name { font-weight:600; }
   .cache-item-age  { font-family:var(--mono); font-size:11px; color:var(--muted); margin-left:auto; }
+  .cache-notam-hit  { font-family:var(--mono); font-size:11.5px; font-weight:700; color:var(--danger); text-transform:uppercase; letter-spacing:.04em; }
+  .cache-notam-none { font-family:var(--mono); font-size:11px; color:var(--muted); }
+  .cache-notam-btn {
+    flex-shrink:0; text-decoration:none;
+    font-family:var(--mono); font-size:10.5px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.07em;
+    padding:6px 11px; border-radius:6px;
+    border:1.5px solid var(--oc-accent-ink);
+    background:var(--oc-accent-btn); color:var(--oc-accent-ink);
+    white-space:nowrap;
+  }
+  .cache-notam-btn:hover { background:var(--oc-accent-fill); }
 
   /* ── Open Category: the hour strip ── */
   .oc-hours-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:5px; }
@@ -1234,6 +1274,7 @@
     color:var(--oc-accent-ink); margin-bottom:3px;
   }
   .stage-sub { display:block; font-size:12.5px; line-height:1.5; color:var(--muted); margin-top:4px; }
+  .stage-sub strong { color:var(--oc-ink); font-weight:700; }
   .stage-chevron {
     flex-shrink:0; font-size:13px; color:var(--oc-accent-ink);
     transition:transform .15s;
@@ -1263,6 +1304,30 @@
   .notice-action .notice-title { color:var(--oc-accent-ink); }
   .notice-urgent { border-left-color:var(--oc-danger-strong); background:var(--oc-danger-tint); }
   .notice-urgent .notice-title { color:var(--oc-danger-ink); }
+
+  /* ── Home: the two ways to send a MAMC notification ── */
+  .mamc-route { display:flex; flex-direction:column; gap:7px; }
+  .mamc-route-label {
+    font-family:var(--mono); font-size:10px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.1em; color:var(--oc-accent-ink);
+  }
+  /* Three buttons occupying exactly the width of the one above them, so the
+     choice reads as one method or the other rather than four buttons. */
+  .mamc-copy-row { display:flex; gap:8px; width:100%; }
+  .mamc-copy-btn {
+    flex:1 1 0; min-width:0; margin:0;
+    display:flex; align-items:center; justify-content:center; gap:7px;
+    padding:14px 6px; font-size:11.5px; white-space:nowrap;
+  }
+  .mamc-step {
+    flex-shrink:0; width:17px; height:17px; border-radius:50%;
+    background:var(--oc-ink); color:var(--oc-accent-fill);
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:700;
+  }
+  @media (max-width:560px) {
+    .mamc-copy-btn { font-size:10.5px; padding:13px 4px; gap:5px; }
+  }
 
   /* ── Home: MAMC deadline line ── */
   .mamc-deadline {
@@ -1315,6 +1380,9 @@
 <div id="panel-indicator">
   <div class="pi-label">—</div>
 </div>
+
+<!-- Brand mark down the left of the home screen -->
+<div id="brand-indicator"><div class="pi-label">Skylark</div></div>
 
 <header>
   <div class="logo-block">
@@ -1399,7 +1467,7 @@
       <span class="stage-text">
         <span class="stage-when">By 20:00 the day before</span>
         <span class="stage-title">The Day Before You Fly</span>
-        <span class="stage-sub">Send the MAMC low-flying notification, then pull 24 hours of weather, NOTAMs and daylight onto this device while you still have signal.</span>
+        <span class="stage-sub"><strong>MAMC notification</strong> and <strong>24-hour data download</strong> &mdash; send the low-flying notification, then pull the weather, NOTAMs and daylight onto this device while you still have signal.</span>
       </span>
       <span class="stage-chevron">&#9660;</span>
     </button>
@@ -1463,6 +1531,12 @@
             </div>
           </div>
 
+          <div style="font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--oc-accent-ink);background:var(--oc-accent-canvas);border:1.5px solid var(--oc-accent-line);border-radius:8px;padding:10px 13px">
+            The centre and what3words come from the estate's stored coordinate, which for most estates is
+            derived from a postcode rather than the boundary. <strong>Edit both to the actual area of operation</strong>
+            before sending &mdash; this is what tells a low-flying crew where you will be.
+          </div>
+
           <div>
             <div class="field-label">Area &mdash; Radius From the Centre</div>
             <div style="display:flex;gap:8px;align-items:center">
@@ -1492,10 +1566,20 @@
 
           <div class="mamc-deadline" id="mamc-deadline"></div>
 
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="submit-btn" type="button" id="mamc-send" style="flex:1;min-width:200px" onclick="mamcOpenMail()">Open in Outlook</button>
-            <button class="secondary-btn" type="button" style="flex:1;min-width:140px;margin:0" onclick="mamcCopy('body')">Copy Body</button>
-            <button class="secondary-btn" type="button" style="flex:1;min-width:140px;margin:0" onclick="mamcCopy('subject')">Copy Subject</button>
+          <!-- Two ways to send it, and the layout says so: one button, or
+               three of the same total width used in order. -->
+          <div class="mamc-route">
+            <div class="mamc-route-label">One tap</div>
+            <button class="submit-btn" type="button" id="mamc-send" style="margin:0" onclick="mamcOpenMail()">Open in Outlook</button>
+          </div>
+
+          <div class="mamc-route">
+            <div class="mamc-route-label">Or copy it across, in this order</div>
+            <div class="mamc-copy-row">
+              <button class="secondary-btn mamc-copy-btn" type="button" onclick="mamcCopy('to')"><span class="mamc-step">1</span>Email address</button>
+              <button class="secondary-btn mamc-copy-btn" type="button" onclick="mamcCopy('subject')"><span class="mamc-step">2</span>Subject</button>
+              <button class="secondary-btn mamc-copy-btn" type="button" onclick="mamcCopy('body')"><span class="mamc-step">3</span>Body</button>
+            </div>
           </div>
 
           <div id="mamc-copybox" style="display:none">
@@ -1545,7 +1629,7 @@
       <span class="stage-text">
         <span class="stage-when">On site, before every single flight</span>
         <span class="stage-title">Before Every Flight</span>
-        <span class="stage-sub">Fill in the brief for the category you are flying under. Every flight, every time &mdash; not once a day.</span>
+        <span class="stage-sub"><strong>Open category</strong> or <strong>PDRA-01</strong> brief &mdash; fill in the one for the category you are flying under. Every flight, every time, not once a day.</span>
       </span>
       <span class="stage-chevron">&#9660;</span>
     </button>
@@ -1654,6 +1738,9 @@
         <span style="color:var(--danger);font-weight:600">Red</span> &mdash; outside limits, do not fly
       </p>
       <div id="oc-weather-source" style="display:none;background:#f0f7f0;border:1.5px solid #4caf70;border-radius:7px;padding:9px 13px;font-family:var(--mono);font-size:11px;color:#166a2a;line-height:1.6"></div>
+
+      <button class="secondary-btn" type="button" id="oc-live-btn" style="margin:0" onclick="ocRefreshLive()">Fetch Live Data for This Estate</button>
+      <div class="cache-status" id="oc-live-status" style="display:none"></div>
 
       <div>
         <div class="field-label">Pick Your Flight Hour</div>
@@ -2732,37 +2819,37 @@
             <div id="comms-carousel-inner" style="display:flex;transition:transform 0.25s ease;will-change:transform">
 
               <div class="ep-proc" style="min-width:100%;flex-shrink:0">
-                <div class="ep-proc-header" style="background:#e0f2fe;border-bottom-color:#0284c7">
-                  <div class="ep-icon" style="background:#e0f2fe"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m0 0l-4 4m4-4l4 4"/></svg></div>
+                <div class="ep-proc-header" style="background:var(--oc-info-tint);border-bottom-color:var(--oc-info-strong)">
+                  <div class="ep-icon" style="background:var(--oc-info-tint)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="stroke:var(--oc-info-strong)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m0 0l-4 4m4-4l4 4"/></svg></div>
                   <span class="ep-proc-title">Pre-flight</span>
-                  <span class="ep-callout" style="background:#e0f2fe;color:#0284c7;font-size:15px;font-weight:700">"Props clear"</span>
+                  <span class="ep-callout" style="background:var(--oc-info-tint);color:var(--oc-info-strong);font-size:15px;font-weight:700">"Props clear"</span>
                 </div>
                 <div class="ep-proc-body" style="padding:10px 16px"><span style="font-size:14px;color:var(--muted)">Said before motors are started</span></div>
               </div>
 
               <div class="ep-proc" style="min-width:100%;flex-shrink:0">
-                <div class="ep-proc-header" style="background:#e0f2fe;border-bottom-color:#0284c7">
-                  <div class="ep-icon" style="background:#e0f2fe"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19l7-14 7 14M5 19h14"/></svg></div>
+                <div class="ep-proc-header" style="background:var(--oc-info-tint);border-bottom-color:var(--oc-info-strong)">
+                  <div class="ep-icon" style="background:var(--oc-info-tint)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="stroke:var(--oc-info-strong)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19l7-14 7 14M5 19h14"/></svg></div>
                   <span class="ep-proc-title">Departure</span>
-                  <span class="ep-callout" style="background:#e0f2fe;color:#0284c7;font-size:15px;font-weight:700">"Taking off"</span>
+                  <span class="ep-callout" style="background:var(--oc-info-tint);color:var(--oc-info-strong);font-size:15px;font-weight:700">"Taking off"</span>
                 </div>
                 <div class="ep-proc-body" style="padding:10px 16px"><span style="font-size:14px;color:var(--muted)">Announced before departure</span></div>
               </div>
 
               <div class="ep-proc" style="min-width:100%;flex-shrink:0">
-                <div class="ep-proc-header" style="background:#e0f2fe;border-bottom-color:#0284c7">
-                  <div class="ep-icon" style="background:#e0f2fe"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l7 14 7-14M5 5h14"/></svg></div>
+                <div class="ep-proc-header" style="background:var(--oc-info-tint);border-bottom-color:var(--oc-info-strong)">
+                  <div class="ep-icon" style="background:var(--oc-info-tint)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="stroke:var(--oc-info-strong)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l7 14 7-14M5 5h14"/></svg></div>
                   <span class="ep-proc-title">Descent</span>
-                  <span class="ep-callout" style="background:#e0f2fe;color:#0284c7;font-size:15px;font-weight:700">"Landing"</span>
+                  <span class="ep-callout" style="background:var(--oc-info-tint);color:var(--oc-info-strong);font-size:15px;font-weight:700">"Landing"</span>
                 </div>
                 <div class="ep-proc-body" style="padding:10px 16px"><span style="font-size:14px;color:var(--muted)">Called before descent</span></div>
               </div>
 
               <div class="ep-proc" style="min-width:100%;flex-shrink:0">
-                <div class="ep-proc-header" style="background:#e0f2fe;border-bottom-color:#0284c7">
-                  <div class="ep-icon" style="background:#e0f2fe"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+                <div class="ep-proc-header" style="background:var(--oc-info-tint);border-bottom-color:var(--oc-info-strong)">
+                  <div class="ep-icon" style="background:var(--oc-info-tint)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="stroke:var(--oc-info-strong)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
                   <span class="ep-proc-title">Landed</span>
-                  <span class="ep-callout" style="background:#e0f2fe;color:#0284c7;font-size:15px;font-weight:700">"SOD"</span>
+                  <span class="ep-callout" style="background:var(--oc-info-tint);color:var(--oc-info-strong);font-size:15px;font-weight:700">"SOD"</span>
                 </div>
                 <div class="ep-proc-body" style="padding:10px 16px"><span style="font-size:14px;color:var(--muted)">Safely on deck — confirms aircraft is down safely</span></div>
               </div>
@@ -4100,7 +4187,7 @@ function setAutoFieldColor(el, status) {
     green:   { bg: '#d4edda', border: '#4caf70', color: '#166a2a' },
     orange:  { bg: '#fed7aa', border: '#ea580c', color: '#9a3412' },
     red:     { bg: '#ffe4e6', border: '#9f1239', color: '#881337' },
-    info:    { bg: '#e0f2fe', border: '#0284c7', color: '#0284c7' },
+    info:    { bg: 'var(--oc-info-tint)', border: 'var(--oc-info-strong)', color: 'var(--oc-info-strong)' },
     loading: { bg: '#f5f3ff', border: '#7c3aed', color: '#4c1d95' },
     neutral: { bg: '#ffffff', border: '#d4d4d8', color: '#3f3f46' },
   };
@@ -4121,7 +4208,7 @@ function setDataCellStyle(id, status) {
   const styles = {
     green:  { bg: '#d4edda', border: '#4caf70', labelColor: '#166a2a', valueColor: '#0f4a1e', weight: '600' },
     orange: { bg: '#fed7aa', border: '#ea580c', labelColor: '#9a3412', valueColor: '#9a3412', weight: '700' },
-    info:   { bg: '#e0f2fe', border: '#0284c7', labelColor: '#0284c7', valueColor: '#0284c7', weight: '500' },
+    info:   { bg: 'var(--oc-info-tint)', border: 'var(--oc-info-strong)', labelColor: 'var(--oc-info-strong)', valueColor: 'var(--oc-info-strong)', weight: '500' },
     red:    { bg: '#ffe4e6', border: '#9f1239', labelColor: '#9f1239', valueColor: '#881337', weight: '700' },
   };
   const s = styles[status];
@@ -4749,7 +4836,7 @@ function buildOpsCategory() {
     + '<option value="PDRA-01">PDRA-01 (Specific)</option>'
     + '<option value="Open A3">Open category A3</option>'
     + '</select>'
-    + '<div id="ops-category-note" style="display:none;margin-top:8px;border-radius:8px;padding:11px 14px;font-family:var(--mono);font-size:11px;line-height:1.5;background:#e0f2fe;border:2px solid #0284c7;color:#075985"></div>';
+    + '<div id="ops-category-note" style="display:none;margin-top:8px;border-radius:8px;padding:11px 14px;font-family:var(--mono);font-size:11px;line-height:1.5;background:var(--oc-info-tint);border:2px solid var(--oc-info-strong);color:var(--oc-info-ink)"></div>';
   host.parentNode.insertBefore(wrap, host.nextSibling);
 }
 
@@ -5303,11 +5390,49 @@ async function runSkylark() {
     setLaunchInfo(`Data loaded at ${new Date().toLocaleTimeString('en-GB')}`,'ok');
     document.getElementById('pf-submit-btn').disabled = false;
   } catch(e) {
-    setStatus('error','● ERROR');
-    setLaunchInfo(`Error: ${e.message}`,'error');
+    // The Action could not be reached or did not finish. If this estate was
+    // cached from the home screen, the same fields can be filled from that
+    // snapshot - it is the identical payload, only older. The pilot is told
+    // loudly, and the record carries the provenance.
+    const cached = ocReadCache(estate);
+    if (cached && !cached.partial) {
+      const hrs  = ocCacheAgeHours(cached);
+      const data = ocCacheAsPreflightData(cached);
+      skylarkData = data;
+      populateActionData(data);
+      checkAllCardTicks();
+      setStatus('error','● CACHED');
+      setLaunchInfo(
+        `CACHED DATA - ${ocAgeText(hrs)}, pulled ${new Date(cached.fetchedAt).toLocaleString('en-GB')}. ` +
+        `Live fetch failed: ${e.message}. NOTAMs, Kp and METAR may have changed since - check NATS before you fly.`,
+        'error');
+      document.getElementById('pf-submit-btn').disabled = false;
+    } else {
+      setStatus('error','● ERROR');
+      setLaunchInfo(`Error: ${e.message}`,'error');
+    }
   } finally {
     document.getElementById('pf-estate-select').disabled = false;
   }
+}
+
+// The cached bundle and the Action's result hold the same data under
+// different names. This maps one onto the other so the PDRA-01 pre-flight
+// can be filled from a cache pulled on the home screen.
+function ocCacheAsPreflightData(b) {
+  return {
+    _notams_list:           b.notams || [],
+    _notam_refs:            b.notamRefs || {},
+    notam_required:         b.notamRequired || '',
+    _notam_required_reason: b.notamRequiredReason || '',
+    _space_weather_kp:      (b.kp === undefined ? null : b.kp),
+    _sunrise:               b.sunrise || '',
+    _sunset:                b.sunset  || '',
+    _metar:                 b.metar   || '',
+    _taf:                   b.taf     || '',
+    _from_cache:            true,
+    _cached_at:             b.fetchedAt || '',
+  };
 }
 
 async function pollForResult(runId, timeoutSecs, intervalMs) {
@@ -6030,6 +6155,11 @@ function buildPreflightRecord() {
     radios:                           getPfToggle('pf-radios'),
     whistles:                         getPfToggle('pf-whistles'),
     untitled_question_63:             'English',
+    // Where the NOTAM / Kp / METAR block came from. A record filled from a
+    // cached pull has to say so - the figures were true when they were
+    // pulled, not necessarily when the flight went.
+    _airspace_data_source:            (skylarkData && skylarkData._from_cache) ? 'Cached on device' : 'Live Skylark run',
+    _airspace_data_pulled_at:         (skylarkData && skylarkData._from_cache) ? (skylarkData._cached_at || '') : '',
     // ── Hazards ────────────────────────────────────────────────────────────
     risk_assessment_result:           document.getElementById('pf-ra-result-onsite')?.value||'',
     summarise_any_significant_hazar:  val('pf-hazards-brief'),
@@ -8072,6 +8202,9 @@ function ocSetIndicator(label, cls) {
   ind.className = cls;
   const lab = ind.querySelector('.pi-label');
   if (lab) lab.textContent = label;
+  // Skylark down the left, but only on the home screen.
+  const brand = ocEl('brand-indicator');
+  if (brand) brand.classList.toggle('visible', cls === 'pi-home');
 }
 
 function ocCloseAllPanels() {
@@ -8113,7 +8246,7 @@ function goHome() {
   if (bar) bar.style.display = 'none';
   const homeBtn = ocEl('btn-home');
   if (homeBtn) homeBtn.classList.remove('visible');
-  ocSetIndicator('Skylark', 'pi-home');
+  ocSetIndicator('Home', 'pi-home');
   ocSetMode('home');
   ocRenderCacheList();
   ocRenderQueue();
@@ -8218,17 +8351,43 @@ async function ocFetchMet24(lat, lon) {
     }));
 }
 
+// Written to both the home screen's status line and the one in the Open
+// category weather card, so a live pull started from either place reports
+// where the pilot is standing.
 function ocCacheStatus(msg, cls) {
-  const el = ocEl('oc-cache-status');
-  if (!el) return;
-  el.style.display = '';
-  el.className = 'cache-status ' + (cls || '');
-  el.innerHTML = msg;
+  ['oc-cache-status', 'oc-live-status'].forEach(id => {
+    const el = ocEl(id);
+    if (!el) return;
+    el.style.display = '';
+    el.className = 'cache-status ' + (cls || '');
+    el.innerHTML = msg;
+  });
 }
 
-async function ocCacheEstate() {
+// The Open category brief used to be cache-only. With a signal it can pull
+// exactly what the home screen pulls, for the estate already selected.
+async function ocRefreshLive() {
+  const estate = ocVal('oc-estate');
+  if (!estate) { skyToast('Pick an estate first.'); return; }
+  if (navigator.onLine === false) {
+    ocCacheStatus('&#9888; No connection. Working from whatever is already on this device.', 'stale');
+    return;
+  }
+  const btn = ocEl('oc-live-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Fetching…'; }
+  try { await ocCacheEstate(estate); }
+  finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Fetch Live Data for This Estate'; }
+    ocLoadCacheForEstate(estate);
+  }
+}
+
+// estateArg lets the Open category brief run the same live pull for the
+// estate it already has selected, rather than sending the pilot back to the
+// home screen to pick it again.
+async function ocCacheEstate(estateArg) {
   if (ocCacheBusy) return;
-  const estate = ocVal('oc-cache-estate');
+  const estate = estateArg || ocVal('oc-cache-estate');
   if (!estate) { ocCacheStatus('Pick an estate first.', 'stale'); return; }
 
   const e   = (typeof estatesData === 'object' && estatesData[estate]) || {};
@@ -8371,14 +8530,21 @@ function ocRenderCacheList() {
   list.innerHTML = items.map(b => {
     const hrs = ocCacheAgeHours(b);
     const cls = ocAgeClass(hrs);
+    const n   = (b.notams || []).length;
     const bits = [];
     if (b.hours && b.hours.length) bits.push(b.hours.length + 'h weather');
-    bits.push((b.notams ? b.notams.length : 0) + ' NOTAM' + ((b.notams && b.notams.length === 1) ? '' : 's'));
     if (b.sunrise) bits.push('daylight');
+    // A NOTAM is the one thing in this line worth interrupting for, so it
+    // is pulled out of the run-on list and made impossible to skim past.
+    const notam = n
+      ? `<span class="cache-notam-hit">${n} NOTAM${n === 1 ? '' : 's'}</span>`
+      : `<span class="cache-notam-none">no NOTAMs</span>`;
     return `<div class="cache-item ${cls}">
-      <span class="cache-item-name">${b.estate}</span>
+      <span class="cache-item-name">${ocEsc(b.estate)}</span>
+      ${notam}
       <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${bits.join(' · ')}</span>
       <span class="cache-item-age">${ocAgeText(hrs)}</span>
+      <a class="cache-notam-btn" href="${NATS_BRIEFING_URL}" target="_blank" rel="noopener noreferrer">Check NOTAM</a>
     </div>`;
   }).join('');
 }
@@ -9452,6 +9618,10 @@ function ocPreviewJson() {
 
 const NOTICE_KEY = 'SKY_NOTICES_CACHE';
 
+// NATS AIS pre-flight briefing - the authoritative NOTAM source. Skylark's
+// cached NOTAM count is a snapshot; this is the live check.
+const NATS_BRIEFING_URL = 'https://nats-uk.ead-it.com/cms-nats/opencms/en/Pre-flight-briefing/';
+
 const NOTICE_FALLBACK = [{
   title: 'MAMC notification',
   body: 'Submit a MAMC low-flying notification before 20:00 the day before any weekday mission. Use the card below.',
@@ -9775,8 +9945,8 @@ function mamcShowCopyBox(text, note) {
 // lines to delete afterwards. 'subject' is the subject on its own.
 async function mamcCopy(what) {
   const m = mamcBuild();
-  const text = what === 'subject' ? m.subject : m.body;
-  const label = what === 'subject' ? 'Subject' : 'Notification';
+  const text = what === 'subject' ? m.subject : what === 'to' ? m.to : m.body;
+  const label = what === 'subject' ? 'Subject' : what === 'to' ? 'Email address' : 'Notification';
 
   // Fired before anything is awaited, so the tap's user activation is still
   // live - iOS refuses a clipboard write that has lost it.
