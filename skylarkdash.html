@@ -30,14 +30,14 @@
        The two dark steps are a dark, fully saturated yellow (blue at zero,
        red and green close together). The old #854d0e and #a16207 had far
        more red than green and read as brown. */
-    --oc-accent-ink:    #6d6000;
+    --oc-accent-ink:    #000000;   /* was a brown-yellow; black reads far better on the pale grounds */
     --oc-accent-strong: #eab308;
     --oc-accent-line:   #fcd34d;
     --oc-accent-tint:   #fef9c3;
     --oc-accent-fill:   #fde047;
     --oc-accent-btn:    #fef08a;
     --oc-accent-canvas: #fefce8;
-    --oc-accent-deep:   #806f00;
+    --oc-accent-deep:   #000000;
 
     /* go — green (Skylark original) */
     --oc-ok-ink:    #166a2a;
@@ -68,7 +68,7 @@
     /* Matches the home screen's stage cards exactly - pale ground, accent
        line border, accent ink text. The earlier #fef08a fill read as too
        bright once it was carrying whole cards rather than one button. */
-    --oc-info-ink:    #6d6000;
+    --oc-info-ink:    #000000;
     --oc-info-strong: #fcd34d;
     --oc-info-line:   #fcd34d;
     --oc-info-tint:   #fefce8;
@@ -382,6 +382,11 @@
   /* ── Two-col ── */
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 560px) { .two-col { grid-template-columns: 1fr; } }
+  /* Centre, what3words and radius: the three fields that describe the area. */
+  .three-col { display: grid; grid-template-columns: 1.4fr 1.4fr 0.7fr; gap: 16px; }
+  @media (max-width: 760px) { .three-col { grid-template-columns: 1fr 1fr; }
+                              .three-col > div:last-child { grid-column: 1 / -1; } }
+  @media (max-width: 560px) { .three-col { grid-template-columns: 1fr; } }
 
   /* ── Toggle buttons ── */
   .toggle-group { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -1148,6 +1153,48 @@
   #panel-home select:focus,
   #setup-card input:focus { border-color:var(--oc-accent-line); outline:none; }
 
+  /* ── Home: the two banners have to read as things you open ──
+     Black bar, small caps and a 13px chevron looked like a section heading, so
+     a shut card said nothing about what was in it. Now: a bigger title, the
+     description stays visible while it is shut, and the chevron is a labelled
+     control rather than a glyph. */
+  #panel-home .card.collapsed .card-sub { display:block; }
+  #panel-home .card-header {
+    padding:16px 18px;
+    border-bottom:3px solid var(--oc-accent-line);
+    cursor:pointer;
+  }
+  #panel-home .card-header:hover { background:#111; }
+  #panel-home .card-header h2 {
+    font-size:16px;
+    letter-spacing:.04em;
+    text-transform:none;
+  }
+  #panel-home .card-sub {
+    background:var(--oc-accent-canvas);
+    color:var(--oc-accent-ink);
+    border-bottom:1.5px solid var(--oc-accent-line);
+    font-size:12.5px; line-height:1.55;
+    padding:11px 18px;
+  }
+  #panel-home .card-chevron {
+    flex-shrink:0;
+    display:inline-flex; align-items:center; gap:7px;
+    font-family:var(--mono); font-weight:700;
+    letter-spacing:.1em;
+    color:#000; background:var(--oc-accent-fill);
+    border-radius:999px; padding:6px 12px;
+    font-size:0;                      /* hides the glyph in the markup */
+    transition:background .15s;
+  }
+  #panel-home .card-chevron::before { content:"CLOSE"; font-size:10px; }
+  #panel-home .card.collapsed .card-chevron::before { content:"OPEN"; }
+  #panel-home .card-chevron::after {
+    content:"\25BC"; font-size:9px; display:inline-block; transition:transform .15s;
+  }
+  #panel-home .card.collapsed .card-chevron::after { transform:rotate(-90deg); }
+  #panel-home .card-header:hover .card-chevron { background:var(--oc-accent-btn); }
+
   /* ── Home: a button has to look pressable ──
      Everything on this screen was the same pale yellow, so a button and a
      line of text read the same. Text surfaces keep the pale canvas; anything
@@ -1361,6 +1408,9 @@
   .card-toggle { cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .card-chevron { color:var(--oc-accent-fill); font-size:12px; transition:transform .15s; flex-shrink:0; }
   .card.collapsed .card-chevron { transform:rotate(-90deg); }
+  /* On home the pill must not rotate - only the glyph inside it does. */
+  #panel-home .card-chevron,
+  #panel-home .card.collapsed .card-chevron { transform:none; }
   .card.collapsed .card-body,
   .card.collapsed .card-sub { display:none; }
   .card-sub {
@@ -1620,8 +1670,9 @@
           </div>
 
           <!-- Coordinate first: it is what the map produces, and what the
-               words are then looked up from. -->
-          <div class="two-col">
+               words are then looked up from. The radius sits with them because
+               the three together are the area the notification describes. -->
+          <div class="three-col">
             <div>
               <div class="field-label auto-label">Centre</div>
               <input type="text" id="mamc-centre" placeholder="from the site data" oninput="mamcRefresh()" onchange="mamcOnCentreBlur()" onblur="mamcOnCentreBlur()">
@@ -1629,6 +1680,10 @@
             <div>
               <div class="field-label">what3words</div>
               <input type="text" id="mamc-w3w" placeholder="what.three.words" oninput="mamcOnW3wInput()">
+            </div>
+            <div>
+              <div class="field-label">Radius (nm)</div>
+              <input type="number" id="mamc-radius" value="2" min="0.5" max="20" step="0.5" oninput="mamcRefresh()">
             </div>
           </div>
 
@@ -1663,25 +1718,7 @@
           </div>
           <div id="mamc-w3w-status" style="display:none;font-family:var(--mono);font-size:11px;line-height:1.6;padding:9px 12px;border-radius:7px;background:var(--oc-accent-canvas);border:1.5px solid var(--oc-accent-line);color:var(--oc-accent-ink)"></div>
 
-          <div style="font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--oc-accent-ink);background:var(--oc-accent-canvas);border:1.5px solid var(--oc-accent-line);border-radius:8px;padding:10px 13px">
-            The centre and what3words come from the estate's stored coordinate, which for most estates is
-            derived from a postcode rather than the boundary. <strong>Edit both to the actual area of operation</strong>
-            before sending &mdash; this is what tells a low-flying crew where you will be.
-            <strong>Pick the Centre on a Map</strong> drops a pin on the ground you will actually be flying over,
-            and the yellow circle shows exactly what your radius covers. Then
-            <strong>Find the what3words for the Centre</strong> opens the square that pin lands in, so you can copy its
-            three words back. what3words never shows a coordinate and will not answer another site, so that last hop is a
-            copy rather than something Skylark can fill in for you.
-          </div>
-
-          <div>
-            <div class="field-label">Area &mdash; Radius From the Centre</div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <input type="number" id="mamc-radius" value="2" min="0.5" max="20" step="0.5" style="flex:0 0 110px" oninput="mamcRefresh()">
-              <span style="font-family:var(--mono);font-size:12px;color:var(--faint)">nm radius</span>
-            </div>
-            <div id="mamc-radius-note" style="font-family:var(--mono);font-size:11px;line-height:1.55;color:var(--muted);margin-top:7px"></div>
-          </div>
+          <div id="mamc-radius-note" style="font-family:var(--mono);font-size:11px;line-height:1.55;color:var(--muted)"></div>
 
           <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
             <div class="field-label" style="margin-bottom:9px">Contact &mdash; remembered on this device</div>
