@@ -67,9 +67,9 @@
        button, so the forms carry one accent colour rather than two. */
     --oc-info-ink:    #6d6000;
     --oc-info-strong: #6d6000;
-    --oc-info-line:   #fcd34d;
+    --oc-info-line:   #6d6000;
     --oc-info-tint:   #fef08a;
-    --oc-info-fill:   #fde047;
+    --oc-info-fill:   #fef08a;
 
     /* auto-filled — violet. A MEANING, not a brand colour: it marks data
        Skylark fetched rather than data a person typed. Don't restyle. */
@@ -1150,10 +1150,12 @@
     font-family:var(--mono); font-size:11px; line-height:1.6;
     border:2px solid var(--border); background:var(--surface2); color:var(--muted);
   }
-  .cache-status.fresh { background:var(--ok-bg);     border-color:var(--ok-border); color:var(--ok); }
-  .cache-status.aging { background:#fff0e0;          border-color:#d45a00;          color:#8a3300; }
-  .cache-status.stale { background:var(--danger-bg); border-color:var(--danger);    color:var(--danger); }
-  .cache-status.busy  { background:#f5f3ff;          border-color:#7c3aed;          color:#4c1d95; }
+  .cache-status.fresh { background:var(--oc-accent-canvas); border-color:var(--oc-accent-line); color:var(--oc-accent-ink); }
+  .cache-status.aging { background:var(--oc-accent-tint);   border-color:var(--oc-accent-ink);  color:var(--oc-accent-ink); }
+  .cache-status.busy  { background:var(--oc-accent-canvas); border-color:var(--oc-accent-line); color:var(--oc-accent-ink); }
+  /* Left red on purpose: 'stale' here means the data you need is missing
+     or failed to save, which is a flying decision, not a status note. */
+  .cache-status.stale { background:var(--danger-bg); border-color:var(--danger); color:var(--danger); }
 
   .cache-list { display:flex; flex-direction:column; gap:7px; }
   .cache-item {
@@ -1161,8 +1163,8 @@
     border:1.5px solid var(--border); border-left-width:4px; border-radius:0 8px 8px 0;
     padding:9px 13px; font-size:13px; background:var(--surface);
   }
-  .cache-item.fresh { border-left-color:var(--ok);     background:#f3faf5; }
-  .cache-item.aging { border-left-color:#d45a00;       background:#fffaf3; }
+  .cache-item.fresh { border-left-color:var(--oc-accent-line); background:var(--oc-accent-canvas); }
+  .cache-item.aging { border-left-color:var(--oc-accent-ink);  background:var(--oc-accent-tint); }
   .cache-item.stale { border-left-color:var(--danger); background:#fff6f6; }
   .cache-item-name { font-weight:600; }
   .cache-item-age  { font-family:var(--mono); font-size:11px; color:var(--muted); margin-left:auto; }
@@ -1170,14 +1172,15 @@
   .cache-notam-none { font-family:var(--mono); font-size:11px; color:var(--muted); }
   .cache-notam-btn {
     flex-shrink:0; text-decoration:none;
+    display:inline-flex; align-items:center; gap:6px;
     font-family:var(--mono); font-size:10.5px; font-weight:700;
     text-transform:uppercase; letter-spacing:.07em;
     padding:6px 11px; border-radius:6px;
-    border:1.5px solid var(--oc-accent-ink);
-    background:var(--oc-accent-btn); color:var(--oc-accent-ink);
+    border:1.5px solid var(--oc-danger-ink);
+    background:var(--oc-danger-tint); color:var(--oc-danger-ink);
     white-space:nowrap;
   }
-  .cache-notam-btn:hover { background:var(--oc-accent-fill); }
+  .cache-notam-btn:hover { background:var(--oc-danger-fill); }
 
   /* ── Open Category: the hour strip ── */
   .oc-hours-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:5px; }
@@ -1295,8 +1298,8 @@
     border:1.5px solid var(--border); border-left-width:4px; border-radius:0 8px 8px 0;
     padding:11px 14px; background:var(--surface);
   }
-  .notice-title { font-family:var(--mono); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
-  .notice-body  { font-size:13px; line-height:1.6; color:var(--muted); margin-top:5px; }
+  .notice-title { font-family:var(--mono); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+  .notice-body  { font-size:14.5px; line-height:1.65; color:var(--muted); margin-top:5px; }
   .notice-meta  { font-family:var(--mono); font-size:10px; color:var(--faint); margin-top:6px; }
   .notice-info   { border-left-color:var(--oc-line-strong); }
   .notice-info   .notice-title { color:var(--oc-ink-2); }
@@ -1304,6 +1307,17 @@
   .notice-action .notice-title { color:var(--oc-accent-ink); }
   .notice-urgent { border-left-color:var(--oc-danger-strong); background:var(--oc-danger-tint); }
   .notice-urgent .notice-title { color:var(--oc-danger-ink); }
+
+  /* ── Home: cards that fold ── */
+  .card-toggle { cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .card-chevron { color:var(--oc-accent-fill); font-size:12px; transition:transform .15s; flex-shrink:0; }
+  .card.collapsed .card-chevron { transform:rotate(-90deg); }
+  .card.collapsed .card-body,
+  .card.collapsed .card-sub { display:none; }
+  .card-sub {
+    padding:11px 18px 0;
+    font-size:12.5px; line-height:1.55; color:var(--muted);
+  }
 
   /* ── Home: the two ways to send a MAMC notification ── */
   .mamc-route { display:flex; flex-direction:column; gap:7px; }
@@ -1474,8 +1488,13 @@
     <div class="stage-body">
 
       <!-- ── MAMC low-flying notification ── -->
-      <div class="card">
-        <div class="card-header"><h2>MAMC Notification</h2></div>
+      <div class="card collapsed" id="card-mamc">
+        <div class="card-header card-toggle" onclick="toggleCard('card-mamc')">
+          <h2>MAMC Notification</h2>
+          <span class="card-chevron">&#9660;</span>
+        </div>
+        <div class="card-sub">Tells the military low-flying coordination desk at Swanwick where and when
+          you will be flying, so low-flying military aircraft can be warned to stay clear.</div>
         <div class="card-body">
 
           <div class="two-col">
@@ -1595,8 +1614,13 @@
       </div>
 
       <!-- ── 24-hour offline cache ── -->
-      <div class="card">
-        <div class="card-header"><h2>Download the Next 24 Hours</h2></div>
+      <div class="card collapsed" id="card-cache">
+        <div class="card-header card-toggle" onclick="toggleCard('card-cache')">
+          <h2>Download the Next 24 Hours</h2>
+          <span class="card-chevron">&#9660;</span>
+        </div>
+        <div class="card-sub">Pulls the weather, NOTAMs, space weather and daylight onto this device so the
+          brief can be filled in with no signal.</div>
         <div class="card-body">
           <div class="oc-queue" id="oc-queue-banner"></div>
 
@@ -1737,7 +1761,7 @@
         <span style="color:var(--warn);font-weight:600">Orange</span> &mdash; close to the limit, use caution &nbsp;&middot;&nbsp;
         <span style="color:var(--danger);font-weight:600">Red</span> &mdash; outside limits, do not fly
       </p>
-      <div id="oc-weather-source" style="display:none;background:#f0f7f0;border:1.5px solid #4caf70;border-radius:7px;padding:9px 13px;font-family:var(--mono);font-size:11px;color:#166a2a;line-height:1.6"></div>
+      <div id="oc-weather-source" style="display:none;background:var(--oc-accent-canvas);border:1.5px solid var(--oc-accent-line);border-radius:7px;padding:9px 13px;font-family:var(--mono);font-size:11px;color:var(--oc-accent-ink);line-height:1.6"></div>
 
       <button class="secondary-btn" type="button" id="oc-live-btn" style="margin:0" onclick="ocRefreshLive()">Fetch Live Data for This Estate</button>
       <div class="cache-status" id="oc-live-status" style="display:none"></div>
@@ -1836,6 +1860,17 @@
         &mdash; stop, and speak to a qualified remote pilot.
       </p>
       <div id="oc-rules-list" style="display:flex;flex-direction:column;gap:10px"></div>
+
+      <!-- Counted with the subcategory rules: the gate does not clear
+           without it, and the record says whether it was ticked. -->
+      <label class="oc-rule" id="oc-rule-manual">
+        <input type="checkbox" id="ocr-manual" onchange="ocRefresh()">
+        <span class="oc-rule-box">&#10003;</span>
+        <span>
+          <span class="oc-rule-text">I have read the Oxygen Conservation Open Category Operations Manual.</span>
+          <span class="oc-rule-sub" style="display:block">The manual governs these flights, not the PDRA-01 one. Where it is stricter than anything on this page, the manual wins.</span>
+        </span>
+      </label>
       <div class="gate-card gate-pending" id="oc-gate-rules">
         <div class="gate-indicator" id="oc-gate-rules-label">&mdash;</div>
         <div class="gate-msg" id="oc-gate-rules-msg">Select an aircraft to see the rules that apply.</div>
@@ -8226,6 +8261,13 @@ function ocSetMode(mode) {
 // Both stages start closed on every load, so the home screen opens as two
 // clear headings rather than a long scroll. The fold state is deliberately
 // not remembered - a fresh landing should always look the same.
+// Cards inside a stage fold too, so an open stage is a short list of
+// headings rather than two long forms at once.
+function toggleCard(id) {
+  const el = ocEl(id);
+  if (el) el.classList.toggle('collapsed');
+}
+
 function toggleStage(id) {
   const el = ocEl('stage-' + id);
   if (el) el.classList.toggle('collapsed');
@@ -8544,7 +8586,7 @@ function ocRenderCacheList() {
       ${notam}
       <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${bits.join(' · ')}</span>
       <span class="cache-item-age">${ocAgeText(hrs)}</span>
-      <a class="cache-notam-btn" href="${NATS_BRIEFING_URL}" target="_blank" rel="noopener noreferrer">Check NOTAM</a>
+      ${n ? `<a class="cache-notam-btn" href="${NATS_BRIEFING_URL}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">&#9888;</span>Check NOTAM</a>` : ''}
     </div>`;
   }).join('');
 }
@@ -8745,7 +8787,11 @@ function ocRulesState() {
   if (!ac) return { total: 0, done: 0, missing: [] };
   const rules = OC_RULES[ac.subcat] || [];
   const missing = rules.filter(r => { const b = ocEl('ocr-' + r.key); return !(b && b.checked); });
-  return { total: rules.length, done: rules.length - missing.length, missing };
+  // The operations-manual confirmation counts as one of the conditions.
+  const man = ocEl('ocr-manual');
+  const manOk = !!(man && man.checked);
+  if (!manOk) missing.push({ key: 'manual', text: 'Operations Manual read' });
+  return { total: rules.length + 1, done: rules.length + 1 - missing.length, missing };
 }
 
 function ocRenderHourStrip() {
@@ -9287,6 +9333,7 @@ function ocBuildRecord() {
     aircraft_limits:    ac ? `wind ${ac.windMs} m/s, precip ${ac.precipMm} mm/h, ${ac.tMin} to ${ac.tMax} C` : '',
     limits_source:      ac ? (ac.inOm ? 'PDRA-01 OM v3.1 s3.3' : 'DJI published - not in OM v3.1') : '',
     open_category_rules: rules,
+    operations_manual_read: (ocEl('ocr-manual') && ocEl('ocr-manual').checked) ? 'Yes' : 'No',
     all_rules_confirmed: ocRulesState().missing.length === 0 && !!ac ? 'Yes' : 'No',
     // ── Conditions at the briefed hour ─────────────────────────────────
     forecast_hour:    h ? h.time : '',
@@ -9347,7 +9394,8 @@ function ocCollectFormState() {
     datetime: ocVal('oc-datetime'),
     lat: ocVal('oc-lat'), lon: ocVal('oc-lon'),
     hourIdx: ocHourIdx, toggles: Object.assign({}, ocToggleState),
-    rules, note: ocVal('oc-debrief-note'),
+    rules, manual: !!(ocEl('ocr-manual') && ocEl('ocr-manual').checked),
+    note: ocVal('oc-debrief-note'),
     wxOverride: ocWxOverride, wxOverrideNote: ocVal('oc-wx-override-note'),
   };
 }
@@ -9360,6 +9408,7 @@ function ocRestoreDraft(s) {
   set('oc-datetime', s.datetime);
   set('oc-lat', s.lat); set('oc-lon', s.lon);
   set('oc-debrief-note', s.note); set('oc-wx-override-note', s.wxOverrideNote);
+  const man = ocEl('ocr-manual'); if (man) man.checked = !!s.manual;
   ocOnPilotChange();
   ocOnAircraftChange();
   if (s.estate) ocLoadCacheForEstate(s.estate);
@@ -9620,7 +9669,7 @@ const NOTICE_KEY = 'SKY_NOTICES_CACHE';
 
 // NATS AIS pre-flight briefing - the authoritative NOTAM source. Skylark's
 // cached NOTAM count is a snapshot; this is the live check.
-const NATS_BRIEFING_URL = 'https://nats-uk.ead-it.com/cms-nats/opencms/en/Pre-flight-briefing/';
+const NATS_BRIEFING_URL = 'https://nats-uk.ead-it.com/fwf-nats/public/user/account/login.faces';
 
 const NOTICE_FALLBACK = [{
   title: 'MAMC notification',
