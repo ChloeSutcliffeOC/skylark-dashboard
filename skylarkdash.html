@@ -1353,6 +1353,37 @@
   .mamc-deadline.ok   { background:var(--oc-ok-fill);     border-color:var(--oc-ok-strong);     color:var(--oc-ok-ink); }
   .mamc-deadline.late { background:var(--oc-danger-tint); border-color:var(--oc-danger-strong); color:var(--oc-danger-ink); }
 
+  /* ── Open Category: emergency procedures, one card per swipe ──
+     Native scroll-snap rather than a transform carousel: it is what a
+     thumb expects on an iPad, and it keeps working if the JS that drives
+     the arrows ever does not. */
+  .oc-ep-track {
+    display:flex; gap:12px;
+    overflow-x:auto; scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none; padding-bottom:2px;
+  }
+  .oc-ep-track::-webkit-scrollbar { display:none; }
+  .oc-ep-track > .ep-proc { flex:0 0 100%; scroll-snap-align:center; min-width:100%; }
+
+  .oc-ep-nav { display:flex; align-items:center; justify-content:center; gap:14px; }
+  .oc-ep-arrow {
+    flex-shrink:0; width:34px; height:34px; border-radius:50%;
+    border:1.5px solid var(--border); background:var(--surface);
+    color:var(--muted); font-size:11px; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .oc-ep-arrow:hover { border-color:var(--oc-accent-ink); color:var(--oc-accent-ink); }
+  .oc-ep-dots { display:flex; gap:7px; align-items:center; }
+  .oc-ep-dot {
+    width:9px; height:9px; border-radius:50%; padding:0; cursor:pointer;
+    border:1.5px solid var(--border-strong); background:var(--surface);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .oc-ep-dot.here { background:var(--oc-accent-ink); border-color:var(--oc-accent-ink); transform:scale(1.25); }
+  .oc-ep-dot.done { background:var(--oc-ok-strong); border-color:var(--oc-ok-ink); }
+  .oc-ep-dot.here.done { background:var(--oc-ok-ink); }
+
   /* ── Open Category: upload queue ── */
   .oc-queue {
     border-radius:8px; padding:11px 14px; margin-bottom:4px;
@@ -1879,6 +1910,30 @@
       <div class="gate-card gate-pending" id="oc-gate-rules">
         <div class="gate-indicator" id="oc-gate-rules-label">&mdash;</div>
         <div class="gate-msg" id="oc-gate-rules-msg">Select an aircraft to see the rules that apply.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4b. Emergency procedures -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Emergency Procedures <span class="card-tick" id="tick-oc-ep" style="display:none">&#10003;</span></h2>
+      <span class="timestamp" id="oc-ep-count"></span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:2px">
+        Swipe through each one and confirm it has been briefed to everyone on site. The call-out in the
+        corner is what you say out loud.
+      </p>
+      <div class="oc-ep-track" id="oc-ep-track"></div>
+      <div class="oc-ep-nav">
+        <button class="oc-ep-arrow" type="button" onclick="ocEpStep(-1)" aria-label="Previous procedure">&#9664;</button>
+        <div class="oc-ep-dots" id="oc-ep-dots"></div>
+        <button class="oc-ep-arrow" type="button" onclick="ocEpStep(1)" aria-label="Next procedure">&#9654;</button>
+      </div>
+      <div class="gate-card gate-pending" id="oc-gate-ep">
+        <div class="gate-indicator" id="oc-gate-ep-label">&mdash;</div>
+        <div class="gate-msg" id="oc-gate-ep-msg">Confirm each procedure has been briefed.</div>
       </div>
     </div>
   </div>
@@ -9124,6 +9179,114 @@ function ocGetGps() {
   );
 }
 
+
+// ══════════════════════════════════════════════════════
+// EMERGENCY PROCEDURES — Open category
+// ══════════════════════════════════════════════════════
+// The same seven procedures the PDRA-01 pre-flight carries, presented one
+// per swipe. Separate state from the PDRA-01 set (epBriefedState) so the
+// two briefs cannot tick each other off.
+
+const OC_EP = [
+  { key:'pilot-incap', level:'danger', title:'Pilot Incapacitation', call:'"Terminate mission"', steps:[
+    'Increase altitude if required',
+    'Activate RTH failsafe',
+    'Immediately clear the area of people',
+    'UAS will automatically land and shut motors off',
+    'Seek medical assistance'] },
+  { key:'air-incursion', level:'danger', title:'Air Incursion', call:'"Air incursion"', steps:[
+    'Assess heading, speed and altitude of the incursion',
+    'Assess heading, speed and altitude of the UA',
+    'Acquire orientation of the UA',
+    'See and avoid - change altitude and move the UA at 90 degrees to the hazard\'s flight path'] },
+  { key:'ground-incursion', level:'warn', title:'Ground Incursion', call:'"Cordon breach"', steps:[
+    'Move the UAS to a holding area at a safe and legal distance from the uninvolved person',
+    'Clear the area of uninvolved persons, if possible',
+    'Resume the mission if the area is cleared - or land elsewhere if they cannot be cleared'] },
+  { key:'fire', level:'danger', title:'Fire', call:'"Fire, fire, fire"', steps:[
+    'Identify a non-flammable landing area',
+    'Immediately clear the area of people',
+    'Land as soon as possible',
+    'Put out the fire, if trained, equipped and safe to do so',
+    'Call emergency services if required'] },
+  { key:'flyaway', level:'danger', title:'Flyaway', call:'"Flyaway"', steps:[
+    'Note the time and heading',
+    'Calculate remaining flight time and plot the potential crash site',
+    'Leave the command unit on and monitor telemetry',
+    'Inform the appropriate ATC and airspace managers in the direction of the flyaway',
+    'Inform the police',
+    'Remain at the area of operation until the UAS returns via RTH or runs out of power',
+    'Find the crash site using the command unit map or the lat/lon from the flight log'] },
+  { key:'bad-vis', level:'warn', title:'Abnormal Weather - Visibility', call:'"Bad vis"', steps:[
+    'Move the UA closer to the remote pilot to keep it clearly visible',
+    'Terminate the flight if there is any risk of losing VLOS'] },
+  { key:'wind', level:'warn', title:'Abnormal Weather - Wind', call:'"Wind"', steps:[
+    'Pause and hover',
+    'Note wind direction and strength',
+    'Try to regain control',
+    'If control is not regained, engage RTH',
+    'Identify a landing site and immediately clear the area of people',
+    'UAS will automatically land and shut motors off'] },
+];
+
+const ocEpState = {};
+let ocEpIdx = 0;
+
+function ocEpRender() {
+  const track = ocEl('oc-ep-track');
+  if (!track || track.dataset.built) return;
+  track.innerHTML = OC_EP.map(p => `
+    <div class="ep-proc" id="oc-ep-${p.key}">
+      <div class="ep-proc-header ep-${p.level}">
+        <span class="ep-proc-title">${ocEsc(p.title)}</span>
+        <span class="ep-callout ep-callout-${p.level}">${ocEsc(p.call)}</span>
+      </div>
+      <div class="ep-proc-body">
+        <ol class="ep-steps">
+          ${p.steps.map((t, i) => `<li><span class="ep-num ep-num-${p.level}">${i + 1}</span><span>${ocEsc(t)}</span></li>`).join('')}
+        </ol>
+        <button class="ep-brief-btn" type="button" onclick="ocEpBriefed('${p.key}', this)">Briefed and understood by all crew</button>
+      </div>
+    </div>`).join('');
+  track.dataset.built = '1';
+  // Keep the dots honest when the pilot swipes rather than taps an arrow.
+  track.addEventListener('scroll', () => {
+    const w = track.clientWidth || 1;
+    const i = Math.round(track.scrollLeft / w);
+    if (i !== ocEpIdx) { ocEpIdx = Math.max(0, Math.min(OC_EP.length - 1, i)); ocEpDots(); }
+  }, { passive: true });
+  ocEpDots();
+}
+
+function ocEpDots() {
+  const host = ocEl('oc-ep-dots');
+  if (!host) return;
+  host.innerHTML = OC_EP.map((p, i) =>
+    `<button type="button" class="oc-ep-dot${i === ocEpIdx ? ' here' : ''}${ocEpState[p.key] ? ' done' : ''}" ` +
+    `onclick="ocEpGo(${i})" aria-label="${ocEsc(p.title)}"></button>`).join('');
+}
+
+function ocEpGo(i) {
+  const track = ocEl('oc-ep-track');
+  if (!track) return;
+  ocEpIdx = Math.max(0, Math.min(OC_EP.length - 1, i));
+  track.scrollTo({ left: ocEpIdx * track.clientWidth, behavior: 'smooth' });
+  ocEpDots();
+}
+
+function ocEpStep(d) { ocEpGo(ocEpIdx + d); }
+
+function ocEpBriefed(key, btn) {
+  ocEpState[key] = !ocEpState[key];
+  const card = ocEl('oc-ep-' + key);
+  if (card) card.classList.toggle('ep-confirmed', !!ocEpState[key]);
+  if (btn) btn.textContent = ocEpState[key] ? '✓ Briefed to all crew' : 'Briefed and understood by all crew';
+  ocEpDots();
+  ocRefresh();
+}
+
+function ocEpDone() { return OC_EP.filter(p => ocEpState[p.key]).length; }
+
 // ══════════════════════════════════════════════════════
 // WEATHER OVERRIDE
 // ══════════════════════════════════════════════════════
@@ -9215,6 +9378,29 @@ function ocRefresh() {
   ocTick('tick-oc-rules',    rulesOk);
   ocTick('tick-oc-debrief',  dbOk);
 
+  // Emergency procedures. A tick and a gate, not a GO blocker - nothing
+  // here should stop a pilot filing a record of a flight that happened.
+  const epDone = ocEpDone();
+  const epAll  = epDone === OC_EP.length;
+  ocTick('tick-oc-ep', epAll);
+  const epCount = ocEl('oc-ep-count');
+  if (epCount) epCount.textContent = `${epDone} / ${OC_EP.length} briefed`;
+  const epGate = ocEl('oc-gate-ep');
+  if (epGate) {
+    epGate.classList.remove('gate-go', 'gate-nogo', 'gate-pending');
+    const lab = ocEl('oc-gate-ep-label');
+    const msg = ocEl('oc-gate-ep-msg');
+    if (epAll) {
+      epGate.classList.add('gate-go');
+      if (lab) lab.textContent = '\u2713 BRIEFED';
+      if (msg) msg.textContent = `All ${OC_EP.length} emergency procedures briefed to the crew.`;
+    } else {
+      epGate.classList.add('gate-pending');
+      if (lab) lab.textContent = `${epDone} / ${OC_EP.length}`;
+      if (msg) msg.textContent = 'Swipe through each one and confirm it has been briefed.';
+    }
+  }
+
   // Rules gate
   const rg = ocEl('oc-gate-rules');
   if (rg) {
@@ -9293,6 +9479,9 @@ function ocRefresh() {
     if (!canSave) {
       banner.style.background = '#fdd9d7'; banner.style.border = '1.5px solid #e05c5c'; banner.style.color = '#7a1212';
       banner.innerHTML = '⚠ Fill in the estate, pilot and aircraft before saving.';
+    } else if (!epAll) {
+      banner.style.background = 'var(--oc-accent-tint)'; banner.style.border = '1.5px solid var(--oc-accent-ink)'; banner.style.color = 'var(--oc-accent-ink)';
+      banner.innerHTML = `&#9888; You can save now, but ${OC_EP.length - epDone} emergency procedure${OC_EP.length - epDone === 1 ? ' has' : 's have'} not been confirmed as briefed.`;
     } else if (!dbOk) {
       banner.style.background = '#fff0e0'; banner.style.border = '1.5px solid #d45a00'; banner.style.color = '#8a3300';
       banner.innerHTML = '⚠ You can save now, but the debrief note is empty. Come back and finish it after you land.';
@@ -9342,6 +9531,8 @@ function ocBuildRecord() {
     aircraft_limits:    ac ? `wind ${ac.windMs} m/s, precip ${ac.precipMm} mm/h, ${ac.tMin} to ${ac.tMax} C` : '',
     limits_source:      ac ? (ac.inOm ? 'PDRA-01 OM v3.1 s3.3' : 'DJI published - not in OM v3.1') : '',
     open_category_rules: rules,
+    emergency_procedures: OC_EP.reduce((o, p) => { o[p.key] = ocEpState[p.key] ? 'Briefed' : 'Not briefed'; return o; }, {}),
+    all_emergency_procedures_briefed: ocEpDone() === OC_EP.length ? 'Yes' : 'No',
     operations_manual_read: (ocEl('ocr-manual') && ocEl('ocr-manual').checked) ? 'Yes' : 'No',
     all_rules_confirmed: ocRulesState().missing.length === 0 && !!ac ? 'Yes' : 'No',
     // ── Conditions at the briefed hour ─────────────────────────────────
@@ -9404,6 +9595,7 @@ function ocCollectFormState() {
     lat: ocVal('oc-lat'), lon: ocVal('oc-lon'),
     hourIdx: ocHourIdx, toggles: Object.assign({}, ocToggleState),
     rules, manual: !!(ocEl('ocr-manual') && ocEl('ocr-manual').checked),
+    ep: Object.assign({}, ocEpState),
     note: ocVal('oc-debrief-note'),
     wxOverride: ocWxOverride, wxOverrideNote: ocVal('oc-wx-override-note'),
   };
@@ -9418,6 +9610,17 @@ function ocRestoreDraft(s) {
   set('oc-lat', s.lat); set('oc-lon', s.lon);
   set('oc-debrief-note', s.note); set('oc-wx-override-note', s.wxOverrideNote);
   const man = ocEl('ocr-manual'); if (man) man.checked = !!s.manual;
+  Object.entries(s.ep || {}).forEach(([k, v]) => {
+    if (!v) return;
+    ocEpState[k] = true;
+    const card = ocEl('oc-ep-' + k);
+    if (card) {
+      card.classList.add('ep-confirmed');
+      const b = card.querySelector('.ep-brief-btn');
+      if (b) b.textContent = '\u2713 Briefed to all crew';
+    }
+  });
+  ocEpDots();
   ocOnPilotChange();
   ocOnAircraftChange();
   if (s.estate) ocLoadCacheForEstate(s.estate);
@@ -10090,6 +10293,7 @@ function ocBuildAircraftSelect() {
 
 function ocOnPanelOpen() {
   ocBuildAircraftSelect();
+  ocEpRender();
   const dt = ocEl('oc-datetime');
   if (dt && !dt.value) {
     const n = new Date();
