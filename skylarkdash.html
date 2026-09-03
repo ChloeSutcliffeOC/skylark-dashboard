@@ -68,10 +68,15 @@
     --oc-danger-fill:   #fecdd3;
     --oc-danger-ink-deep: #881337; /* selected-toggle label */
 
-    /* Hazard cards - solid, not a wash. Deep maroon ground, near-white ink. */
-    --oc-hazard-ground: #7c1d32;
-    --oc-hazard-edge:   #5c1224;
-    --oc-hazard-ink:    #ffe9ed;
+    /* Hazard cards - a light red that still reads as red. The danger ramp is
+       rose-based (#e11d48), which at light values goes pink, so this is built
+       from a true red instead and laid on as an alpha rather than a solid:
+       light enough to read dark text on, red enough not to be mistaken for
+       decoration. */
+    --oc-hazard-ground: rgba(185, 28, 28, 0.17);
+    --oc-hazard-edge:   rgba(185, 28, 28, 0.45);
+    --oc-hazard-bar:    #b91c1c;
+    --oc-hazard-ink:    #7f1d1d;
 
     /* neutral — was sky blue; now the same yellow as the Download 24 Hours
        button, so the forms carry one accent colour rather than two. */
@@ -548,10 +553,11 @@
   .info-cell.ic-contact  { border-left: 4px solid var(--oc-info-ink); background: var(--oc-info-tint); }
   .info-cell.ic-airspace { border-left: 4px solid var(--oc-info-strong); background: var(--oc-info-tint); }
   /* Hazards were a pale pink wash that read as decorative. They carry the
-     things that hurt someone, so they get a solid maroon and light text. */
+     things that hurt someone, so they get a red ground with a solid red bar
+     and dark red text - light to read on, but unmistakably red. */
   .info-cell.ic-hazard   {
     border: 2px solid var(--oc-hazard-edge);
-    border-left: 4px solid var(--oc-hazard-edge);
+    border-left: 4px solid var(--oc-hazard-bar);
     background: var(--oc-hazard-ground);
     color: var(--oc-hazard-ink);
   }
