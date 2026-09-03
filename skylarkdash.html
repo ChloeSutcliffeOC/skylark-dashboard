@@ -552,7 +552,8 @@
     gap: 7px;
   }
 
-  .info-cell .ic-icon  { font-size: 16px; line-height: 1; flex-shrink: 0; }
+  /* .ic-icon is gone: the hazard and airspace cards carry no emoji. The
+     label and the card's colour class say what kind of card it is. */
 
   .info-cell .ic-label {
     font-family: var(--sans);
@@ -3961,18 +3962,18 @@ function onEstateChange() {
   setAutoFieldColor(loc, 'neutral');
   if (e.estate_contact) document.getElementById('f-phone').value = e.estate_contact;
   // Build styled estate reference cards
-  const contactHtml = (label, icon, phone, extra) => {
+  const contactHtml = (label, phone, extra) => {
     const num = phone ? phone.replace(/[^0-9+ ]/g,'').trim() : '';
     return `<div class="info-cell ic-contact">
-      <div class="ic-header"><span class="ic-icon">${icon}</span><span class="ic-label">${label}</span></div>
+      <div class="ic-header"><span class="ic-label">${label}</span></div>
       ${num ? `<a class="ic-phone" href="tel:${num.replace(/ /g,'')}">${num}</a>` : ''}
       ${extra ? `<div class="ic-value">${extra}</div>` : ''}
     </div>`;
   };
 
-  const infoHtml = (label, icon, value, cls) =>
+  const infoHtml = (label, value, cls) =>
     `<div class="info-cell ${cls}">
-      <div class="ic-header"><span class="ic-icon">${icon}</span><span class="ic-label">${label}</span></div>
+      <div class="ic-header"><span class="ic-label">${label}</span></div>
       <div class="ic-value">${value}</div>
     </div>`;
 
@@ -3981,17 +3982,17 @@ function onEstateChange() {
   // Build two balanced columns — NOTAM placeholder always reserved in col1
   // Contact numbers first (top of each column), then info cards below
   const cardDefs = [];
-  if (e.nearest_atc || e.atc_phone) cardDefs.push(contactHtml('Nearest ATC (Air Traffic Control)', '📡', e.atc_phone, e.nearest_atc));
+  if (e.nearest_atc || e.atc_phone) cardDefs.push(contactHtml('Nearest ATC (Air Traffic Control)', e.atc_phone, e.nearest_atc));
   if (e.airspace_manager_contact) {
     const amPhone = (e.airspace_manager_contact.match(/[\d\-\/ ]{7,}/) || [''])[0].trim();
     const amName  = e.airspace_manager_contact.split(':')[0].trim();
-    cardDefs.push(contactHtml('Airspace Manager', '🛂', amPhone, amName));
+    cardDefs.push(contactHtml('Airspace Manager', amPhone, amName));
   }
-  if (e.nearest_aerodrome) cardDefs.push(infoHtml('Nearest Aerodrome', '✈️', e.nearest_aerodrome, 'ic-airspace'));
-  if (e.other_airspace)    cardDefs.push(infoHtml('Other Airspace',    '🗺️', e.other_airspace,    'ic-airspace'));
-  if (e.airspace_hazards)  cardDefs.push(infoHtml('Airspace Hazards',  '⚠️', e.airspace_hazards,  'ic-hazard'));
-  if (e.known_hazards)     cardDefs.push(infoHtml('Known Hazards',     '⚡', e.known_hazards,     'ic-hazard'));
-  if (e.areas_to_avoid)    cardDefs.push(infoHtml('Areas to Avoid',    '🚫', e.areas_to_avoid,    'ic-hazard'));
+  if (e.nearest_aerodrome) cardDefs.push(infoHtml('Nearest Aerodrome', e.nearest_aerodrome, 'ic-airspace'));
+  if (e.other_airspace)    cardDefs.push(infoHtml('Other Airspace',    e.other_airspace,    'ic-airspace'));
+  if (e.airspace_hazards)  cardDefs.push(infoHtml('Airspace Hazards',  e.airspace_hazards,  'ic-hazard'));
+  if (e.known_hazards)     cardDefs.push(infoHtml('Known Hazards',     e.known_hazards,     'ic-hazard'));
+  if (e.areas_to_avoid)    cardDefs.push(infoHtml('Areas to Avoid',    e.areas_to_avoid,    'ic-hazard'));
 
   // Split into two columns alternately
   const col1 = cardDefs.filter((_,i) => i % 2 === 0).join('');
@@ -4702,7 +4703,7 @@ function applyOnsiteFetchData(d) {
           const ref  = refMatch ? lines[0] : '';
           const body = ref ? lines.slice(1).join('\n') || lines[0] : n;
           const cls  = isDeactivated ? 'onsite-notam-card notam-deactivated' : 'onsite-notam-card';
-          return `<div class="${cls}">${ref ? `<div class="notam-ref">📋 ${ref}</div>` : ''}<div class="notam-body">${body}</div></div>`;
+          return `<div class="${cls}">${ref ? `<div class="notam-ref">${ref}</div>` : ''}<div class="notam-body">${body}</div></div>`;
         }).join('');
       }
     }
@@ -4718,7 +4719,6 @@ function applyOnsiteFetchData(d) {
       cell.className = `info-cell ${isRequired ? 'ic-notam' : 'ic-airspace'}`;
       cell.innerHTML = `
         <div class="ic-header">
-          <span class="ic-icon">${isRequired ? '🔴' : '🟢'}</span>
           <span class="ic-label">Airspace Manager Notification Required?</span>
           ${isTimeDependent ? '<span style="font-family:var(--mono);font-size:10px;background:#fed7aa;color:#9a3412;border:1px solid #ea580c;border-radius:4px;padding:1px 6px;margin-left:auto">TIME-DEPENDENT</span>' : ''}
         </div>
@@ -6147,20 +6147,20 @@ function buildAirspaceRefGrid(e, airspace, notamRefs) {
   const constraints = airspace.additional_constraints || [];
 
   // Helper: build an info-cell HTML string
-  const infoCard = (label, icon, value, cls, extra) => {
+  const infoCard = (label, value, cls, extra) => {
     if (!value) return '';
     return `<div class="info-cell ${cls}">
-      <div class="ic-header"><span class="ic-icon">${icon}</span><span class="ic-label">${label}</span></div>
+      <div class="ic-header"><span class="ic-label">${label}</span></div>
       <div class="ic-value" style="margin-top:4px;white-space:pre-wrap">${value}</div>
       ${extra || ''}
     </div>`;
   };
 
-  const contactCard = (label, icon, phone, name) => {
+  const contactCard = (label, phone, name) => {
     if (!phone && !name) return '';
     const num = (phone || '').replace(/[^0-9+ ]/g,'').trim();
     return `<div class="info-cell ic-contact">
-      <div class="ic-header"><span class="ic-icon">${icon}</span><span class="ic-label">${label}</span></div>
+      <div class="ic-header"><span class="ic-label">${label}</span></div>
       ${num ? `<a class="ic-phone" href="tel:${num.replace(/ /g,'')}">${num}</a>` : ''}
       ${name ? `<div class="ic-value" style="margin-top:2px">${name}</div>` : ''}
     </div>`;
@@ -6179,21 +6179,21 @@ function buildAirspaceRefGrid(e, airspace, notamRefs) {
 
   // Contact cards first — most field-critical
   if (e.nearest_atc || e.atc_phone) {
-    cards.push(contactCard('Nearest ATC', '📡', e.atc_phone, e.nearest_atc));
+    cards.push(contactCard('Nearest ATC', e.atc_phone, e.nearest_atc));
   }
   if (e.airspace_manager_contact) {
     const phone = (e.airspace_manager_contact.match(/[\d\-\/ ]{7,}/) || [''])[0].trim();
     const name  = e.airspace_manager_contact.split(':')[0].trim();
-    cards.push(contactCard('Airspace Manager', '🛂', phone, name));
+    cards.push(contactCard('Airspace Manager', phone, name));
   }
 
   // Aerodrome
-  if (e.nearest_aerodrome) cards.push(infoCard('Nearest Aerodrome', '✈️', e.nearest_aerodrome, 'ic-airspace'));
+  if (e.nearest_aerodrome) cards.push(infoCard('Nearest Aerodrome', e.nearest_aerodrome, 'ic-airspace'));
 
   // HIRTA — own card if flagged
   if (airspace.hirta_present) {
     cards.push(`<div class="info-cell ic-hazard">
-      <div class="ic-header"><span class="ic-icon">📡</span><span class="ic-label">HIRTA</span></div>
+      <div class="ic-header"><span class="ic-label">HIRTA</span></div>
       <div class="ic-value" style="margin-top:4px">High-Intensity Radio Transmission Area present. Check for active emissions before flight — can cause GPS and compass interference.</div>
     </div>`);
   }
@@ -6201,7 +6201,7 @@ function buildAirspaceRefGrid(e, airspace, notamRefs) {
   // Military Low Flying Area — own card if flagged
   if (airspace.military_lfa_present) {
     cards.push(`<div class="info-cell ic-hazard">
-      <div class="ic-header"><span class="ic-icon">✈️</span><span class="ic-label">Military Low Flying Area</span></div>
+      <div class="ic-header"><span class="ic-label">Military Low Flying Area</span></div>
       <div class="ic-value" style="margin-top:4px">Military low-level flying activity possible. Aircraft may operate without prior notification. Maintain heightened visual awareness throughout flight.</div>
     </div>`);
   }
@@ -6209,7 +6209,7 @@ function buildAirspaceRefGrid(e, airspace, notamRefs) {
   // Restricted airspace flag card (if present but no specific area designator)
   if (airspace.restricted_airspace_present && !areas.some(a => (a.type||'').toUpperCase().includes('RESTRICTED'))) {
     cards.push(`<div class="info-cell ic-notam">
-      <div class="ic-header"><span class="ic-icon">🔴</span><span class="ic-label">Restricted Airspace</span></div>
+      <div class="ic-header"><span class="ic-label">Restricted Airspace</span></div>
       <div class="ic-value" style="margin-top:4px">Restricted airspace present in this area. Verify specific designators and activation status before flight.</div>
     </div>`);
   }
@@ -6232,7 +6232,6 @@ function buildAirspaceRefGrid(e, airspace, notamRefs) {
     const notes = a.notes ? `<div style="margin-top:4px;font-size:11px;color:var(--faint)">${a.notes}</div>` : '';
     cards.push(`<div class="info-cell ${isDisabled ? 'ic-airspace' : areaClass(a.type)}" style="${isDisabled ? 'opacity:0.7' : ''}">
       <div class="ic-header">
-        <span class="ic-icon">${isDisabled ? '✅' : areaClass(a.type) === 'ic-notam' ? '🔴' : '⚠️'}</span>
         <span class="ic-label">${a.designator || ''}</span>
         <span style="font-family:var(--mono);font-size:10px;font-weight:600;margin-left:auto;padding:2px 6px;border-radius:3px;background:rgba(0,0,0,0.06)">${a.type||''}</span>
       </div>
@@ -6331,7 +6330,7 @@ function populateActionData(d) {
       const body = ref ? lines.slice(1).join('\n') || lines[0] : n;
       const el = document.createElement('div');
       el.className = isDeactivated ? 'notam-item notam-deactivated' : 'notam-item';
-      el.innerHTML = (ref ? `<div class="notam-ref">📋 ${ref}</div>` : '') + `<div class="notam-body">${body}</div>`;
+      el.innerHTML = (ref ? `<div class="notam-ref">${ref}</div>` : '') + `<div class="notam-body">${body}</div>`;
       list.appendChild(el);
     });
   }
@@ -9268,24 +9267,24 @@ function ocRenderHazards() {
   const e = live || (ocCache && ocCache.static) || {};
 
   const seen = new Set();
-  const cell = (label, icon, value, cls) => {
+  const cell = (label, value, cls) => {
     const v = String(value || '').trim();
     if (!v) return '';
     const key = v.toLowerCase();
     if (seen.has(key)) return '';        // known_hazards and ground_hazards often repeat
     seen.add(key);
     return `<div class="info-cell ${cls}">
-      <div class="ic-header"><span class="ic-icon">${icon}</span><span class="ic-label">${ocEsc(label)}</span></div>
+      <div class="ic-header"><span class="ic-label">${ocEsc(label)}</span></div>
       <div class="ic-value" style="margin-top:4px;white-space:pre-wrap">${ocEsc(v)}</div>
     </div>`;
   };
 
   const html = [
-    cell('Airspace Hazards',      '&#9888;',   e.airspace_hazards,      'ic-hazard'),
-    cell('Known Hazards',         '&#9889;',   e.known_hazards,         'ic-hazard'),
-    cell('Ground Hazards',        '&#9889;',   e.ground_hazards,        'ic-hazard'),
-    cell('Areas to Avoid',        '&#128683;', e.areas_to_avoid,        'ic-hazard'),
-    cell('Public Access',         '&#128694;', e.public_access_points,  'ic-airspace'),
+    cell('Airspace Hazards', e.airspace_hazards,     'ic-hazard'),
+    cell('Known Hazards',    e.known_hazards,        'ic-hazard'),
+    cell('Ground Hazards',   e.ground_hazards,       'ic-hazard'),
+    cell('Areas to Avoid',   e.areas_to_avoid,       'ic-hazard'),
+    cell('Public Access',    e.public_access_points, 'ic-airspace'),
   ].filter(Boolean).join('');
 
   if (!html) { wrap.style.display = 'none'; grid.innerHTML = ''; return; }
