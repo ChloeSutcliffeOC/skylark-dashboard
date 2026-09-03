@@ -4265,7 +4265,9 @@ async function fetchMetOfficeDirect(lat, lon) {
   };
 
   const precipPct = best.probOfPrecipitation ?? 0;
-  const cloudOktas = best.totalCloudCover;  // 0–8 oktas, may be undefined
+  // DataHub carries no cloud field - see ocMetarCloud for the detail - so
+  // the sky comes from the significant weather code alone here.
+  const cloudOktas = null;
   const sigWx      = best.significantWeatherCode;  // numeric code
 
   // Map significantWeatherCode to a short readable label
@@ -8652,6 +8654,7 @@ async function ocFetchMet24(lat, lon) {
       sigWx:      e.significantWeatherCode ?? null,
       sigWxLabel: ocSigWxLabel(e.significantWeatherCode),
       visM:       e.visibility ?? null,
+      // Kept so old cached bundles still parse; DataHub never sends it.
       cloud:      e.totalCloudCover ?? null,
     }));
 }
@@ -8981,6 +8984,62 @@ function ocRenderNight() {
   return night;
 }
 
+// ── Cloud ────────────────────────────────────────────────────────────────
+// The Met Office DataHub site-specific API carries no cloud field at all -
+// not on hourly, not on three-hourly, not on daily. The code used to read
+// e.totalCloudCover, which never exists, so the Cloud cell has been empty
+// for every estate since it was written. Checked against the live API on
+// 3 Sep 2026; the hourly response has 19 fields and none of them mention
+// cloud.
+//
+// So cloud comes from what we do have, in order of how much it is worth:
+// the METAR when the Action returned one (an actual observation, with a
+// base height), and otherwise the sky state implied by the significant
+// weather code. Neither is invented, and both say where they came from.
+
+// FEW/SCT/BKN/OVC + height in hundreds of feet. Returns the lowest layer,
+// because the lowest is the one that matters for staying clear of cloud.
+function ocMetarCloud(metar) {
+  if (!metar) return null;
+  const t = String(metar).toUpperCase();
+  if (/\bCAVOK\b/.test(t)) return { text: 'No cloud below 5,000 ft (CAVOK)' };
+  if (/\b(NSC|NCD|SKC|CLR)\b/.test(t)) return { text: 'No significant cloud' };
+  // No trailing \b: a slash is not a word character, so VV/// never matched.
+  const vv = t.match(/\bVV(\d{3}|\/\/\/)(?=\s|$)/);
+  if (vv) return { text: vv[1] === '///' ? 'Sky obscured' : `Sky obscured, vertical visibility ${(+vv[1] * 100).toLocaleString()} ft` };
+  const layers = [...t.matchAll(/\b(FEW|SCT|BKN|OVC)(\d{3})\b/g)]
+    .map(m => ({ cover: m[1], ft: +m[2] * 100 }))
+    .sort((a, b) => a.ft - b.ft);
+  if (!layers.length) return null;
+  const l = layers[0];
+  const words = { FEW: 'Few', SCT: 'Scattered', BKN: 'Broken', OVC: 'Overcast' };
+  return { text: `${words[l.cover]} at ${l.ft.toLocaleString()} ft`, ft: l.ft, cover: l.cover };
+}
+
+// What the significant weather code implies about the sky. Qualitative on
+// purpose - the code does not carry an okta figure, so neither do we.
+function ocSkyFromCode(code) {
+  if (code == null) return '';
+  if (code === 0 || code === 1) return 'Clear';
+  if (code === 2 || code === 3) return 'Partly cloudy';
+  if (code === 5) return 'Mist';
+  if (code === 6) return 'Fog';
+  if (code === 7) return 'Cloudy';
+  if (code === 8) return 'Overcast';
+  if (code >= 9)  return 'Overcast with precipitation';
+  return '';
+}
+
+// The Cloud cell, and what it is honest about.
+function ocCloudCell(h, bundle) {
+  const icao = (bundle && bundle.static && (bundle.static.weather_icao || bundle.static.nearest_aerodrome_icao)) || '';
+  const m = ocMetarCloud(bundle && bundle.metar);
+  if (m) return { text: `${m.text}${icao ? ` · ${icao} observed` : ' · nearest METAR'}`, status: 'info' };
+  const sky = ocSkyFromCode(h && h.sigWx);
+  if (sky) return { text: `${sky} · from the weather code`, status: 'info' };
+  return { text: 'Not in this forecast', status: 'info' };
+}
+
 const OC_RANK = { green: 0, orange: 1, red: 2 };
 function ocWorst(list) {
   return list.reduce((a, b) => (OC_RANK[b] > OC_RANK[a] ? b : a), 'green');
@@ -9180,7 +9239,8 @@ function ocRenderConditions() {
   ocSetCell('oc-d-precip', (h.sigWxLabel || 'Clear') + (h.precipProb ? ` · ${h.precipProb}% prob` : ''), pS);
   ocSetCell('oc-d-temp',  h.tempC != null ? `${h.tempC}°C` : '—', tS);
   ocSetCell('oc-d-vis',   ocVisText(h.visM), vS);
-  ocSetCell('oc-d-cloud', h.cloud != null ? `${h.cloud}/8 oktas` : '—', 'info');
+  const cloudCell = ocCloudCell(h, ocCache);
+  ocSetCell('oc-d-cloud', cloudCell.text, cloudCell.status);
   ocSetCell('oc-d-icing', ice.text, ice.status);
   ocSetCell('oc-d-kp',    (ocCache && ocCache.kp != null && ocCache.kp !== '') ? `Kp ${ocCache.kp}` : '—', kS);
   ocSetCell('oc-d-daylight', day.text, day.status);
@@ -9812,7 +9872,7 @@ function ocBuildRecord() {
     temperature:      h && h.tempC != null ? `${h.tempC} C` : '',
     dew_point:        h && h.dewC  != null ? `${h.dewC} C`  : '',
     visibility:       h ? ocVisText(h.visM) : '',
-    cloud_cover:      h && h.cloud != null ? `${h.cloud}/8 oktas` : '',
+    cloud_cover:      h ? ocCloudCell(h, ocCache).text : '',
     space_weather_kp: ocCache && ocCache.kp != null ? String(ocCache.kp) : '',
     sunrise:          ocCache ? ocCache.sunrise : '',
     sunset:           ocCache ? ocCache.sunset  : '',
