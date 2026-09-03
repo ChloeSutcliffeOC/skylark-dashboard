@@ -1580,7 +1580,7 @@
           <div class="two-col">
             <div>
               <div class="field-label">what3words</div>
-              <input type="text" id="mamc-w3w" placeholder="what.three.words" oninput="mamcRefresh()">
+              <input type="text" id="mamc-w3w" placeholder="what.three.words" oninput="mamcOnW3wInput()">
             </div>
             <div>
               <div class="field-label auto-label">Centre</div>
@@ -1588,10 +1588,18 @@
             </div>
           </div>
 
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="secondary-btn" type="button" id="mamc-w3w-btn" style="margin:0;flex:1 1 200px" onclick="mamcOpenW3w()">Open what3words Map</button>
+            <button class="secondary-btn" type="button" id="mamc-w3w-sync" style="margin:0;flex:1 1 200px" onclick="mamcW3wToCentre(true)">Set Centre From These Words</button>
+          </div>
+          <div id="mamc-w3w-status" style="display:none;font-family:var(--mono);font-size:11px;line-height:1.6;padding:9px 12px;border-radius:7px;background:var(--oc-accent-canvas);border:1.5px solid var(--oc-accent-line);color:var(--oc-accent-ink)"></div>
+
           <div style="font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--oc-accent-ink);background:var(--oc-accent-canvas);border:1.5px solid var(--oc-accent-line);border-radius:8px;padding:10px 13px">
             The centre and what3words come from the estate's stored coordinate, which for most estates is
             derived from a postcode rather than the boundary. <strong>Edit both to the actual area of operation</strong>
             before sending &mdash; this is what tells a low-flying crew where you will be.
+            Open the map, drag onto the ground you will be flying over, and paste those three words back here:
+            the centre is then taken <strong>from the square you picked</strong>, not from the postcode.
           </div>
 
           <div>
@@ -1823,6 +1831,26 @@
         <div class="data-cell"><div class="cell-label auto-label">Icing Risk</div><div class="cell-value" id="oc-d-icing">&mdash;</div></div>
         <div class="data-cell"><div class="cell-label auto-label">Kp-Index</div><div class="cell-value" id="oc-d-kp">&mdash;</div></div>
         <div class="data-cell"><div class="cell-label auto-label">Daylight</div><div class="cell-value" id="oc-d-daylight">&mdash;</div></div>
+      </div>
+
+      <!-- Night. Not a NO GO - the hour is flyable - but it is only flyable
+           after the area has been walked in daylight, so the confirmation
+           sits here, against the hour that triggered it. -->
+      <div id="oc-night" style="display:none;background:var(--oc-accent-canvas);border:2px solid var(--oc-accent-line);border-left:5px solid var(--oc-accent-strong);border-radius:9px;padding:14px 16px">
+        <div style="font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--oc-accent-ink);margin-bottom:8px">Night Flight</div>
+        <p style="font-size:12.5px;line-height:1.65;color:var(--oc-accent-ink);margin-bottom:10px">
+          The hour you have picked is outside the daylight window. Night flying is allowed, but it
+          <strong>requires a walk-over of the area of operation in daylight first</strong> &mdash; the take-off and landing
+          point, the obstacles, the wires, the ground you would have to walk to reach the aircraft. The aircraft must also
+          show a <strong>green flashing light</strong>, and you still have to keep it in sight with your own eyes.
+        </p>
+        <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer">
+          <input type="checkbox" id="oc-night-walk" onchange="ocRefresh()" style="margin-top:3px;flex:0 0 auto;width:18px;height:18px">
+          <span style="font-size:13px;line-height:1.6;color:var(--oc-accent-ink)">
+            <strong>I have walked over this area in daylight</strong> and know the obstacles, the surface and the
+            take-off and landing point. The aircraft has a working green flashing light.
+          </span>
+        </label>
       </div>
 
       <div class="gate-card gate-pending" id="oc-gate-weather">
@@ -8245,8 +8273,8 @@ const OC_RULES = {
       sub:'No binoculars, no screen only. If it goes out of sight, bring it back.' },
     { key:'a1-height',  text:'I will stay at or below 120 m (400 ft) above the surface',
       sub:'Measured from the ground below the aircraft, not from where I am standing.' },
-    { key:'a1-frz',     text:'I am outside any airport flight restriction zone, and it is daylight',
-      sub:'Check the airspace section above. If a FRZ covers this spot, you need permission first.' },
+    { key:'a1-frz',     text:'I am outside any airport flight restriction zone',
+      sub:'Check the airspace section above. If a FRZ covers this spot, you need permission first. After dark, the aircraft must show a green flashing light.' },
     { key:'a1-ids',     text:'My Flyer ID is current and the Operator ID is on the aircraft',
       sub:'Both are legal requirements. The Operator ID must be readable on the airframe.' },
   ],
@@ -8259,8 +8287,8 @@ const OC_RULES = {
       sub:'No binoculars, no screen only. If it goes out of sight, bring it back.' },
     { key:'a3-height',  text:'I will stay at or below 120 m (400 ft) above the surface',
       sub:'Measured from the ground below the aircraft, not from where I am standing.' },
-    { key:'a3-frz',     text:'I am outside any airport flight restriction zone, and it is daylight',
-      sub:'Check the airspace section above. If a FRZ covers this spot, you need permission first.' },
+    { key:'a3-frz',     text:'I am outside any airport flight restriction zone',
+      sub:'Check the airspace section above. If a FRZ covers this spot, you need permission first. After dark, the aircraft must show a green flashing light.' },
     { key:'a3-ids',     text:'My Flyer ID is current and the Operator ID is on the aircraft',
       sub:'Both are legal requirements. The Operator ID must be readable on the airframe.' },
   ],
@@ -8653,7 +8681,7 @@ function ocRenderCacheList() {
       ${notam}
       <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${bits.join(' · ')}</span>
       <span class="cache-item-age">${ocAgeText(hrs)}</span>
-      ${n ? `<a class="cache-notam-btn" href="${NATS_BRIEFING_URL}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">&#9888;</span>Check NOTAM</a>` : ''}
+      ${n ? `<a class="cache-notam-btn" href="${NOTAM_INFO_URL}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">&#9888;</span>Check NOTAM</a>` : ''}
     </div>`;
   }).join('');
 }
@@ -8738,22 +8766,51 @@ function ocKpStatus(kp) {
   return 'green';
 }
 
-// Open category has no night provision in OC's internal training, so
-// daylight is a hard edge rather than a caution.
+// Night is flyable, so darkness is a flagged condition rather than a hard
+// NO GO. What it costs is a walk-over of the area in daylight first, and a
+// green flashing light on the aircraft. That is handled by the night panel
+// in the weather card, not by blocking the hour outright.
 function ocDaylight(hourIso, bundle) {
   if (!hourIso || !bundle || !bundle.sunrise || !bundle.sunset) {
-    return { status:'orange', text:'Daylight window unknown — check before you fly' };
+    return { status:'orange', night:false, unknown:true, text:'Daylight window unknown — check before you fly' };
   }
   const d    = new Date(hourIso);
   const mins = d.getHours() * 60 + d.getMinutes();
   const toM  = s => { const m = String(s).match(/(\d{1,2}):(\d{2})/); return m ? (+m[1]) * 60 + (+m[2]) : null; };
   const up = toM(bundle.sunrise), down = toM(bundle.sunset);
-  if (up == null || down == null) return { status:'orange', text:'Daylight window unclear' };
+  if (up == null || down == null) return { status:'orange', night:false, unknown:true, text:'Daylight window unclear' };
   const window = `${bundle.sunrise}–${bundle.sunset}`;
-  if (mins < up || mins > down)   return { status:'red',    text:`Outside daylight (${window})` };
-  if (mins > down - 30)           return { status:'orange', text:`Within 30 min of sunset (${window})` };
-  if (mins < up + 30)             return { status:'orange', text:`Just after sunrise (${window})` };
-  return { status:'green', text:`Daylight (${window})` };
+  if (mins < up || mins > down)   return { status:'orange', night:true,  text:`Night — walk-over required (daylight ${window})` };
+  if (mins > down - 30)           return { status:'orange', night:false, text:`Within 30 min of sunset (${window})` };
+  if (mins < up + 30)             return { status:'orange', night:false, text:`Just after sunrise (${window})` };
+  return { status:'green', night:false, text:`Daylight (${window})` };
+}
+
+// True when the hour on the strip falls outside the daylight window.
+function ocIsNightHour() {
+  const h = ocHourIdx >= 0 ? ocHours[ocHourIdx] : null;
+  if (!h) return false;
+  return ocDaylight(h.time, ocCache).night === true;
+}
+
+function ocNightWalkOk() {
+  const el = ocEl('oc-night-walk');
+  return !!(el && el.checked);
+}
+
+// Shows the night panel only when a night hour is selected, and clears the
+// confirmation when the pilot moves back into daylight so it can never be
+// carried over from an earlier selection.
+function ocRenderNight() {
+  const panel = ocEl('oc-night');
+  if (!panel) return false;
+  const night = ocIsNightHour();
+  panel.style.display = night ? '' : 'none';
+  if (!night) {
+    const el = ocEl('oc-night-walk');
+    if (el) el.checked = false;
+  }
+  return night;
 }
 
 const OC_RANK = { green: 0, orange: 1, red: 2 };
@@ -8932,6 +8989,8 @@ function ocRenderConditions() {
       if (el) el.textContent = '—';
       if (typeof resetDataCellStyle === 'function') resetDataCellStyle(id);
     });
+    const np = ocEl('oc-night');
+    if (np) np.style.display = 'none';
     ocEvalWeatherGate(null);
     return;
   }
@@ -8954,6 +9013,8 @@ function ocRenderConditions() {
   ocSetCell('oc-d-icing', ice.text, ice.status);
   ocSetCell('oc-d-kp',    (ocCache && ocCache.kp != null && ocCache.kp !== '') ? `Kp ${ocCache.kp}` : '—', kS);
   ocSetCell('oc-d-daylight', day.text, day.status);
+
+  ocRenderNight();
 
   const worst = ocWorst([wS, gS, pS, tS, vS, ice.status, kS, day.status]);
   ocEvalWeatherGate(worst);
@@ -8981,7 +9042,11 @@ function ocEvalWeatherGate(worst) {
   } else if (worst === 'orange') {
     gate.classList.add('gate-go');
     label.textContent = '⚠ CAUTION';
-    msg.textContent = 'Within limits, but close to one. Watch it on site and be ready to land.';
+    msg.textContent = ocIsNightHour()
+      ? (ocNightWalkOk()
+          ? 'Night flight, walk-over confirmed. Within limits, but watch it on site and be ready to land.'
+          : 'This hour is after dark. Flying is allowed, but confirm the daylight walk-over of the area below first.')
+      : 'Within limits, but close to one. Watch it on site and be ready to land.';
   } else {
     gate.classList.add('gate-go');
     label.textContent = '✓ GO';
@@ -9382,9 +9447,12 @@ function ocRefresh() {
   const rulesOk  = rules.total > 0 && rules.missing.length === 0;
   const issues   = ocGetToggle('oc-issues');
   const dbOk     = issues === 'No' || (issues === 'Yes' && ocVal('oc-debrief-note').length > 0);
+  // Night: flyable, but only once the area has been walked in daylight.
+  const nightHour = ocIsNightHour();
+  const nightOk   = !nightHour || ocNightWalkOk();
 
   ocTick('tick-oc-flight',   flightOk);
-  ocTick('tick-oc-weather',  wxOk && worst !== 'red');
+  ocTick('tick-oc-weather',  wxOk && worst !== 'red' && nightOk);
   ocTick('tick-oc-airspace', ocGetToggle('oc-airspace-ok') === 'Yes');
   ocTick('tick-oc-rules',    rulesOk);
   ocTick('tick-oc-debrief',  dbOk);
@@ -9441,6 +9509,8 @@ function ocRefresh() {
     if (!wxOk)     reasons.push('No weather for the hour you are flying — pick an hour, or cache the estate.');
     else if (worst === 'red') reasons.push('Weather is outside this aircraft’s limits at that hour.');
   }
+  // Night is allowed, so it is not a reason on its own. The walk-over is.
+  if (nightHour && !nightOk) reasons.push('Night flight — the daylight walk-over of the area has not been confirmed.');
   if (ocGetToggle('oc-airspace-ok') === 'No') reasons.push('You have said the airspace is not clear.');
   else if (!airOk) reasons.push('The airspace question has not been answered.');
   if (!rulesOk && ac) reasons.push(`${rules.missing.length} of the ${rules.total} Open category rules are not confirmed.`);
@@ -9558,6 +9628,8 @@ function ocBuildRecord() {
     space_weather_kp: ocCache && ocCache.kp != null ? String(ocCache.kp) : '',
     sunrise:          ocCache ? ocCache.sunrise : '',
     sunset:           ocCache ? ocCache.sunset  : '',
+    night_flight:            ocIsNightHour() ? 'Yes' : 'No',
+    night_walkover_confirmed: ocIsNightHour() ? (ocNightWalkOk() ? 'Yes' : 'No') : 'N/A',
     metar:            ocCache ? ocCache.metar   : '',
     taf:              ocCache ? ocCache.taf     : '',
     conditions_verdict: worst === 'red' ? 'Outside limits' : worst === 'orange' ? 'Within limits, close to one' : worst === 'green' ? 'Within limits' : 'Not assessed',
@@ -9892,7 +9964,11 @@ const NOTICE_KEY = 'SKY_NOTICES_CACHE';
 
 // NATS AIS pre-flight briefing - the authoritative NOTAM source. Skylark's
 // cached NOTAM count is a snapshot; this is the live check.
-const NATS_BRIEFING_URL = 'https://nats-uk.ead-it.com/fwf-nats/public/user/account/login.faces';
+// The NOTAM link on the cached-estate rows. NOTAM Info is a public map of
+// current UK NOTAMs - no login, works on a phone in a field - which is what
+// this button is for. The NATS AIS briefing remains the authoritative
+// source and needs an account, so it is not what a pilot taps on site.
+const NOTAM_INFO_URL = 'https://notaminfo.com/ukmap';
 
 const NOTICE_FALLBACK = [{
   title: 'MAMC notification',
@@ -10068,6 +10144,118 @@ function mamcBuild() {
   return { to: MAMC_TO, subject: `UAS activity for ${dSub}`, body };
 }
 
+// ── what3words ───────────────────────────────────────────────────────────
+// The estate's stored square is a starting point, not the flying area. The
+// map button opens what3words at that square so the pilot can drag onto the
+// ground they will actually be over, and the words they come back with then
+// drive the coordinate rather than the other way round.
+const W3W_WORD = '[a-z\\u00C0-\\u024F\\u0400-\\u04FF\']+';
+const W3W_RE   = new RegExp('^' + W3W_WORD + '\\.' + W3W_WORD + '\\.' + W3W_WORD + '$', 'i');
+
+function mamcW3wWords() {
+  return ocVal('mamc-w3w').replace(/^\/+/, '').replace(/\s+/g, '').trim();
+}
+
+function mamcW3wStatus(html, tone) {
+  const el = ocEl('mamc-w3w-status');
+  if (!el) return;
+  if (!html) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
+  el.innerHTML = html;
+  const bad = tone === 'bad';
+  el.style.background  = bad ? 'var(--oc-danger-tint)' : 'var(--oc-accent-canvas)';
+  el.style.borderColor = bad ? 'var(--oc-danger-line)' : 'var(--oc-accent-line)';
+  el.style.color       = bad ? 'var(--oc-danger-ink)'  : 'var(--oc-accent-ink)';
+}
+
+// Opens the square if we have valid words, otherwise the estate's coordinate,
+// otherwise the map itself. what3words resolves /lat,lon to the square there.
+function mamcW3wHref() {
+  const w = mamcW3wWords();
+  if (W3W_RE.test(w)) return 'https://what3words.com/' + encodeURIComponent(w);
+  const e = (typeof estatesData === 'object' && estatesData[ocVal('mamc-estate')]) || {};
+  const lat = parseFloat(e.lat), lon = parseFloat(e.lon);
+  if (!isNaN(lat) && !isNaN(lon)) return `https://what3words.com/${lat},${lon}`;
+  return 'https://what3words.com/';
+}
+
+function mamcOpenW3w() {
+  window.open(mamcW3wHref(), '_blank', 'noopener,noreferrer');
+  mamcW3wStatus('Pick the square over your actual area of operation, copy the three words back into the box above, ' +
+                'then tap <strong>Set Centre From These Words</strong>.');
+}
+
+// words -> latitude/longitude. There is no key baked into this file, so it
+// tries the public map endpoint what3words.com itself uses, and an API key
+// only if one has been stored on the device. Either can fail on a bad signal,
+// so failure says plainly what to do by hand rather than leaving a stale
+// coordinate looking authoritative.
+async function mamcW3wLookup(words) {
+  const key = (localStorage.getItem('SKY_W3W_KEY') || '').trim();
+  const urls = [];
+  if (key) urls.push(`https://api.what3words.com/v3/convert-to-coordinates?words=${encodeURIComponent(words)}&key=${encodeURIComponent(key)}`);
+  urls.push(`https://mapapi.what3words.com/api/convert-to-coordinates?words=${encodeURIComponent(words)}`);
+  let lastErr = 'no response';
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) { lastErr = 'HTTP ' + r.status; continue; }
+      const j = await r.json();
+      const c = j && (j.coordinates || j.coords || j);
+      const lat = parseFloat(c && (c.lat ?? c.latitude));
+      const lon = parseFloat(c && (c.lng ?? c.lon ?? c.longitude));
+      if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
+      lastErr = 'no coordinates in the reply';
+    } catch (err) { lastErr = err.message || String(err); }
+  }
+  throw new Error(lastErr);
+}
+
+let mamcW3wBusy = false;
+let mamcW3wLast = '';
+let mamcLastEstate = '';
+
+async function mamcW3wToCentre(manual) {
+  const words = mamcW3wWords();
+  if (!W3W_RE.test(words)) {
+    if (manual) mamcW3wStatus('That is not a what3words address. It is three words separated by full stops, like <strong>filled.count.soap</strong>.', 'bad');
+    return;
+  }
+  if (mamcW3wBusy) return;
+  if (!navigator.onLine) {
+    mamcW3wStatus('No connection, so the words cannot be turned into a coordinate here. Open the what3words map when you have signal, ' +
+                  'or type the coordinate into <strong>Centre</strong> by hand.', 'bad');
+    return;
+  }
+  mamcW3wBusy = true;
+  mamcW3wStatus(`Looking up ///${ocEsc(words)}…`);
+  try {
+    const { lat, lon } = await mamcW3wLookup(words);
+    const cEl = ocEl('mamc-centre');
+    if (cEl) { cEl.value = mamcDms(lat, lon); cEl.dataset.touched = '1'; cEl.dataset.fromW3w = '1'; }
+    mamcW3wLast = words;
+    mamcW3wStatus(`Centre set from <strong>///${ocEsc(words)}</strong> &mdash; ${ocEsc(mamcDms(lat, lon))} ` +
+                  `(${lat.toFixed(5)}, ${lon.toFixed(5)}). This is what goes in the notification.`);
+    mamcRefresh();
+  } catch (err) {
+    mamcW3wStatus(`Could not turn ///${ocEsc(words)} into a coordinate (${ocEsc(err.message)}). ` +
+                  'Open the what3words map, read the coordinate off the square and type it into <strong>Centre</strong>.', 'bad');
+  } finally {
+    mamcW3wBusy = false;
+  }
+}
+
+// Typing the words is enough - once a complete address is in the box, the
+// centre follows it without another tap.
+let mamcW3wTimer = null;
+function mamcOnW3wInput() {
+  mamcRefresh();
+  const words = mamcW3wWords();
+  if (mamcW3wTimer) clearTimeout(mamcW3wTimer);
+  if (!W3W_RE.test(words) || words === mamcW3wLast) return;
+  mamcW3wTimer = setTimeout(() => mamcW3wToCentre(false), 700);
+}
+
 function mamcRefresh() {
   mamcSaveContact();
 
@@ -10077,6 +10265,17 @@ function mamcRefresh() {
   const estate = ocVal('mamc-estate');
   const e = (typeof estatesData === 'object' && estatesData[estate]) || {};
   const cEl = ocEl('mamc-centre');
+  // A change of estate throws away anything the what3words lookup filled in -
+  // a coordinate from the last estate's square is worse than no coordinate.
+  // Anything typed by hand is left alone, as it always was.
+  if (estate && estate !== mamcLastEstate) {
+    mamcLastEstate = estate;
+    mamcW3wLast = '';
+    mamcW3wStatus('');
+    const wE = ocEl('mamc-w3w');
+    if (cEl && cEl.dataset.fromW3w) { delete cEl.dataset.touched; delete cEl.dataset.fromW3w; }
+    if (wE  && wE.dataset.fromW3w)  { delete wE.dataset.touched;  delete wE.dataset.fromW3w; }
+  }
   if (cEl && estate && !cEl.dataset.touched) {
     const lat = parseFloat(e.lat), lon = parseFloat(e.lon);
     cEl.value = (!isNaN(lat) && !isNaN(lon)) ? mamcDms(lat, lon) : '';
