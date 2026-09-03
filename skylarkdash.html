@@ -553,7 +553,8 @@
   }
 
   /* Category colours */
-  .info-cell.ic-contact  { border-left: 4px solid var(--oc-info-ink); background: var(--oc-info-tint); }
+  .info-cell.ic-contact,
+  .info-cell.ic-neutral  { border-left: 4px solid var(--oc-info-ink); background: var(--oc-info-tint); }
   .info-cell.ic-airspace { border-left: 4px solid var(--oc-info-strong); background: var(--oc-info-tint); }
   /* Hazards were a pale pink wash that read as decorative. They carry the
      things that hurt someone, so they get a red ground with a solid red bar
@@ -588,7 +589,8 @@
   .info-cell.ic-hazard .ic-label { color: var(--oc-hazard-ink); }
   .info-cell.ic-hazard .ic-value { color: var(--oc-hazard-ink); }
   .info-cell.ic-notam  .ic-label { color: var(--oc-info-strong); }
-  .info-cell.ic-contact .ic-label { color: var(--oc-info-ink); }
+  .info-cell.ic-contact .ic-label,
+  .info-cell.ic-neutral .ic-label { color: var(--oc-info-ink); }
   .info-cell.ic-airspace .ic-label { color: var(--oc-info-strong); }
 
   .info-cell .ic-value {
@@ -4012,7 +4014,7 @@ function onEstateChange() {
     const amName  = e.airspace_manager_contact.split(':')[0].trim();
     cardDefs.push(contactHtml('Airspace Manager', amPhone, amName));
   }
-  if (e.nearest_aerodrome) cardDefs.push(infoHtml('Nearest Aerodrome', e.nearest_aerodrome, 'ic-airspace'));
+  if (e.nearest_aerodrome) cardDefs.push(infoHtml('Nearest Aerodrome', e.nearest_aerodrome, 'ic-neutral'));
   if (e.other_airspace)    cardDefs.push(infoHtml('Other Airspace',    e.other_airspace,    'ic-airspace'));
   if (e.airspace_hazards)  cardDefs.push(infoHtml('Airspace Hazards',  e.airspace_hazards,  'ic-hazard'));
   if (e.known_hazards)     cardDefs.push(infoHtml('Known Hazards',     e.known_hazards,     'ic-hazard'));
@@ -6214,7 +6216,7 @@ function buildAirspaceRefGrid(e, airspace, notamRefs) {
   }
 
   // Aerodrome
-  if (e.nearest_aerodrome) cards.push(infoCard('Nearest Aerodrome', e.nearest_aerodrome, 'ic-airspace'));
+  if (e.nearest_aerodrome) cards.push(infoCard('Nearest Aerodrome', e.nearest_aerodrome, 'ic-neutral'));
 
   // HIRTA — own card if flagged
   if (airspace.hirta_present) {
@@ -9321,7 +9323,7 @@ function ocRenderHazards() {
     cell('Known Hazards',    e.known_hazards,        'ic-hazard'),
     cell('Ground Hazards',   e.ground_hazards,       'ic-hazard'),
     cell('Areas to Avoid',   e.areas_to_avoid,       'ic-hazard'),
-    cell('Public Access',    e.public_access_points, 'ic-airspace'),
+    cell('Public Access',    e.public_access_points, 'ic-hazard'),
   ].filter(Boolean).join('');
 
   if (!html) { wrap.style.display = 'none'; grid.innerHTML = ''; return; }
