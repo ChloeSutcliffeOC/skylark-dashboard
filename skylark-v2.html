@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Skylark v2 — OC Field Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Skylark v2 — "Instrument" treatment ─────────────────────────────
+     A visual recreation of skylarkdash.html. Same screens, same order,
+     same field names. Three deliberate changes:
+       1. Yellow is softened one step. The saturated #efd074 competed with
+          the traffic light; the fill step reads as brand without shouting.
+       2. Auto-filled data is slate, not violet. It still means "the app
+          fetched this, a person did not type it" — but slate sits outside
+          the traffic light entirely so it can never be read as a status.
+       3. Borders are 3px and square, values are mono and large, targets are
+          54–96px. Built to survive glare on a tablet.
+     This file is standalone and writes NOTHING to localStorage, so it can
+     be tested alongside the live dashboard without touching its state.
+     ------------------------------------------------------------------- */
+  :root {
+    --ink: #0a0a0a; --ink-2: #3f3f46; --ink-3: #52525b;
+    --line: #e4e4e7; --line-mid: #b4b4bb; --canvas: #f4f4f5;
+
+    --acc-fill: #f4e18c; --acc-line: #e0cb8c; --acc-dark: #e9d69f; --acc-tint: #fbf6dd;
+
+    --ok: #166a2a; --ok-deep: #0f4a1e; --ok-fill: #c8ecd1; --ok-strong: #4caf70;
+    --warn: #9a3412; --warn-fill: #fed7aa; --warn-strong: #ea580c;
+    --bad: #9f1239; --bad-deep: #881337; --bad-fill: #fecdd3; --bad-strong: #e11d48;
+    --haz-ink: #7f1d1d; --haz-fill: rgba(185,28,28,.12); --haz-strong: #b91c1c;
+
+    /* auto-filled — slate. A MEANING, not a brand colour. */
+    --auto-ink: #334155; --auto-fill: #e8eef4; --auto-strong: #475569;
+
+    --mono: 'DM Mono', monospace; --sans: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  button, input, select, textarea, label, a { touch-action: manipulation; }
+  body { background: #fff; color: var(--ink); font-family: var(--sans);
+         font-size: 17px; line-height: 1.5; min-height: 100vh;
+         -webkit-font-smoothing: antialiased; }
+
+  /* ── Side indicators ── */
+  .side-ind { position: fixed; left: 0; top: 40%; z-index: 100; writing-mode: vertical-rl;
+              transform: rotate(180deg); font-family: var(--mono); font-size: 11px;
+              font-weight: 600; letter-spacing: .3em; text-transform: uppercase;
+              color: var(--line-mid); padding: 10px 6px; pointer-events: none; }
+  @media (max-width: 1080px) { .side-ind { display: none; } }
+
+  /* ── Header ── */
+  header { background: #000; padding: 0 18px; display: flex; align-items: stretch;
+           justify-content: space-between; min-height: 64px; position: sticky; top: 0;
+           z-index: 200; border-bottom: 4px solid var(--acc-line); gap: 14px; }
+  .logo-block { display: flex; flex-direction: column; justify-content: center; padding: 10px 0; }
+  .logo-main { font-size: 17px; font-weight: 700; color: var(--acc-dark);
+               letter-spacing: .16em; text-transform: uppercase; }
+  .logo-sub { font-family: var(--mono); font-size: 10px; color: #9a9a9a;
+              letter-spacing: .1em; text-transform: uppercase; margin-top: 2px; }
+  .head-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+                justify-content: flex-end; }
+  #header-estate { font-family: var(--mono); font-size: 11px; color: #c9c9c9; letter-spacing: .06em; }
+  #status-badge { font-family: var(--mono); font-size: 11px; padding: 5px 11px;
+                  background: #16181c; border: 2px solid #2a3441; color: #9aa4b0;
+                  letter-spacing: .06em; }
+  #status-badge.sync { border-color: var(--acc-line); color: var(--acc-dark); }
+  .hdr-btn { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .06em;
+             padding: 11px 14px; min-height: 44px; background: #000; color: #fff;
+             border: 2px solid #3f3f46; cursor: pointer; }
+  .hdr-btn:hover { border-color: var(--acc-line); color: var(--acc-dark); }
+  .hdr-btn.hdr-home { background: var(--acc-fill); color: #000; border-color: var(--acc-fill); }
+  .hdr-btn:active { transform: translateY(1px); }
+
+  /* ── Accordion bar (PDRA-01 only) ── */
+  .acc-bar { display: flex; background: #fff; border-bottom: 3px solid var(--ink); }
+  .acc-btn { flex: 1; display: flex; align-items: center; gap: 11px; padding: 14px 13px;
+             border: none; border-right: 3px solid var(--ink); cursor: pointer;
+             text-align: left; background: #fff; color: var(--ink); font-family: var(--sans);
+             -webkit-tap-highlight-color: transparent; }
+  .acc-btn:last-child { border-right: none; }
+  .acc-num { display: inline-flex; align-items: center; justify-content: center;
+             width: 28px; height: 28px; font-family: var(--mono); font-size: 13px;
+             font-weight: 700; flex-shrink: 0; background: var(--line); color: var(--ink-2); }
+  .acc-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .acc-label { font-weight: 700; font-size: 14.5px; }
+  .acc-meta { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+              letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .acc-btn.on { background: var(--ink); color: #fff; }
+  .acc-btn.on .acc-num { background: var(--acc-fill); color: #000; }
+  .acc-btn.on .acc-meta { color: #9a9a9a; }
+  .acc-btn.done .acc-num { background: var(--ok); color: #fff; }
+  .acc-btn.done .acc-meta { color: var(--ok); }
+  .acc-btn.on.done .acc-num { background: var(--acc-fill); color: #000; }
+
+  /* ── Layout ── */
+  main { max-width: 920px; margin: 0 auto; padding: 20px 18px 72px;
+         display: flex; flex-direction: column; gap: 18px; }
+
+  /* ── Card ── */
+  .card { background: #fff; border: 3px solid var(--ink); }
+  .card-head { background: var(--ink); padding: 13px 16px; display: flex;
+               align-items: center; gap: 12px; }
+  .card-head h2 { flex: 1; font-family: var(--mono); font-size: 14px; font-weight: 600;
+                  color: #fff; text-transform: uppercase; letter-spacing: .08em; }
+  .card-meta { font-family: var(--mono); font-size: 12px; color: var(--acc-dark); letter-spacing: .06em; }
+  .card-tick { font-size: 14px; color: var(--ok-strong); }
+  .card-sub { background: var(--acc-tint); color: #000; border-bottom: 3px solid var(--ink);
+              font-size: 14.5px; line-height: 1.55; padding: 13px 16px; text-wrap: pretty; }
+  .card-body { padding: 18px 16px; display: flex; flex-direction: column; gap: 18px; }
+
+  /* ── Stage banner ── */
+  .stage { display: flex; align-items: center; gap: 15px; padding: 16px 18px; background: #fff;
+           border: 3px solid var(--ink); border-left: 10px solid var(--acc-line); }
+  .stage.dim { background: var(--canvas); border-color: var(--line-mid); border-left-color: var(--line-mid); }
+  .stage-num { flex-shrink: 0; width: 38px; height: 38px; display: flex; align-items: center;
+               justify-content: center; font-family: var(--mono); font-size: 17px;
+               font-weight: 700; background: var(--ink); color: var(--acc-fill); }
+  .stage.dim .stage-num { background: var(--line-mid); color: #fff; }
+  .stage-text { flex: 1; min-width: 0; }
+  .stage-when { display: block; font-family: var(--mono); font-size: 12px; font-weight: 600;
+                text-transform: uppercase; letter-spacing: .12em; color: var(--ink-2); margin-bottom: 4px; }
+  .stage-title { display: block; font-size: 23px; font-weight: 700; line-height: 1.15; letter-spacing: -.015em; }
+  .stage.dim .stage-title { color: var(--ink-2); }
+  .stage-sub { display: block; font-size: 15px; line-height: 1.5; color: var(--ink-2);
+               margin-top: 6px; max-width: 64ch; text-wrap: pretty; }
+
+  /* ── Notice ── */
+  .notice { display: flex; border: 3px solid var(--bad-strong); background: var(--bad-fill); }
+  .notice.info { border-color: var(--ink); background: #fff; }
+  .notice.action { border-color: var(--acc-line); background: var(--acc-tint); }
+  .notice > i { width: 10px; background: var(--bad-strong); flex-shrink: 0; }
+  .notice.info > i { background: var(--ink); }
+  .notice.action > i { background: var(--acc-line); }
+  .notice-in { padding: 14px 16px; }
+  .notice-title { display: block; font-family: var(--mono); font-size: 13px; font-weight: 700;
+                  text-transform: uppercase; letter-spacing: .1em; color: var(--bad); }
+  .notice.info .notice-title, .notice.action .notice-title { color: var(--ink); }
+  .notice-body { display: block; font-size: 16px; line-height: 1.55; margin-top: 6px; text-wrap: pretty; }
+  .notice-meta { display: block; font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin-top: 7px; }
+
+  /* ── Fields ── */
+  .f-label { display: block; margin-bottom: 9px; }
+  .f-label > span:first-child { font-family: var(--mono); font-size: 12.5px; font-weight: 600;
+                  line-height: 1.4; text-transform: uppercase; letter-spacing: .1em; }
+  .f-hint { display: block; font-family: var(--sans); font-size: 13.5px; text-transform: none;
+            letter-spacing: 0; color: var(--ink-3); line-height: 1.45; margin-top: 5px; }
+  .tag { display: inline-block; margin-left: 8px; font-family: var(--mono); font-size: 10.5px;
+         font-weight: 700; letter-spacing: .12em; padding: 3px 7px; background: var(--acc-fill);
+         color: #000; white-space: nowrap; }
+  .tag.auto  { background: var(--auto-fill); color: var(--auto-ink); }
+  .tag.quiet { background: var(--canvas); color: var(--ink-2); }
+  .tag.miss  { background: var(--warn-fill); color: var(--warn); }
+
+  .in { width: 100%; min-height: 58px; padding: 15px 16px; border: 3px solid var(--ink);
+        border-radius: 0; background: #fff; color: var(--ink); font-family: var(--sans);
+        font-size: 17px; font-weight: 500; outline: none; appearance: none; -webkit-appearance: none; }
+  .in:focus { box-shadow: 0 0 0 4px var(--acc-fill); }
+  textarea.in { min-height: 110px; line-height: 1.5; resize: vertical; }
+  .in.mono { font-family: var(--mono); font-size: 19px; }
+  .in.auto { border-color: var(--auto-strong); background: var(--auto-fill); }
+  .in.locked { border-color: var(--line-mid); background: var(--canvas); color: var(--ink-3); }
+  .in.locked:focus { box-shadow: none; }
+  .in.bad { border-color: var(--bad-strong); background: #fff5f6; }
+  .in::placeholder, textarea.in::placeholder { color: #a1a1aa; }
+  select.in { padding-right: 44px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%230a0a0a' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 16px center; }
+  .f-msg { margin-top: 8px; display: flex; align-items: center; gap: 9px;
+           font-family: var(--mono); font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+  .f-msg > i { width: 10px; height: 10px; background: var(--ink-2); flex-shrink: 0; }
+  .f-msg.bad, .f-msg.bad > i { color: var(--bad); }
+  .f-msg.bad > i { background: var(--bad); }
+  .f-msg[hidden] { display: none; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .mic-btn { min-width: 58px; min-height: 58px; border: 3px solid var(--ink); background: #fff;
+             font-size: 20px; cursor: pointer; flex-shrink: 0; }
+  .mic-row { display: flex; gap: 10px; align-items: stretch; }
+  .mic-row .in { flex: 1; }
+  .mic-hint { background: var(--acc-tint); border: 3px solid var(--acc-line); padding: 13px 15px;
+              font-size: 14.5px; line-height: 1.55; text-wrap: pretty; }
+
+  /* ── Toggles ── */
+  .tg { display: flex; gap: 10px; flex-wrap: wrap; }
+  .tg button { flex: 1; min-width: 108px; min-height: 62px; padding: 14px 12px;
+    border: 3px solid var(--ink); background: #fff; color: var(--ink-2);
+    font-family: var(--mono); font-size: 14px; font-weight: 500; letter-spacing: .08em;
+    text-transform: uppercase; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .tg button:active { transform: translateY(1px); }
+  .tg button.on { font-weight: 700; }
+  .tg button.on.t-yes  { background: var(--ok-fill);   color: var(--ok-deep);  border-color: var(--ok); }
+  .tg button.on.t-no   { background: var(--bad-fill);  color: var(--bad-deep); border-color: var(--bad); }
+  .tg button.on.t-nr   { background: var(--acc-tint);  color: #000;            border-color: var(--ink); }
+  .tg button.on.t-info { background: var(--acc-tint);  color: #000;            border-color: var(--ink); }
+  .tg button.on.t-warn { background: var(--warn-fill); color: var(--warn);     border-color: var(--warn-strong); }
+  .tg button.on.t-haz  { background: var(--haz-fill);  color: var(--haz-ink);  border-color: var(--haz-strong); }
+
+  /* ── Read-only grid ── */
+  .grid { display: grid; grid-template-columns: 1fr 1fr;
+          border-top: 2px solid var(--ink); border-left: 2px solid var(--ink); }
+  .grid > div { border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); padding: 12px 14px; }
+  .g-label { font-family: var(--mono); font-size: 12px; font-weight: 600;
+             text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); }
+  .g-value { font-family: var(--mono); font-size: 21px; font-weight: 600; margin-top: 3px; word-break: break-word; }
+  .grid > div.warn { background: var(--warn-fill); }
+  .grid > div.warn .g-label, .grid > div.warn .g-value { color: var(--warn); }
+  .grid > div.bad { background: var(--bad-fill); }
+  .grid > div.bad .g-label, .grid > div.bad .g-value { color: var(--bad-deep); }
+  .grid > div.auto { background: var(--auto-fill); }
+  .grid > div.auto .g-label, .grid > div.auto .g-value { color: var(--auto-ink); }
+
+  /* ── Limit chips ── */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-family: var(--mono); font-size: 12.5px; font-weight: 600; padding: 9px 12px;
+          border: 3px solid var(--auto-strong); background: var(--auto-fill); color: var(--auto-ink);
+          letter-spacing: .04em; }
+
+  /* ── Hour strip ── */
+  .hours { display: flex; border: 3px solid var(--ink); overflow-x: auto; }
+  .hours button { flex: 1 0 76px; min-height: 62px; border: none; border-right: 2px solid var(--ink);
+                  cursor: pointer; font-family: var(--mono); font-size: 15px; font-weight: 600;
+                  background: #fff; color: var(--ink); display: flex; flex-direction: column;
+                  align-items: center; justify-content: center; gap: 3px; }
+  .hours button:last-child { border-right: none; }
+  .hours button small { font-size: 11px; font-weight: 500; color: var(--ink-3); }
+  .hours button.on { background: var(--ink); color: var(--acc-fill); }
+  .hours button.on small { color: var(--acc-dark); }
+  .hours button.wx-warn { background: var(--warn-fill); color: var(--warn); }
+  .hours button.wx-bad  { background: var(--bad-fill);  color: var(--bad-deep); }
+
+  /* ── Checklists / rules ── */
+  .checks > div { display: flex; align-items: flex-start; gap: 14px; padding: 15px 0;
+                  border-bottom: 2px solid var(--line); }
+  .checks > div > i { width: 26px; height: 26px; background: var(--ok); color: #fff; display: flex;
+              align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
+              font-style: normal; }
+  .checks p { flex: 1; font-size: 16.5px; line-height: 1.45; font-weight: 500; text-wrap: pretty; }
+  .checks p small { display: block; font-size: 14px; font-weight: 400; color: var(--ink-3); margin-top: 3px; }
+
+  .cbrow { display: flex; align-items: flex-start; gap: 14px; padding: 14px; border: 3px solid var(--ink);
+           background: #fff; cursor: pointer; }
+  .cbrow.on { background: var(--ok-fill); border-color: var(--ok); }
+  .cbbox { width: 30px; height: 30px; border: 3px solid var(--ink); flex-shrink: 0; display: flex;
+           align-items: center; justify-content: center; font-size: 16px; color: transparent; background: #fff; }
+  .cbrow.on .cbbox { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .cbrow p { flex: 1; font-size: 16px; line-height: 1.45; font-weight: 500; text-wrap: pretty; }
+  .cbrow p small { display: block; font-size: 14px; font-weight: 400; color: var(--ink-3); margin-top: 3px; }
+  .cbrow.on p small { color: var(--ok-deep); }
+  .cb-count { font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: .08em;
+              padding: 11px 14px; border: 3px solid var(--ink); background: var(--canvas); text-align: center; }
+  .cb-count.done { background: var(--ok-fill); border-color: var(--ok); color: var(--ok-deep); }
+
+  /* ── NOTAMs ── */
+  .notam { display: flex; border: 3px solid var(--ink); background: #fff; }
+  .notam.warn { border-color: var(--warn-strong); background: var(--warn-fill); color: var(--warn); }
+  .notam.bad { border-color: var(--bad); background: var(--bad-fill); color: var(--bad-deep); }
+  .notam > i { width: 12px; background: var(--ink); flex-shrink: 0; }
+  .notam.warn > i { background: var(--warn-strong); }
+  .notam.bad > i { background: var(--bad); }
+  .notam-in { padding: 13px 15px; flex: 1; }
+  .notam-top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .notam-id { font-family: var(--mono); font-size: 15px; font-weight: 600; }
+  .notam-title { flex: 1; font-size: 16.5px; font-weight: 600; }
+  .notam-detail { display: block; font-size: 15.5px; line-height: 1.5; margin-top: 5px; text-wrap: pretty; }
+
+  /* ── Hazard rows ── */
+  .haz { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+         border: 3px solid var(--ink); background: #fff; padding: 12px 14px; }
+  .haz.on { border-color: var(--haz-strong); background: var(--haz-fill); color: var(--haz-ink); }
+  .haz-text { flex: 1; min-width: 170px; }
+  .haz-label { display: block; font-size: 17px; font-weight: 700; }
+  .haz-sub { display: block; font-family: var(--mono); font-size: 12px; margin-top: 2px;
+             letter-spacing: .04em; color: var(--ink-3); }
+  .haz.on .haz-sub { color: var(--haz-ink); }
+  .haz .tg { flex: 0 0 auto; }
+  .haz .tg button { min-width: 90px; min-height: 54px; padding: 12px; }
+
+  /* ── Gate ── */
+  .gate { display: flex; border: 3px solid var(--line-mid); background: var(--canvas); }
+  .gate > i { width: 14px; background: var(--line-mid); flex-shrink: 0; }
+  .gate-in { padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+  .gate-verdict { font-family: var(--mono); font-size: 19px; font-weight: 700; letter-spacing: .12em; }
+  .gate-text { font-size: 16px; line-height: 1.45; text-wrap: pretty; }
+  .gate.go   { border-color: var(--ok); background: var(--ok-fill); color: var(--ok-deep); }
+  .gate.go > i { background: var(--ok); }
+  .gate.warn { border-color: var(--warn-strong); background: var(--warn-fill); color: var(--warn); }
+  .gate.warn > i { background: var(--warn-strong); }
+  .gate.nogo { border-color: var(--bad); background: var(--bad-fill); color: var(--bad-deep); }
+  .gate.nogo > i { background: var(--bad); }
+
+  /* ── Final decision blocks ── */
+  .final { border: 3px solid var(--ink); padding: 20px; }
+  .final h3 { font-family: var(--mono); font-size: 30px; font-weight: 700; letter-spacing: .1em; }
+  .final p { font-size: 16px; line-height: 1.5; margin-top: 10px; text-wrap: pretty; }
+  .final.go   { border-color: var(--ok); background: var(--ok-fill); color: var(--ok-deep); }
+  .final.nogo { border-color: var(--bad); background: var(--bad-fill); color: var(--bad-deep); }
+  .final.pending { background: var(--canvas); border-color: var(--line-mid); color: var(--ink-3); }
+  .final.pending h3 { font-size: 15px; letter-spacing: .12em; }
+  .final ul { margin-top: 10px; padding-left: 0; list-style: none;
+              font-family: var(--mono); font-size: 14px; line-height: 1.9; }
+
+  .decision { display: flex; border: 3px solid var(--ink); }
+  .decision button { flex: 1; min-height: 96px; border: none; border-right: 3px solid var(--ink);
+    cursor: pointer; font-family: var(--mono); font-size: 22px; font-weight: 700;
+    letter-spacing: .14em; background: #fff; color: var(--ink-2); }
+  .decision button:last-child { border-right: none; }
+  .decision button.on.go   { background: var(--ok-fill);  color: var(--ok-deep); }
+  .decision button.on.nogo { background: var(--bad-fill); color: var(--bad-deep); }
+
+  /* ── Buttons ── */
+  .btn { width: 100%; min-height: 66px; background: #fff; color: var(--ink);
+         border: 3px solid var(--ink); font-family: var(--mono); font-size: 15px;
+         font-weight: 600; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+  .btn.primary { background: var(--ink); color: var(--acc-fill); }
+  .btn.off { background: var(--canvas); color: #71717a; border-color: var(--line-mid); }
+  .btn.quiet { min-height: 54px; font-size: 13px; color: var(--ink-3); border-color: var(--line-mid); }
+  .btn:active { transform: translateY(2px); }
+  .pair { display: flex; gap: 12px; flex-wrap: wrap; }
+  .pair .btn { flex: 1; min-width: 210px; min-height: 62px; }
+
+  /* ── Mode choice ── */
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .mode { border: 3px solid var(--ink); background: #fff; padding: 26px 22px; cursor: pointer;
+          text-align: left; display: flex; flex-direction: column; gap: 14px; min-height: 168px; }
+  .mode:hover { background: var(--acc-tint); }
+  .mode:active { transform: translateY(2px); }
+  .mode-rule { display: block; width: 56px; height: 10px; background: var(--acc-fill); }
+  .mode.pdra .mode-rule { background: var(--ink); }
+  .mode-title { font-size: 27px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+  .mode-sub { font-size: 15px; line-height: 1.5; color: var(--ink-2); text-wrap: pretty; }
+  .mode-steps { font-family: var(--mono); font-size: 11.5px; font-weight: 600;
+                letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-top: auto; }
+  @media (max-width: 700px) { .modes { grid-template-columns: 1fr; } .grid, .two { grid-template-columns: 1fr; } }
+
+  /* ── Emergency procedures carousel ── */
+  .ep { border: 3px solid var(--ink); background: #fff; }
+  .ep-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+             border-bottom: 3px solid var(--ink); flex-wrap: wrap; }
+  .ep-level { width: 14px; height: 34px; flex-shrink: 0; background: var(--warn-strong); }
+  .ep-level.danger { background: var(--bad-strong); }
+  .ep-title { flex: 1; font-size: 21px; font-weight: 700; letter-spacing: -.015em; min-width: 140px; }
+  .ep-call { font-family: var(--mono); font-size: 14px; font-weight: 700; padding: 8px 12px;
+             background: var(--acc-fill); color: #000; letter-spacing: .04em; }
+  .ep-steps { padding: 6px 16px 14px; }
+  .ep-steps > div { display: flex; gap: 14px; padding: 13px 0; border-bottom: 2px solid var(--line); }
+  .ep-steps > div:last-child { border-bottom: none; }
+  .ep-n { font-family: var(--mono); font-size: 14px; font-weight: 700; width: 26px;
+          flex-shrink: 0; color: var(--ink-3); }
+  .ep-steps p { flex: 1; font-size: 16px; line-height: 1.45; text-wrap: pretty; }
+  .ep-nav { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-top: 3px solid var(--ink); }
+  .ep-arrow { min-width: 58px; min-height: 54px; border: 3px solid var(--ink); background: #fff;
+              font-size: 15px; cursor: pointer; }
+  .ep-dots { flex: 1; display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; }
+  .ep-dot { width: 14px; height: 14px; background: var(--line); border: none; cursor: pointer; padding: 0; }
+  .ep-dot.on { background: var(--ink); }
+
+  /* ── Misc ── */
+  .note { font-size: 15px; line-height: 1.55; color: var(--ink-2); text-wrap: pretty; }
+  .note strong { color: var(--ink); }
+  .sub-head { border-top: 3px solid var(--ink); padding-top: 11px; font-family: var(--mono);
+              font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-family: var(--mono);
+            font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+  .legend span { display: flex; align-items: center; gap: 8px; }
+  .legend i { width: 12px; height: 12px; }
+  .infobar { font-family: var(--mono); font-size: 12.5px; line-height: 1.6; padding: 13px 15px;
+             border: 3px solid var(--auto-strong); background: var(--auto-fill); color: var(--auto-ink); }
+  .box { border: 3px solid var(--acc-line); background: var(--acc-tint); padding: 16px; }
+  .box-title { font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: .08em;
+               text-transform: uppercase; margin-bottom: 9px; }
+  .box p { font-size: 15px; line-height: 1.6; text-wrap: pretty; }
+  .json { font-family: var(--mono); font-size: 12.5px; line-height: 1.7; padding: 15px;
+          background: var(--ink); color: #d4d4d8; overflow-x: auto; white-space: pre; }
+  .cache > div { display: flex; align-items: center; gap: 13px; padding: 14px 0;
+                 border-bottom: 2px solid var(--line); }
+  .cache i { width: 12px; height: 12px; background: var(--ok); flex-shrink: 0; }
+  .cache span { flex: 1; font-size: 16.5px; font-weight: 600; }
+  .cache em { font-family: var(--mono); font-size: 14px; font-style: normal; }
+</style>
+</head>
+<body>
+
+<div class="side-ind" id="side-ind">Skylark</div>
+
+<header>
+  <div class="logo-block">
+    <div class="logo-main">Skylark</div>
+    <div class="logo-sub">Oxygen Conservation // UAS Operations</div>
+  </div>
+  <div class="head-right">
+    <div id="header-estate">—</div>
+    <div id="status-badge">&#9679; READY</div>
+    <button class="hdr-btn hdr-home" type="button" id="btn-home"
+            title="Back to the category choice">&#8962; Home</button>
+    <button class="hdr-btn" type="button" id="btn-reload"
+            title="Fetch the latest published version - stays logged in">&#10227; Reload</button>
+    <button class="hdr-btn" type="button" id="btn-logout"
+            title="Clear saved credentials and return to the login screen">Log out</button>
+  </div>
+</header>
+
+<div id="accbar"></div>
+<main id="app"></main>
+
+<script>
+'use strict';
+
+/* ══ Reference data, lifted from skylarkdash.html ═══════════════════════ */
+
+var ESTATES = ['Ripon', 'Kinrara', 'Glen Dye', 'Corrimony'];
+var AIRCRAFT = ['DJI Matrice 350 RTK', 'DJI Matrice 30T', 'DJI Mini 4 Pro'];
+var CREW = ['C. Whitfield', 'D. Reeve', 'A. Kaur', 'J. Marsden'];
+
+var HAZARDS = [
+  { key: 'uninvolved',    label: 'Uninvolved People' },
+  { key: 'assemblies',    label: 'Assemblies of People' },
+  { key: 'pap',           label: 'Public Access Points' },
+  { key: 'unanticipated', label: 'Unanticipated Hazards' },
+  { key: 'obstructions',  label: 'Obstructions' },
+  { key: 'vlos',          label: 'VLOS Limitations', sub: 'Visual Line of Sight' },
+  { key: 'rlos',          label: 'RLOS Limitations', sub: 'Radio Line of Sight' },
+  { key: 'emi',           label: 'EMI Sources',      sub: 'Electromagnetic Interference' },
+  { key: 'livestock',     label: 'Livestock' },
+  { key: 'birds',         label: 'Birds' }
+];
+
+var AREA_SECTIONS = [
+  { id: 'tola',  label: 'Take-Off & Landing Areas (TOLAs)',
+    fields: ['Free of FOD?', 'Free of Obstructions?', 'Airspace Clear?', 'Devoid of Uninvolved People?'] },
+  { id: 'opvol', label: 'Operational & Contingency Volume',
+    fields: ['Free of Obstructions?', 'Airspace Clear?', 'Devoid of Uninvolved People?'] },
+  { id: 'hold',  label: 'Holding / Loiter Areas',
+    fields: ['Free of Obstructions?', 'Airspace Clear?', 'Devoid of Uninvolved People?'] },
+  { id: 'ela',   label: 'Emergency Landing Areas',
+    fields: ['Free of Obstructions?', 'Airspace Clear?', 'Devoid of Uninvolved People?'] }
+];
+
+var OC_EP = [
+  { level: 'danger', title: 'Pilot Incapacitation', call: '"Terminate mission"', steps: [
+    'Increase altitude if required',
+    'Activate RTH failsafe',
+    'Immediately clear the area of people',
+    'UAS will automatically land and shut motors off',
+    'Seek medical assistance'] },
+  { level: 'danger', title: 'Air Incursion', call: '"Air incursion"', steps: [
+    'Assess heading, speed and altitude of the incursion',
+    'Assess heading, speed and altitude of the UA',
+    'Acquire orientation of the UA',
+    'See and avoid \u2014 change altitude and move the UA at 90 degrees to the hazard\u2019s flight path'] },
+  { level: 'warn', title: 'Ground Incursion', call: '"Cordon breach"', steps: [
+    'Move the UAS to a holding area at a safe and legal distance from the uninvolved person',
+    'Clear the area of uninvolved persons, if possible',
+    'Resume the mission if the area is cleared \u2014 or land elsewhere if they cannot be cleared'] },
+  { level: 'danger', title: 'Fire', call: '"Fire, fire, fire"', steps: [
+    'Identify a non-flammable landing area',
+    'Immediately clear the area of people',
+    'Land as soon as possible',
+    'Put out the fire, if trained, equipped and safe to do so',
+    'Call emergency services if required'] },
+  { level: 'danger', title: 'Flyaway', call: '"Flyaway"', steps: [
+    'Note the time and heading',
+    'Calculate remaining flight time and plot the potential crash site',
+    'Leave the command unit on and monitor telemetry',
+    'Inform the appropriate ATC and airspace managers in the direction of the flyaway',
+    'Inform the police',
+    'Remain at the area of operation until the UAS returns via RTH or runs out of power',
+    'Find the crash site using the command unit map or the lat/lon from the flight log'] },
+  { level: 'warn', title: 'Abnormal Weather \u2014 Visibility', call: '"Bad vis"', steps: [
+    'Move the UA closer to the remote pilot to keep it clearly visible',
+    'Terminate the flight if there is any risk of losing VLOS'] },
+  { level: 'warn', title: 'Abnormal Weather \u2014 Wind', call: '"Wind"', steps: [
+    'Pause and hover',
+    'Note wind direction and strength',
+    'Try to regain control',
+    'If control is not regained, engage RTH',
+    'Identify a landing site and immediately clear the area of people',
+    'UAS will automatically land and shut motors off'] }
+];
+
+var DEBRIEF_ROWS = [
+  { key: 'weather',  title: 'Weather',        q: 'Any issues?',              toggle: 'neg' },
+  { key: 'timings',  title: 'Mission timings', q: 'On time?',                toggle: 'pos' },
+  { key: 'objectives', title: 'Objectives',    q: 'Achieved?',               toggle: 'pos' },
+  { key: 'safe',     title: 'Safe flight',     q: 'Achieved?',               toggle: 'pos' },
+  { key: 'cordon',   title: 'Cordon',          q: 'Kept secure?',            toggle: 'pos' },
+  { key: 'airspace', title: 'Airspace',        q: 'Any incursions?',         toggle: 'neg' },
+  { key: 'comms',    title: 'Communications',  q: 'Clear, concise, on time?', toggle: 'pos' }
+];
+
+var IMSAFE = [
+  { key: 'illness',    code: 'I \u2014 Illness',    label: 'No illness affecting performance' },
+  { key: 'medication', code: 'M \u2014 Medication', label: 'No impairing medication' },
+  { key: 'stress',     code: 'S \u2014 Stress',     label: 'Stress levels acceptable' },
+  { key: 'alcohol',    code: 'A \u2014 Alcohol',    label: 'No alcohol in last 8hrs' },
+  { key: 'fatigue',    code: 'F \u2014 Fatigue',    label: 'Adequately rested' },
+  { key: 'eating',     code: 'E \u2014 Eating',     label: 'Adequately nourished' }
+];
+
+var URBAN = [
+  '\u2014 Select \u2014',
+  'Open terrain \u2192 Minimal turbulence',
+  'Buildings \u2192 Wind shear / vortices',
+  'Tall structures \u2192 Localised turbulence',
+  'Wind turbines \u2192 Rotor turbulence',
+  'Cliffs or ridges \u2192 Updrafts / rotor turbulence',
+  'Valleys \u2192 Wind funnelling',
+  'Tree lines \u2192 Local turbulence',
+  'Mixed terrain \u2192 Variable airflow',
+  'Other'
+];
+
+var HOURS = [
+  { t: '09z', wx: 'ok',   sub: '5.1' }, { t: '10z', wx: 'ok',   sub: '5.8' },
+  { t: '11z', wx: 'warn', sub: '9.8' }, { t: '12z', wx: 'warn', sub: '10.4' },
+  { t: '13z', wx: 'bad',  sub: '13.1' }, { t: '14z', wx: 'ok',  sub: '7.2' },
+  { t: '15z', wx: 'ok',   sub: '6.4' }, { t: '16z', wx: 'ok',   sub: '5.9' }
+];
+
+/* ══ State ══════════════════════════════════════════════════════════════ */
+
+var S = {
+  mode: 'home',        /* home | open | pdra | setup */
+  panel: 'onsite',     /* onsite | preflight | debrief */
+  hour: 2,
+  ep: 0,
+  json: false,
+  vals: {
+    'mamc-estate': 'Ripon', 'mamc-aircraft': 'DJI Matrice 350 RTK',
+    'mamc-category': 'PDRA-01 \u2014 Specific category, Operational Authorisation',
+    'mamc-date': '12 Sep 2026', 'mamc-date-end': '12 Sep 2026',
+    'mamc-from': '09:00', 'mamc-to': '17:00',
+    'mamc-centre': '54.1361, -1.5214', 'mamc-w3w': '', 'mamc-radius': '2',
+    'oc-estate': 'Ripon', 'oc-pilot': 'C. Whitfield', 'oc-aircraft': 'DJI Matrice 30T',
+    'oc-lat': '54.1361', 'oc-lon': '-1.5214',
+    'oc-wx-override-note': '', 'oc-debrief-note': '',
+    'f-estate': 'Ripon', 'f-mission-id': 'RIP-0912-A', 'f-datetime': '12 Sep 2026, 09:40',
+    'f-location': 'Home field gate, north drive',
+    'f-wind-strength': '6.2', 'f-wind-dir': 'WSW 248\u00b0', 'f-urban': URBAN[1],
+    'f-precip': '0.0 mm/h', 'f-temp': '11.4', 'f-visibility': 'Greater than 10 km',
+    'f-space-display': 'Kp 2 \u2014 quiet',
+    'f-notams-display': '2 active within 2 nm',
+    'f-notam-details': 'H4821/25 \u2014 Military low flying, surface to 2000 ft, 09:00\u201317:00Z.\nJ1109/25 \u2014 Temporary restriction, outside the operating radius.',
+    'f-name': '', 'f-phone': '', 'f-uas-other': '',
+    'f-command-unit': 'DJI RC Plus', 'f-other-equip': '',
+    'f-pilot': 'C. Whitfield', 'f-vo-name': '', 'f-po-name': '\u2014 Select \u2014',
+    'f-sm-name': '', 'f-others': '', 'haz-notes': '', 'f-offsite-notes': '', 'f-notes': '',
+    'pf-estate-select': 'Ripon', 'pf-client': 'Oxygen Conservation', 'pf-mission-id': 'RIP-0912-A',
+    'pf-task': 'LiDAR Survey', 'pf-route-name': '', 'pf-tola-lat': '54.1361', 'pf-tola-lon': '-1.5214',
+    'pf-tide-high': '', 'pf-tide-low': '', 'pf-urban': URBAN[1],
+    'pf-wind-surface': '4.2', 'pf-wind-altitude': '50', 'pf-roughness': 'Class 2 \u2014 Open farmland',
+    'pf-airspace-class': 'Class G', 'pf-airspace-type': 'Uncontrolled',
+    'pf-hazards-onsite': 'H4821/25 \u2014 Military low flying, surface to 2000 ft, 09:00\u201317:00Z.',
+    'pf-landowner': 'J. Marsden', 'pf-uas': 'DJI Matrice 350 RTK', 'pf-payload': 'DJI Zenmuse L2',
+    'pf-command-unit': 'DJI RC Plus', 'pf-other-equip': 'Landing pad, 4 spare batteries',
+    'pf-objective': '', 'pf-pilot': 'C. Whitfield', 'pf-payload-op': 'D. Reeve',
+    'pf-vo': '', 'pf-marshal': 'None',
+    'pf-opvol-dist': '400 m', 'pf-opvol-height': '110 m', 'pf-tola-desc': '20 m \u00d7 20 m, hard standing',
+    'pf-contvol-dist': '520 m', 'pf-contvol-height': '120 m', 'pf-ela-direction': 'North-east, 80 m',
+    'pf-access-points': 'Footpath from the north drive; stile at the eastern gate.',
+    'pf-marshal-points': 'North drive gate; eastern stile.',
+    'pf-ra-result-onsite': 'Medium \u2014 3 hazards present, mitigated',
+    'pf-airspace-hazards': 'LFA 11 military low flying. Leeming 133.375 within 12 nm.',
+    'pf-ground-hazards': '11 kV line on the northern boundary. Livestock in the TOLA field.',
+    'pf-areas-avoid': 'Woodland to the south \u2014 raptor nest site, 200 m buffer.',
+    'pf-takeoff-time': '09:40', 'pf-finish-time': '12:30',
+    'db-mission-id': 'RIP-0912-A', 'db-estate': 'Ripon',
+    'db-datetime': '12 Sep 2026, 13:05', 'db-led-by': 'C. Whitfield',
+    'db-crew': 'C. Whitfield, D. Reeve', 'db-transcript': '', 'db-custom-vocab': '',
+    'db-overview': '', 'db-lessons': '', 'db-questions': '',
+    's-token': '', 's-owner': 'OC-Drone-Team', 's-repo': 'skylark', 's-met-key': ''
+  },
+  touched: {},
+  toggles: {
+    'oc-airspace-ok': 'Yes', 'oc-issues': 'No',
+    'f-conditions': 'Yes', 'f-notif': 'Yes', 'f-perms': 'Yes', 'f-airspace-clear': 'Yes',
+    'f-task': 'LiDAR Survey', 'f-uas': 'DJI Matrice 350 RTK', 'f-payload': 'DJI Zenmuse L2',
+    'f-pilot-ftf': 'Yes', 'f-pilot-present': 'Present',
+    'f-vo-ftf': null, 'f-vo-present': null,
+    'f-po-ftf': 'Yes', 'f-po-present': 'Present', 'f-sm-ftf': 'Yes',
+    'f-landowner': 'Yes', 'f-police': 'Not Required',
+    'f-la': 'Not Applicable', 'f-film': 'Not Applicable', 'f-ptw': 'Yes',
+    'f-ra': 'Yes', 'f-offsite': 'Yes',
+    'haz-uninvolved': 'No', 'haz-assemblies': 'No', 'haz-pap': 'Yes',
+    'haz-unanticipated': 'No', 'haz-obstructions': 'Yes', 'haz-vlos': 'No',
+    'haz-rlos': 'No', 'haz-emi': 'No', 'haz-livestock': 'Yes', 'haz-birds': 'No',
+    'pf-police': 'Not Required', 'pf-atc': 'Informed',
+    'pf-mobile': 'Yes', 'pf-data': 'Yes', 'pf-radios': 'Yes', 'pf-whistles': 'Yes',
+    'pf-comms-briefed': 'Yes', 'pf-ftf': 'Yes',
+    'db-weather': 'No', 'db-timings': 'Yes', 'db-objectives': 'Yes', 'db-safe': 'Yes',
+    'db-cordon': 'Yes', 'db-airspace': 'No', 'db-comms': 'Yes'
+  },
+  checks: {
+    'ocr-manual': true,
+    'ocr-120': true, 'ocr-50': true, 'ocr-assembly': false,
+    'oc-night-walk': false,
+    'imsafe-illness': true, 'imsafe-medication': true, 'imsafe-stress': true,
+    'imsafe-alcohol': true, 'imsafe-fatigue': true, 'imsafe-eating': false
+  },
+  areas: {},
+  decision: { 'oc-decision': null, 'f-decision': null, 'pf-decision': null }
+};
+
+/* seed the area-inspection toggles */
+AREA_SECTIONS.forEach(function (sec) {
+  sec.fields.forEach(function (f, i) {
+    S.areas[sec.id + '-' + i] = i === 0 && sec.id === 'opvol' ? 'No' : 'Yes';
+  });
+});
+
+/* ══ Helpers ════════════════════════════════════════════════════════════ */
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+var YES_NR_NO = [['Yes', 'yes'], ['Not Required', 'nr'], ['No', 'no']];
+var YES_NA_NO = [['Yes', 'yes'], ['Not Applicable', 'nr'], ['No', 'no']];
+var YES_NO    = [['Yes', 'yes'], ['No', 'no']];
+var PRESENT   = [['Present', 'info'], ['Not Present', 'info']];
+var INFORMED  = [['Informed', 'yes'], ['Not Required', 'nr']];
+
+function note(text)             { return { k: 'note', text: text }; }
+function legend(text)           { return { k: 'legend', text: text }; }
+function sub(label)             { return { k: 'sub', label: label }; }
+function field(id, label, o)    { o = o || {}; o.k = 'field'; o.id = id; o.label = label; return o; }
+function two(a, b)              { return { k: 'two', a: a, b: b }; }
+function toggle(key, label, options, o) {
+  o = o || {}; o.k = 'toggle'; o.key = key; o.label = label; o.options = options; return o;
+}
+function grid(cells)            { return { k: 'grid', cells: cells }; }
+function chips(items)           { return { k: 'chips', items: items }; }
+function hourstrip(label)       { return { k: 'hours', label: label }; }
+function checks(label, items)   { return { k: 'checks', label: label, items: items }; }
+function checkbox(key, text, subText) { return { k: 'checkbox', key: key, text: text, sub: subText }; }
+function checkgroup(label, items, prefix) {
+  return { k: 'checkgroup', label: label, items: items, prefix: prefix };
+}
+function notams(label, items)   { return { k: 'notams', label: label, items: items }; }
+function hazards()              { return { k: 'hazards' }; }
+function areas()                { return { k: 'areas' }; }
+function gate(tone, verdict, text) { return { k: 'gate', tone: tone, verdict: verdict, text: text }; }
+function final(tone, title, text, list) {
+  return { k: 'final', tone: tone, title: title, text: text, list: list };
+}
+function decision(key)          { return { k: 'decision', key: key }; }
+function submit(label, style)   { return { k: 'submit', label: label, style: style || '' }; }
+function pair(buttons)          { return { k: 'pair', buttons: buttons }; }
+function epcard()               { return { k: 'ep' }; }
+function michint(text)          { return { k: 'michint', text: text }; }
+function infobar(text)          { return { k: 'infobar', text: text }; }
+function box(title, text)       { return { k: 'box', title: title, text: text }; }
+function json()                 { return { k: 'json' }; }
+function cache(items)           { return { k: 'cache', items: items }; }
+function debriefrows()          { return { k: 'debriefrows' }; }
+function modes()                { return { k: 'modes' }; }
+
+function card(o) { o.k = 'card'; return o; }
+function stage(o) { o.k = 'stage'; return o; }
+function notice(tone, title, body, meta) {
+  return { k: 'notice', tone: tone, title: title, body: body, meta: meta };
+}
+
+/* ══ Row rendering ══════════════════════════════════════════════════════ */
+
+function fieldHtml(r) {
+  var v = S.vals[r.id] == null ? '' : S.vals[r.id];
+  var touched = !!S.touched[r.id];
+  var emptyRequired = r.required && touched && v === '';
+  var bad = r.invalid || emptyRequired;
+
+  var cls = ['in'];
+  if (r.kind === 'mono') cls.push('mono');
+  if (r.auto) cls.push('auto');
+  if (r.locked) cls.push('locked');
+  if (bad) cls.push('bad');
+
+  var tag = '';
+  if (r.tag) tag = '<span class="tag ' + (r.tagClass || 'quiet') + '">' + esc(r.tag) + '</span>';
+  else if (r.auto) tag = '<span class="tag auto">AUTO-FILLED</span>';
+  else if (r.required && v === '') tag = '<span class="tag">REQUIRED</span>';
+
+  var msg = r.msg || '';
+  var msgCls = '';
+  if (bad) { msg = r.invalidMsg || 'Required \u2014 fill this in before you can save.'; msgCls = ' bad'; }
+
+  var attrs = ' class="' + cls.join(' ') + '" data-field="' + r.id + '"' +
+              (r.ph ? ' placeholder="' + esc(r.ph) + '"' : '') +
+              (r.locked ? ' readonly' : '') +
+              (r.required ? ' data-required="1"' : '');
+
+  var control;
+  if (r.kind === 'select') {
+    control = '<select' + attrs + '>' + (r.options || []).map(function (o) {
+      return '<option' + (o === v ? ' selected' : '') + '>' + esc(o) + '</option>';
+    }).join('') + '</select>';
+  } else if (r.kind === 'area') {
+    control = '<textarea' + attrs + '>' + esc(v) + '</textarea>';
+  } else {
+    control = '<input type="text" value="' + esc(v) + '"' + attrs + '>';
+  }
+  if (r.mic) {
+    control = '<div class="mic-row">' + control +
+      '<button type="button" class="mic-btn" title="Dictate this field">&#127908;</button></div>';
+  }
+
+  return '<div class="f-label"><span>' + esc(r.label) + '</span>' + tag +
+      (r.hint ? '<span class="f-hint">' + esc(r.hint) + '</span>' : '') + '</div>' +
+    control +
+    '<div class="f-msg' + msgCls + '" data-msg="' + r.id + '"' + (msg ? '' : ' hidden') + '>' +
+      '<i></i>' + esc(msg) + '</div>';
+}
+
+function toggleHtml(key, options, cur, store) {
+  return '<div class="tg">' + options.map(function (o) {
+    var on = cur === o[0];
+    return '<button type="button" class="t-' + o[1] + (on ? ' on' : '') +
+      '" data-toggle="' + esc(key) + '" data-store="' + (store || 'toggles') +
+      '" data-value="' + esc(o[0]) + '">' + esc(o[0]) + '</button>';
+  }).join('') + '</div>';
+}
+
+function renderRow(r) {
+  var i;
+  switch (r.k) {
+    case 'note':
+      return '<p class="note">' + r.text + '</p>';
+
+    case 'legend':
+      return '<div class="legend">' +
+        '<span style="color:var(--ok)"><i style="background:var(--ok)"></i>' +
+          esc(r.text ? r.text : 'WITHIN LIMITS') + '</span>' +
+        '<span style="color:var(--warn)"><i style="background:var(--warn-strong)"></i>CLOSE TO THE LIMIT</span>' +
+        '<span style="color:var(--bad)"><i style="background:var(--bad-strong)"></i>OUTSIDE LIMITS \u2014 DO NOT FLY</span>' +
+      '</div>';
+
+    case 'sub':
+      return '<div class="sub-head">' + esc(r.label) + '</div>';
+
+    case 'field':
+      return '<div>' + fieldHtml(r) + '</div>';
+
+    case 'two':
+      return '<div class="two"><div>' + fieldHtml(r.a) + '</div><div>' + fieldHtml(r.b) + '</div></div>';
+
+    case 'toggle':
+      var tg = r.tag ? '<span class="tag miss">' + esc(r.tag) + '</span>' : '';
+      return '<div><div class="f-label"><span>' + esc(r.label) + '</span>' + tg +
+        (r.hint ? '<span class="f-hint">' + esc(r.hint) + '</span>' : '') + '</div>' +
+        toggleHtml(r.key, r.options, S.toggles[r.key]) + '</div>';
+
+    case 'grid':
+      return '<div class="grid">' + r.cells.map(function (c) {
+        return '<div' + (c[2] ? ' class="' + c[2] + '"' : '') + '>' +
+          '<div class="g-label">' + esc(c[0]) + '</div>' +
+          '<div class="g-value">' + esc(c[1]) + '</div></div>';
+      }).join('') + '</div>';
+
+    case 'chips':
+      return '<div class="chips">' + r.items.map(function (c) {
+        return '<span class="chip">' + esc(c) + '</span>';
+      }).join('') + '</div>';
+
+    case 'hours':
+      return '<div><div class="f-label"><span>' + esc(r.label) + '</span>' +
+        '<span class="tag auto">AUTO-FILLED</span>' +
+        '<span class="f-hint">Gust in m/s under each hour.</span></div>' +
+        '<div class="hours">' + HOURS.map(function (h, ix) {
+          var cls = ix === S.hour ? 'on' : ('wx-' + h.wx);
+          return '<button type="button" class="' + cls + '" data-hour="' + ix + '">' +
+            h.t + '<small>' + h.sub + '</small></button>';
+        }).join('') + '</div></div>';
+
+    case 'checks':
+      return '<div>' + (r.label ? '<div class="f-label"><span>' + esc(r.label) + '</span></div>' : '') +
+        '<div class="checks">' + r.items.map(function (it) {
+          var t = typeof it === 'string' ? it : it[0];
+          var s = typeof it === 'string' ? '' : it[1];
+          return '<div><i>\u2713</i><p>' + esc(t) + (s ? '<small>' + esc(s) + '</small>' : '') + '</p></div>';
+        }).join('') + '</div></div>';
+
+    case 'checkbox':
+      var on = !!S.checks[r.key];
+      return '<div class="cbrow' + (on ? ' on' : '') + '" data-check="' + esc(r.key) + '">' +
+        '<span class="cbbox">\u2713</span><p>' + r.text +
+        (r.sub ? '<small>' + r.sub + '</small>' : '') + '</p></div>';
+
+    case 'checkgroup':
+      var done = 0;
+      var rows = r.items.map(function (it) {
+        var key = r.prefix + it.key;
+        var isOn = !!S.checks[key];
+        if (isOn) done++;
+        return '<div class="cbrow' + (isOn ? ' on' : '') + '" data-check="' + esc(key) + '">' +
+          '<span class="cbbox">\u2713</span><p>' + esc(it.code) +
+          '<small>' + esc(it.label) + '</small></p></div>';
+      }).join('');
+      return '<div>' + (r.label ? '<div class="f-label"><span>' + esc(r.label) + '</span></div>' : '') +
+        '<div style="display:flex;flex-direction:column;gap:10px">' + rows +
+        '<div class="cb-count' + (done === r.items.length ? ' done' : '') + '">' +
+          done + ' / ' + r.items.length + ' CONFIRMED</div></div></div>';
+
+    case 'notams':
+      return '<div><div class="f-label"><span>' + esc(r.label) + '</span>' +
+        '<span class="tag auto">AUTO-FILLED</span></div>' +
+        '<div style="display:flex;flex-direction:column;gap:10px">' +
+        r.items.map(function (n) {
+          return '<div class="notam' + (n.tone ? ' ' + n.tone : '') + '"><i></i><div class="notam-in">' +
+            '<div class="notam-top"><span class="notam-id">' + esc(n.id) + '</span>' +
+            '<span class="notam-title">' + esc(n.title) + '</span></div>' +
+            '<span class="notam-detail">' + esc(n.detail) + '</span></div></div>';
+        }).join('') + '</div></div>';
+
+    case 'hazards':
+      return '<div style="display:flex;flex-direction:column;gap:12px">' +
+        HAZARDS.map(function (h) {
+          var key = 'haz-' + h.key;
+          var yes = S.toggles[key] === 'Yes';
+          return '<div class="haz' + (yes ? ' on' : '') + '">' +
+            '<div class="haz-text"><span class="haz-label">' + esc(h.label) + '</span>' +
+            (h.sub ? '<span class="haz-sub">' + esc(h.sub) + '</span>' : '') + '</div>' +
+            toggleHtml(key, [['Yes', 'haz'], ['No', 'yes']], S.toggles[key]) +
+          '</div>';
+        }).join('') + '</div>';
+
+    case 'areas':
+      return AREA_SECTIONS.map(function (sec) {
+        return '<div style="margin-bottom:18px">' +
+          '<div class="sub-head" style="margin-bottom:12px">' + esc(sec.label) + '</div>' +
+          '<div style="display:flex;flex-direction:column;gap:10px">' +
+          sec.fields.map(function (f, ix) {
+            var key = sec.id + '-' + ix;
+            var no = S.areas[key] === 'No';
+            return '<div class="haz' + (no ? ' on' : '') + '">' +
+              '<div class="haz-text"><span class="haz-label" style="font-size:16px">' + esc(f) + '</span></div>' +
+              toggleHtml(key, [['Yes', 'yes'], ['No', 'haz']], S.areas[key], 'areas') +
+            '</div>';
+          }).join('') + '</div></div>';
+      }).join('');
+
+    case 'gate':
+      return '<div class="gate ' + r.tone + '"><i></i><div class="gate-in">' +
+        '<span class="gate-verdict">' + esc(r.verdict) + '</span>' +
+        '<span class="gate-text">' + esc(r.text) + '</span></div></div>';
+
+    case 'final':
+      return '<div class="final ' + r.tone + '"><h3>' + esc(r.title) + '</h3>' +
+        (r.text ? '<p>' + esc(r.text) + '</p>' : '') +
+        (r.list ? '<ul>' + r.list.map(function (l) {
+          return '<li>\u2022 ' + esc(l) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+
+    case 'decision':
+      var cur = S.decision[r.key];
+      return '<div class="decision">' +
+        '<button type="button" class="go' + (cur === 'GO' ? ' on' : '') +
+          '" data-decision="' + r.key + '" data-value="GO">\u2713 GO</button>' +
+        '<button type="button" class="nogo' + (cur === 'NO GO' ? ' on' : '') +
+          '" data-decision="' + r.key + '" data-value="NO GO">\u2717 NO GO</button></div>';
+
+    case 'submit':
+      return '<button type="button" class="btn ' + r.style + '">' + esc(r.label) + '</button>';
+
+    case 'pair':
+      return '<div class="pair">' + r.buttons.map(function (b) {
+        return '<button type="button" class="btn' + (b[1] ? ' ' + b[1] : '') + '">' +
+          esc(b[0]) + '</button>';
+      }).join('') + '</div>';
+
+    case 'ep':
+      var e = OC_EP[S.ep];
+      return '<div class="ep">' +
+        '<div class="ep-head"><span class="ep-level ' + e.level + '"></span>' +
+        '<span class="ep-title">' + esc(e.title) + '</span>' +
+        '<span class="ep-call">' + esc(e.call) + '</span></div>' +
+        '<div class="ep-steps">' + e.steps.map(function (s, ix) {
+          return '<div><span class="ep-n">' + (ix + 1) + '</span><p>' + esc(s) + '</p></div>';
+        }).join('') + '</div>' +
+        '<div class="ep-nav"><button type="button" class="ep-arrow" data-ep="-1">\u25c0</button>' +
+        '<div class="ep-dots">' + OC_EP.map(function (x, ix) {
+          return '<button type="button" class="ep-dot' + (ix === S.ep ? ' on' : '') +
+            '" data-epgo="' + ix + '" aria-label="' + esc(x.title) + '"></button>';
+        }).join('') + '</div>' +
+        '<button type="button" class="ep-arrow" data-ep="1">\u25b6</button></div></div>';
+
+    case 'michint':
+      return '<div class="mic-hint">\ud83c\udfa4 ' + r.text + '</div>';
+
+    case 'infobar':
+      return '<div class="infobar">' + r.text + '</div>';
+
+    case 'box':
+      return '<div class="box"><div class="box-title">' + esc(r.title) + '</div><p>' + r.text + '</p></div>';
+
+    case 'json':
+      if (!S.json) return '';
+      return '<div class="json">' + esc(JSON.stringify({
+        mission_id: S.vals['f-mission-id'], estate: S.vals['f-estate'],
+        submitted_at: '2026-09-12T09:41:00Z', category: 'PDRA-01',
+        conditions: { wind_ms: S.vals['f-wind-strength'], gust_ms: HOURS[S.hour].sub,
+                      temp_c: S.vals['f-temp'], visibility: S.vals['f-visibility'] },
+        hazards_present: HAZARDS.filter(function (h) {
+          return S.toggles['haz-' + h.key] === 'Yes'; }).map(function (h) { return h.key; }),
+        decision: S.decision['f-decision']
+      }, null, 2)) + '</div>';
+
+    case 'cache':
+      return '<div class="cache">' + r.items.map(function (c) {
+        return '<div><i></i><span>' + esc(c[0]) + '</span><em>' + esc(c[1]) + '</em></div>';
+      }).join('') + '</div>';
+
+    case 'debriefrows':
+      return '<div style="display:flex;flex-direction:column;gap:16px">' +
+        DEBRIEF_ROWS.map(function (d) {
+          var key = 'db-' + d.key;
+          var opts = d.toggle === 'pos'
+            ? [['Yes', 'yes'], ['No', 'no']]
+            : [['Yes', 'no'], ['No', 'yes']];
+          return '<div><div class="f-label"><span>' + esc(d.title) + '</span>' +
+            '<span class="f-hint">' + esc(d.q) + '</span></div>' +
+            toggleHtml(key, opts, S.toggles[key]) + '</div>';
+        }).join('') + '</div>';
+
+    case 'modes':
+      return '<div class="modes">' +
+        '<button type="button" class="mode" data-go="open">' +
+          '<span class="mode-rule"></span>' +
+          '<span class="mode-title">Open Category</span>' +
+          '<span class="mode-sub">The short brief. No Operational Authorisation, so the rules do the work instead.</span>' +
+          '<span class="mode-steps">One form</span></button>' +
+        '<button type="button" class="mode pdra" data-go="pdra">' +
+          '<span class="mode-rule"></span>' +
+          '<span class="mode-title">PDRA-01</span>' +
+          '<span class="mode-sub">Specific category. Onsite survey, pre-flight briefing, then the debrief after you land.</span>' +
+          '<span class="mode-steps">Three steps</span></button></div>';
+  }
+  return '';
+}
+
+function renderBlock(b) {
+  if (b.k === 'notice') {
+    return '<div class="notice ' + (b.tone || '') + '"><i></i><div class="notice-in">' +
+      '<span class="notice-title">' + esc(b.title) + '</span>' +
+      '<span class="notice-body">' + esc(b.body) + '</span>' +
+      (b.meta ? '<span class="notice-meta">' + esc(b.meta) + '</span>' : '') + '</div></div>';
+  }
+  if (b.k === 'stage') {
+    return '<div class="stage' + (b.dim ? ' dim' : '') + '">' +
+      '<span class="stage-num">' + esc(b.num) + '</span>' +
+      '<span class="stage-text"><span class="stage-when">' + esc(b.when) + '</span>' +
+      '<span class="stage-title">' + esc(b.title) + '</span>' +
+      (b.sub ? '<span class="stage-sub">' + b.sub + '</span>' : '') + '</span></div>';
+  }
+  var head = b.title
+    ? '<div class="card-head"><h2>' + esc(b.title) +
+      (b.tick ? ' <span class="card-tick">\u2713</span>' : '') + '</h2>' +
+      (b.meta ? '<span class="card-meta">' + esc(b.meta) + '</span>' : '') + '</div>'
+    : '';
+  var subline = b.sub ? '<div class="card-sub">' + b.sub + '</div>' : '';
+  var rows = (b.rows || []).map(renderRow).filter(function (x) { return x; });
+  var body = rows.length ? '<div class="card-body">' + rows.join('') + '</div>' : '';
+  return '<div class="card">' + head + subline + body + '</div>';
+}
+
+/* ══ Screens ════════════════════════════════════════════════════════════ */
+
+function setupScreen() {
+  return [
+    card({ title: 'First-Time Setup',
+      sub: 'Stored only in this browser. Enter once per device.',
+      rows: [
+        field('s-token', 'GitHub Personal Access Token', { ph: 'ghp_xxxxxxxxxxxx', required: true }),
+        field('s-owner', 'GitHub Username', { ph: 'OC-Drone-Team' }),
+        field('s-repo', 'GitHub Repo Name', { ph: 'skylark' }),
+        field('s-met-key', 'Met Office DataHub API Key',
+          { ph: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', required: true }),
+        submit('Save and continue', 'primary')
+      ] })
+  ];
+}
+
+function homeScreen() {
+  return [
+    notice('', 'Airspace change',
+      'Swanwick have moved the low-flying window to 09:00\u201317:00Z from Monday. Re-send MAMC for any booking that straddles it.',
+      'POSTED 2 DAYS AGO'),
+    notice('action', 'Operations manual updated',
+      'Section 2.16 now gives 72 hours for an ECCAIRS2 occurrence report. The debrief note wording has changed to match.',
+      'POSTED 6 DAYS AGO'),
+
+    stage({ num: '1', when: 'By 20:00 the day before', title: 'The Day Before You Fly',
+      sub: '<strong>MAMC notification</strong> and <strong>24-hour data download</strong> \u2014 send the low-flying notification, then pull the weather, NOTAMs and daylight onto this device while you still have signal.' }),
+
+    card({ title: 'MAMC Notification', meta: 'NOT SENT',
+      sub: 'Tells the military low-flying coordination desk at Swanwick where and when you will be flying, so low-flying military aircraft can be warned to stay clear.',
+      rows: [
+        two(field('mamc-estate', 'Estate', { kind: 'select', options: ESTATES }),
+            field('mamc-aircraft', 'Aircraft', { kind: 'select', options: AIRCRAFT })),
+        field('mamc-category', 'Category', { kind: 'select', options: [
+          'PDRA-01 \u2014 Specific category, Operational Authorisation',
+          'Open category \u2014 no Operational Authorisation'] }),
+        two(field('mamc-date', 'Date from', { kind: 'mono' }),
+            field('mamc-date-end', 'Date to', { kind: 'mono' })),
+        two(field('mamc-from', 'From (UTC)', { kind: 'mono' }),
+            field('mamc-to', 'To (UTC)', { kind: 'mono' })),
+        field('mamc-centre', 'Centre', { kind: 'mono', hint: 'Pick it on the map \u2014 what3words never shows a coordinate, so it cannot come from there.' }),
+        two(field('mamc-w3w', 'what3words', { kind: 'mono', ph: '///what.three.words', required: true }),
+            field('mamc-radius', 'Radius (nm)', { kind: 'mono' })),
+        pair([['Pick the centre on a map'], ['Find the what3words for the centre']]),
+        infobar('Deadline: <strong>20:00 tonight</strong>. Anything sent after that is not guaranteed to reach the low-flying desk before tomorrow morning.'),
+        submit('Send notification', 'primary')
+      ] }),
+
+    card({ title: '24-Hour Data Download', meta: 'CACHED 19:42',
+      sub: 'Pulls everything this flight needs onto the device while you still have signal. Nothing below needs a connection once it is cached.',
+      rows: [
+        cache([
+          ['Hourly weather', '24 h'],
+          ['NOTAMs', '2 active'],
+          ['Daylight and civil twilight', '06:14 \u2013 19:52'],
+          ['Airspace and estate reference', 'Ripon'],
+          ['Space weather (Kp)', 'Kp 2']
+        ]),
+        gate('go', 'ON DEVICE', 'Everything this flight needs is cached. You can work with no signal from here.'),
+        submit('Download again')
+      ] }),
+
+    stage({ num: '2', when: 'On site, before every single flight', title: 'Before Every Flight',
+      sub: '<strong>Open category</strong> or <strong>PDRA-01</strong> brief \u2014 fill in the one for the category you are flying under. Every flight, every time, not once a day.' }),
+
+    card({ title: 'What are you flying today?', rows: [modes()] })
+  ];
+}
+
+function openScreen() {
+  return [
+    card({ title: 'The Flight', tick: true, rows: [
+      two(field('oc-estate', 'Estate', { kind: 'select', options: ESTATES }),
+          field('oc-pilot', 'Pilot', { ph: 'Full name', required: true })),
+      field('oc-aircraft', 'Aircraft', { kind: 'select', options: AIRCRAFT }),
+      chips(['A1 \u00b7 under 250 g', 'MAX WIND 10.7 m/s', 'MAX GUST 12 m/s', 'MIN TEMP \u22120 \u00b0C', 'MAX ALT 120 m']),
+      sub('Take-off and landing point'),
+      two(field('oc-lat', 'Latitude', { kind: 'mono', ph: '55.2345' }),
+          field('oc-lon', 'Longitude', { kind: 'mono', ph: '-2.8765' })),
+      submit('\ud83d\udccd Get location from device GPS'),
+      note('<span style="font-family:var(--mono);font-size:13px;color:var(--ink-3)">Fixed to \u00b14 m \u00b7 12 Sep 09:38</span>')
+    ] }),
+
+    card({ title: 'Weather', meta: 'MET OFFICE 09:00Z', tick: true, rows: [
+      legend('COMFORTABLY WITHIN THIS AIRCRAFT\u2019S LIMITS'),
+      infobar('Met Office DataHub, site forecast for <strong>Ripon</strong>, issued 09:00Z. Cached on this device at 19:42 yesterday.'),
+      submit('Fetch live data for this estate'),
+      hourstrip('Pick your flight hour'),
+      grid([['Wind', '6.2 m/s'], ['Gusts', '9.8 m/s', 'warn'], ['Precipitation', '0.0 mm'],
+            ['Temperature', '11 \u00b0C'], ['Visibility', '> 10 km'], ['Icing risk', 'None'],
+            ['Kp-Index', '2 quiet'], ['Daylight', '06:14 \u2013 19:52']]),
+      gate('warn', 'CLOSE TO THE LIMIT',
+        'Gust is inside the 12 m/s limit for this aircraft but within 3 m/s of it. Brief the crew and re-check on site.'),
+      { k: 'note', text: '<div style="border-top:3px dashed var(--acc-line);padding-top:16px"></div>' },
+      field('oc-wx-override-note', 'Override \u2014 real conditions on site', {
+        kind: 'area', ph: 'e.g. anemometer 6 m/s steady, gusting 8, dry, 11 C, vis good',
+        hint: 'Only if you have measured the conditions where you are standing and they are inside the limits. Saved with the record against your name.' }),
+      submit('I choose to override the NO GO on real conditions')
+    ] }),
+
+    card({ title: 'Airspace', tick: true, rows: [
+      notams('NOTAMs', [
+        { id: 'H4821/25', title: 'Military low flying', tone: 'warn',
+          detail: 'Surface to 2,000 ft, 09:00\u201317:00Z. Inside your operating radius.' },
+        { id: 'J1109/25', title: 'Temporary restriction',
+          detail: 'Outside the 2 nm operating radius. No action needed.' }
+      ]),
+      grid([['Airspace class', 'G', 'auto'], ['Nearest ATC', 'Leeming 133.375', 'auto'],
+            ['Low flying area', 'LFA 11', 'auto'], ['Nearest aerodrome', 'Dishforth 6 nm', 'auto']]),
+      { k: 'grid', cells: [['Site hazard', '11 kV line, north boundary', 'auto'],
+                           ['Site hazard', 'Raptor nest, 200 m buffer', 'auto']] },
+      toggle('oc-airspace-ok', 'Is the airspace clear and are you happy to fly it?', YES_NO)
+    ] }),
+
+    card({ title: 'Open Category Rules', tick: true,
+      sub: 'These are the limits that make this flight legal without an Operational Authorisation. Every one has to be true before take-off. If any of them cannot be, this is not an Open category flight \u2014 stop, and speak to a qualified remote pilot.',
+      rows: [
+        checkbox('ocr-120', 'Maximum height 120 m above ground level.',
+          'Measured from the surface directly below the aircraft, not from where you are standing.'),
+        checkbox('ocr-50', 'Never within 50 m of uninvolved people.',
+          'Horizontally, in any direction, at any height.'),
+        checkbox('ocr-assembly', 'Not over open-air assemblies of people.',
+          'No overflight of crowds at any height, whatever the aircraft.'),
+        { k: 'note', text: '<div style="border-top:3px dashed var(--acc-line);padding-top:16px"></div>' },
+        sub('Whatever you are flying'),
+        checkbox('ocr-manual', 'I have read the Oxygen Conservation Open Category Operations Manual.',
+          'The manual governs these flights, not the PDRA-01 one. Where it is stricter than anything on this page, the manual wins.'),
+        gate('warn', '1 RULE UNCONFIRMED',
+          'Open-air assemblies is not yet ticked. Every rule has to be confirmed before this reads GO.')
+      ] }),
+
+    card({ title: 'Emergency Procedures',
+      sub: 'Swipe through these before you fly and brief them to everyone on site. The call-out in the corner is what you say out loud.',
+      rows: [epcard()] }),
+
+    card({ title: 'Go / No Go', rows: [
+      final('pending', 'DECISION PENDING',
+        'Complete the sections above to see the decision.'),
+      final('nogo', '\u2717 NO GO', null, [
+        'Open-air assemblies rule not confirmed',
+        'Gust within 3 m/s of the aircraft limit \u2014 caution, not a stop'
+      ]),
+      decision('oc-decision')
+    ] }),
+
+    card({ title: 'Debrief Note', tick: true,
+      sub: 'After you land. Anything that happened, anything that surprised you, anything the next person should know. Short is fine \u2014 \u201cnothing to report\u201d is a valid answer, and a near miss written down badly beats one not written down at all.',
+      rows: [
+        michint('<strong>Use the keyboard\u2019s microphone key on this iPad.</strong> Tap the note, then tap the mic key at the bottom right of the on-screen keyboard and speak. In-page dictation cannot get the microphone in a Home Screen app.'),
+        toggle('oc-issues', 'Did anything happen worth recording?',
+          [['Yes', 'warn'], ['Nothing to Report', 'yes']]),
+        field('oc-debrief-note', 'The note',
+          { kind: 'area', mic: true, ph: 'What happened, in your own words.' }),
+        box('\u26a0 Occurrence reporting',
+          'If this was an <strong>incident, accident or airprox</strong>, the note is not enough. Tell the <strong>Accountable Manager (Doris)</strong> as soon as you can. A mandatory occurrence report goes to ECCAIRS2 within 72 hours; an airprox goes to the Airprox Board within 7 days. Section 2.16 of the operations manual has the detail.')
+      ] }),
+
+    card({ title: 'Save Flight Record', rows: [
+      infobar('Saves to <strong>OC-Drone-Team/skylark</strong> as <strong>open/2026-09-12-ripon-whitfield.json</strong>. Queued if you have no signal.'),
+      submit('Save flight record', 'primary'),
+      pair([['Download JSON', 'quiet'], ['Preview JSON', 'quiet']]),
+      json()
+    ] })
+  ];
+}
+
+function onsiteScreen() {
+  return [
+    card({ title: 'Survey Details', meta: 'PDRA-01', tick: true, rows: [
+      two(field('f-estate', 'Estate', { kind: 'select', options: ESTATES }),
+          field('f-mission-id', 'Mission ID', { kind: 'mono', required: true })),
+      field('f-datetime', 'Date and time of survey', { kind: 'mono', required: true }),
+      field('f-location', 'Location', { auto: true, ph: 'Auto-filled from estate coordinates on selection' })
+    ] }),
+
+    card({ title: 'Estate \u2014 Airspace & Contact Reference', meta: 'REFERENCE', rows: [
+      grid([['Airspace class', 'G', 'auto'], ['Nearest ATC', 'Leeming 133.375', 'auto'],
+            ['Low flying area', 'LFA 11', 'auto'], ['Estate contact', 'J. Marsden', 'auto'],
+            ['Landowner phone', '01765 xxx xxx', 'auto'], ['Nearest hospital', 'Harrogate DH, 14 mi', 'auto']])
+    ] }),
+
+    card({ title: 'Live Environmental Conditions', meta: 'FETCHED 09:38', tick: true, rows: [
+      legend('COMFORTABLY WITHIN LIMITS'),
+      infobar('Met Office DataHub site forecast for <strong>Ripon</strong>, read at 09:38 on site. Anything you type over the top is kept and marked as measured.'),
+      two(field('f-wind-strength', 'Wind speed (m/s)', { kind: 'mono', auto: true }),
+          field('f-wind-dir', 'Wind direction', { kind: 'mono', auto: true })),
+      field('f-urban', 'Urban / terrain effects', { kind: 'select', required: true, options: URBAN }),
+      two(field('f-precip', 'Precipitation', { kind: 'mono', auto: true }),
+          field('f-temp', 'Temperature (\u00b0C)', { kind: 'mono', auto: true })),
+      two(field('f-visibility', 'Visibility', { kind: 'select', auto: true,
+            options: ['Greater than 10 km', '5 \u2013 10 km', '1 \u2013 5 km', 'Less than 1 km'] }),
+          field('f-space-display', 'Space weather', { kind: 'mono', auto: true })),
+      toggle('f-conditions', 'Are all conditions within limits?',
+        [['Yes', 'yes'], ['Borderline', 'warn'], ['No', 'no']]),
+      gate('go', 'WITHIN LIMITS',
+        'Wind, precipitation, temperature and visibility all inside the M350 envelope.')
+    ] }),
+
+    card({ title: 'Airspace', tick: true, rows: [
+      toggle('f-notif', 'Have all notifications been issued?', YES_NR_NO),
+      toggle('f-perms', 'Have all permissions been obtained?', YES_NR_NO),
+      field('f-notams-display', 'NOTAMs', { kind: 'mono', auto: true }),
+      field('f-notam-details', 'NOTAM details', { kind: 'area', auto: true }),
+      toggle('f-airspace-clear', 'Is the airspace clear?', YES_NO),
+      gate('go', 'AIRSPACE CLEAR', 'MAMC sent, one NOTAM reviewed and accepted.')
+    ] }),
+
+    card({ title: 'Client Details', rows: [
+      two(field('f-name', 'Client name', { ph: 'Who the survey is for', required: true }),
+          field('f-phone', 'Phone number', { kind: 'mono', ph: '+44\u2026', required: true }))
+    ] }),
+
+    card({ title: 'Drone (UAS) for Operation', tick: true, rows: [
+      toggle('f-task', 'Task', [['LiDAR Survey', 'info'], ['Thermal Herbivore Survey', 'info']]),
+      toggle('f-uas', 'Drone (UAS)',
+        [['DJI Matrice 350 RTK', 'info'], ['DJI Matrice 30T', 'info'], ['Other', 'info']]),
+      field('f-uas-other', 'Drone (specify make and model)',
+        { ph: 'Make and model', locked: true, msg: 'Only needed if you picked Other above.' }),
+      toggle('f-payload', 'Payload', [['DJI Zenmuse L2', 'info'], ['DJI Zenmuse H20T', 'info']]),
+      two(field('f-command-unit', 'Command unit (remote controller)', { required: true }),
+          field('f-other-equip', 'Other equipment', { ph: 'Ground station, spare batteries' }))
+    ] }),
+
+    card({ title: 'Flight Crew', meta: '2 ANSWERS MISSING', rows: [
+      sub('Remote pilot'),
+      field('f-pilot', 'Name', { kind: 'select', options: CREW }),
+      toggle('f-pilot-ftf', 'Fit to fly?', YES_NO),
+      toggle('f-pilot-present', 'Present?', PRESENT),
+      sub('Visual observer'),
+      field('f-vo-name', 'Name', { ph: 'Full name', required: true }),
+      toggle('f-vo-ftf', 'Fit to fly?', YES_NO, { tag: 'NOT ANSWERED' }),
+      toggle('f-vo-present', 'Present?', PRESENT, { tag: 'NOT ANSWERED' }),
+      sub('Payload operator'),
+      field('f-po-name', 'Name', { kind: 'select', options: ['\u2014 Select \u2014'].concat(CREW) }),
+      toggle('f-po-ftf', 'Fit to fly?', YES_NO),
+      toggle('f-po-present', 'Present?', PRESENT),
+      sub('Site manager'),
+      field('f-sm-name', 'Name', { ph: 'Full name' }),
+      toggle('f-sm-ftf', 'Fit to fly?', YES_NO),
+      sub('Anyone else'),
+      field('f-others', 'Others present', { ph: 'Name and role of any other persons' }),
+      gate('warn', '2 ANSWERS MISSING',
+        'The visual observer has no fit-to-fly or present answer. You cannot reach a final GO until both are set.')
+    ].filter(function (x) { return x; }) }),
+
+    card({ title: 'Take-Off and Landing Area (TOLA) \u2014 Landowner', tick: true, rows: [
+      toggle('f-landowner', 'Have all permissions been obtained?', YES_NR_NO),
+      gate('go', 'PERMISSION HELD', 'Landowner permission recorded for this TOLA.')
+    ] }),
+
+    card({ title: 'Police', rows: [
+      toggle('f-police', 'Have the police been informed?', YES_NR_NO),
+      gate('warn', 'NOT REQUIRED \u2014 CHECK',
+        'Marked not required, but a public right of way crosses the cordon. Consider a courtesy call to the local team.')
+    ] }),
+
+    card({ title: 'Other Permissions', tick: true, rows: [
+      toggle('f-la', 'Local authority', YES_NA_NO),
+      toggle('f-film', 'Filming licence', YES_NA_NO),
+      toggle('f-ptw', 'Permit to work', YES_NA_NO),
+      gate('go', 'ALL ANSWERED', 'Nothing outstanding on other permissions.')
+    ] }),
+
+    card({ title: 'On Site Hazards', meta: '3 PRESENT', rows: [
+      hazards(),
+      field('haz-notes', 'Mitigation for each hazard present', { kind: 'area', required: true, mic: true,
+        ph: 'Public access points, obstructions, livestock \u2014 what you are doing about each' }),
+      toggle('f-ra', 'Additional risk assessment completed?', YES_NR_NO),
+      gate('warn', '3 HAZARDS PRESENT',
+        'Public access points, obstructions and livestock. Each needs a mitigation before the final decision.')
+    ] }),
+
+    card({ title: 'Offsite Hazards', tick: true, rows: [
+      toggle('f-offsite', 'Locations and distances identified?', YES_NO),
+      field('f-offsite-notes', 'Notes', { kind: 'area', ph: 'Anything beyond the operating volume worth recording' }),
+      gate('go', 'IDENTIFIED', 'Offsite hazards mapped and distances recorded.')
+    ] }),
+
+    card({ title: 'Areas of Operation \u2014 Walked and Checked',
+      sub: 'Each area you will use, inspected on foot before the brief. A No is not a stop \u2014 it is a thing to fix, and it has to be written up below.',
+      rows: [areas()] }),
+
+    card({ title: 'Additional Notes', rows: [
+      field('f-notes', 'Notes', { kind: 'area', mic: true,
+        ph: 'Any additional information relevant to this operation' })
+    ] }),
+
+    card({ title: 'Final GO / NO GO Decision', rows: [
+      final('pending', 'DECISION PENDING', 'Clear the two open items to see the decision.'),
+      gate('warn', '2 ITEMS OPEN',
+        'Visual observer fit-to-fly is unanswered and hazard mitigations are not written up. Clear both, or record a NO GO with a reason.'),
+      decision('f-decision')
+    ] }),
+
+    card({ title: 'Save Record', rows: [
+      infobar('Saves to <strong>OC-Drone-Team/skylark</strong> as <strong>onsite/RIP-0912-A.json</strong>. Queued if you have no signal.'),
+      submit('Save record', 'off'),
+      pair([['Download JSON', 'quiet'], ['Preview JSON', 'quiet']]),
+      json()
+    ] })
+  ];
+}
+
+function preflightScreen() {
+  return [
+    card({ title: 'Estate & Launch', tick: true, rows: [
+      two(field('pf-estate-select', 'Estate', { kind: 'select', options: ESTATES }),
+          field('pf-client', 'Client', {})),
+      two(field('pf-mission-id', 'Mission ID', { kind: 'mono', locked: true,
+            ph: '\u2014 complete onsite survey first \u2014', tag: 'FROM SURVEY' }),
+          field('pf-task', 'Task', { locked: true, tag: 'FROM SURVEY' })),
+      field('pf-route-name', 'Route name', { ph: 'e.g. North transect A', required: true }),
+      sub('TOLA coordinates \u2014 take-off & landing area'),
+      two(field('pf-tola-lat', 'Latitude', { kind: 'mono', ph: '55.2345' }),
+          field('pf-tola-lon', 'Longitude', { kind: 'mono', ph: '-2.8765' }))
+    ] }),
+
+    card({ title: 'Live Environmental Conditions', tick: true, rows: [
+      two(field('pf-tide-high', 'High tide', { kind: 'mono', ph: 'e.g. 09:14 \u2014 4.8m' }),
+          field('pf-tide-low', 'Low tide', { kind: 'mono', ph: 'e.g. 15:32 \u2014 0.9m' })),
+      field('pf-urban', 'Urban / terrain effects', { kind: 'select', options: URBAN }),
+      two(field('pf-wind-surface', 'Surface wind speed at 2m (m/s)', { kind: 'mono', ph: 'e.g. 4.2' }),
+          field('pf-wind-altitude', 'Operating altitude (m AGL)', { kind: 'mono', ph: 'e.g. 50' })),
+      field('pf-roughness', 'Terrain roughness class', { kind: 'select', options: [
+        'Class 0 \u2014 Water', 'Class 1 \u2014 Open, few obstacles',
+        'Class 2 \u2014 Open farmland', 'Class 3 \u2014 Villages, hedges, woodland',
+        'Class 4 \u2014 Suburban, forest'] }),
+      grid([['Wind at altitude', '6.8 m/s', 'auto'], ['Correction applied', '\u00d71.62', 'auto']]),
+      gate('go', 'WITHIN LIMITS', 'Wind at operating altitude is inside the aircraft limit with margin.')
+    ] }),
+
+    card({ title: 'Airspace', tick: true, rows: [
+      two(field('pf-airspace-class', 'Airspace class', { kind: 'select',
+            options: ['Class G', 'Class D', 'Class C', 'Class A'] }),
+          field('pf-airspace-type', 'Airspace type', { kind: 'select',
+            options: ['Uncontrolled', 'Controlled', 'ATZ', 'FRZ', 'Danger area'] })),
+      field('pf-hazards-onsite', 'NOTAMs', { kind: 'area', auto: true }),
+      sub('Permissions & notifications'),
+      field('pf-landowner', 'Landowner', { required: true }),
+      toggle('pf-police', 'Police', INFORMED),
+      toggle('pf-atc', 'Airspace managers / ATC', INFORMED),
+      gate('go', 'ALL NOTIFIED', 'Landowner recorded, ATC informed, police not required for this operation.')
+    ] }),
+
+    card({ title: 'Drone (UAS)', tick: true, rows: [
+      two(field('pf-uas', 'Drone (UAS)', { locked: true, tag: 'FROM SURVEY' }),
+          field('pf-payload', 'Payload', { locked: true, tag: 'FROM SURVEY' })),
+      two(field('pf-command-unit', 'Command unit (remote controller)', {}),
+          field('pf-other-equip', 'Other equipment', {}))
+    ] }),
+
+    card({ title: 'Safety Objectives', tick: true, rows: [
+      field('pf-objective', 'Objective', { required: true, mic: true,
+        ph: 'What this flight is for, in one line' })
+    ] }),
+
+    card({ title: 'Roles & Responsibilities', tick: true, rows: [
+      two(field('pf-pilot', 'Remote pilot', { kind: 'select', options: CREW }),
+          field('pf-payload-op', 'Payload operator', { kind: 'select', options: CREW })),
+      two(field('pf-vo', 'Visual observer(s)', { ph: 'Name(s) or None', required: true }),
+          field('pf-marshal', 'Safety marshal(s)', { ph: 'Name(s) or None' }))
+    ] }),
+
+    card({ title: 'Cordons', tick: true, rows: [
+      sub('Operational volume'),
+      two(field('pf-opvol-dist', 'Distance from ground control', { kind: 'mono' }),
+          field('pf-opvol-height', 'Height max', { kind: 'mono' })),
+      field('pf-tola-desc', 'Take-off and landing area (TOLA)', {}),
+      sub('Contingency volume'),
+      two(field('pf-contvol-dist', 'Distance from ground control', { kind: 'mono' }),
+          field('pf-contvol-height', 'Height max', { kind: 'mono' })),
+      field('pf-ela-direction', 'Emergency landing areas', { ph: 'direction' }),
+      field('pf-access-points', 'Public access points',
+        { kind: 'area', auto: true, ph: '\u2014 select estate first \u2014' }),
+      field('pf-marshal-points', 'Marshalling points',
+        { kind: 'area', auto: true, ph: '\u2014 select estate first \u2014' })
+    ] }),
+
+    card({ title: 'Communications', tick: true, rows: [
+      toggle('pf-mobile', 'Mobile signal', YES_NO),
+      toggle('pf-data', 'Data signal', YES_NO),
+      toggle('pf-radios', 'Radios', YES_NO),
+      toggle('pf-whistles', 'Whistles', YES_NO),
+      checks('Communication language \u2014 standard OC phraseology', [
+        ['\u201cTaking off\u201d', 'Called by the remote pilot before the motors spin up.'],
+        ['\u201cHolding\u201d', 'Aircraft stationary in a holding area, awaiting an instruction.'],
+        ['\u201cCordon breach\u201d', 'Called by anyone. Aircraft moves to a holding area immediately.'],
+        ['\u201cAir incursion\u201d', 'Called by anyone who sees another aircraft. See and avoid.'],
+        ['\u201cLanding\u201d', 'Called by the remote pilot on final descent.'],
+        ['\u201cTerminate mission\u201d', 'Stops the flight. Anyone can call it, nobody argues with it.']
+      ]),
+      toggle('pf-comms-briefed', 'Briefed and understood by all crew?', YES_NO)
+    ] }),
+
+    card({ title: 'Hazards', tick: true, rows: [
+      field('pf-ra-result-onsite', 'Risk assessment result',
+        { locked: true, tag: 'FROM SURVEY', hint: 'From today\u2019s onsite survey.' }),
+      field('pf-airspace-hazards', 'Airspace hazards',
+        { kind: 'area', auto: true, hint: 'From estate data.' }),
+      field('pf-ground-hazards', 'Ground hazards',
+        { kind: 'area', auto: true, hint: 'From estate data and the onsite survey.' }),
+      field('pf-areas-avoid', 'Areas to avoid',
+        { kind: 'area', auto: true, hint: 'From estate data.' })
+    ] }),
+
+    card({ title: 'Emergency Procedures', tick: true,
+      sub: 'Brief every one of these to everyone on site before the motors spin up. The call-out in the corner is what you say out loud.',
+      rows: [epcard()] }),
+
+    card({ title: 'Flight Timings', tick: true, rows: [
+      two(field('pf-takeoff-time', 'Time of takeoff', { kind: 'mono' }),
+          field('pf-finish-time', 'Planned finish time', { kind: 'mono' }))
+    ] }),
+
+    card({ title: 'Flight Crew Health', meta: 'IMSAFE', rows: [
+      checkgroup('Every crew member, out loud, before the brief closes', IMSAFE, 'imsafe-'),
+      toggle('pf-ftf', 'Fit to fly?', YES_NO),
+      gate('warn', '1 CHECK OUTSTANDING',
+        'Eating is not confirmed. IMSAFE has to be complete before the pre-flight record can be saved.')
+    ] }),
+
+    card({ title: 'Save Pre-Flight Record', rows: [
+      infobar('Saves to <strong>OC-Drone-Team/skylark</strong> as <strong>preflight/RIP-0912-A.json</strong>. Queued if you have no signal.'),
+      submit('Save pre-flight record', 'off'),
+      pair([['Preview JSON', 'quiet']])
+    ] })
+  ];
+}
+
+function debriefScreen() {
+  return [
+    card({ title: 'Debrief Details', rows: [
+      two(field('db-mission-id', 'Mission ID',
+            { kind: 'mono', locked: true, tag: 'FROM SURVEY', ph: 'Carried from today\u2019s onsite survey' }),
+          field('db-estate', 'Estate',
+            { locked: true, tag: 'FROM SURVEY', ph: 'Carried from today\u2019s onsite survey' })),
+      field('db-datetime', 'Debrief date & time', { kind: 'mono' }),
+      two(field('db-led-by', 'Debrief led by', { kind: 'select', options: CREW }),
+          field('db-crew', 'Crew present', { ph: 'Everyone at the debrief', required: true }))
+    ] }),
+
+    card({ title: 'Voice Debrief', tick: true,
+      sub: 'Talk through the flight once, in order, and let it sort itself into the rows below. Edit the transcript before you sort it \u2014 dictation gets aircraft names and place names wrong.',
+      rows: [
+        michint('<strong>Use the keyboard\u2019s microphone key on this iPad.</strong> Tap the transcript, then tap the mic key at the bottom right of the on-screen keyboard and speak.'),
+        field('db-transcript', 'Transcript', { kind: 'area', mic: true,
+          ph: 'Your spoken debrief appears here. You can edit it before sorting.' }),
+        field('db-custom-vocab', 'Custom vocabulary',
+          { ph: 'Words dictation keeps getting wrong \u2014 drone models, place names, crew' }),
+        pair([['Sort into the rows below'], ['Clear transcript', 'quiet']])
+      ] }),
+
+    card({ title: 'Operational Review', tick: true, rows: [debriefrows()] }),
+
+    card({ title: 'Overview of the Operation', tick: true, rows: [
+      field('db-overview', 'Overview', { kind: 'area', mic: true,
+        ph: 'What the flight set out to do and whether it did it' })
+    ] }),
+
+    card({ title: 'Lessons Identified', tick: true, rows: [
+      field('db-lessons', 'Lessons', { kind: 'area', mic: true,
+        ph: 'What you would do differently, and what the next crew should know' })
+    ] }),
+
+    card({ title: 'Questions', tick: true, rows: [
+      field('db-questions', 'Questions', { kind: 'area', mic: true,
+        ph: 'Anything raised that this debrief cannot answer' })
+    ] }),
+
+    card({ title: 'Save Debrief Record', rows: [
+      infobar('Saves to <strong>OC-Drone-Team/skylark</strong> as <strong>debrief/RIP-0912-A.json</strong>. Queued if you have no signal.'),
+      submit('Save debrief record', 'primary'),
+      pair([['Download JSON', 'quiet'], ['Preview JSON', 'quiet']])
+    ] })
+  ];
+}
+
+/* ══ Chrome ═════════════════════════════════════════════════════════════ */
+
+var PANELS = [
+  { id: 'onsite',    num: '1', label: 'Onsite Survey',       meta: '2 answers missing', done: false },
+  { id: 'preflight', num: '2', label: 'Pre-Flight Briefing', meta: 'IMSAFE outstanding', done: false },
+  { id: 'debrief',   num: '3', label: 'Debrief',             meta: 'After you land',     done: false }
+];
+
+function renderChrome() {
+  var estate = S.mode === 'open' ? S.vals['oc-estate'] : S.vals['f-estate'];
+  var label = { home: '\u2014', open: 'OPEN CATEGORY', pdra: 'PDRA-01', setup: 'SETUP' }[S.mode];
+  document.getElementById('header-estate').textContent =
+    S.mode === 'home' || S.mode === 'setup' ? '\u2014' : (estate + ' \u00b7 ' + label).toUpperCase();
+
+  document.getElementById('side-ind').textContent =
+    S.mode === 'home' ? 'Skylark'
+      : S.mode === 'open' ? 'Open Category'
+      : S.mode === 'pdra' ? (PANELS.filter(function (p) { return p.id === S.panel; })[0] || {}).label
+      : 'Setup';
+
+  document.getElementById('btn-home').style.display = S.mode === 'home' ? 'none' : '';
+  document.getElementById('btn-logout').style.display = S.mode === 'setup' ? 'none' : '';
+
+  var bar = document.getElementById('accbar');
+  if (S.mode !== 'pdra') { bar.innerHTML = ''; return; }
+  bar.innerHTML = '<div class="acc-bar">' + PANELS.map(function (p) {
+    return '<button type="button" class="acc-btn' + (p.id === S.panel ? ' on' : '') +
+      (p.done ? ' done' : '') + '" data-panel="' + p.id + '">' +
+      '<span class="acc-num">' + p.num + '</span>' +
+      '<span class="acc-text"><span class="acc-label">' + esc(p.label) + '</span>' +
+      '<span class="acc-meta">' + esc(p.meta) + '</span></span></button>';
+  }).join('') + '</div>';
+}
+
+function render() {
+  var blocks;
+  if (S.mode === 'setup') blocks = setupScreen();
+  else if (S.mode === 'open') blocks = openScreen();
+  else if (S.mode === 'pdra') {
+    blocks = S.panel === 'preflight' ? preflightScreen()
+           : S.panel === 'debrief' ? debriefScreen()
+           : onsiteScreen();
+  } else blocks = homeScreen();
+
+  renderChrome();
+  document.getElementById('app').innerHTML = blocks.map(renderBlock).join('');
+}
+
+/* ══ Events ═════════════════════════════════════════════════════════════ */
+
+/* Store keystrokes without re-rendering, so the caret is never disturbed. */
+document.addEventListener('input', function (e) {
+  var id = e.target.getAttribute && e.target.getAttribute('data-field');
+  if (id) S.vals[id] = e.target.value;
+});
+
+document.addEventListener('change', function (e) {
+  var id = e.target.getAttribute && e.target.getAttribute('data-field');
+  if (id && e.target.tagName === 'SELECT') { S.vals[id] = e.target.value; renderChrome(); }
+});
+
+/* Validate on the way out of a field, in place. */
+document.addEventListener('blur', function (e) {
+  var el = e.target;
+  var id = el.getAttribute && el.getAttribute('data-field');
+  if (!id) return;
+  S.touched[id] = true;
+  var required = el.getAttribute('data-required') === '1';
+  var msgEl = document.querySelector('[data-msg="' + id + '"]');
+  if (required && el.value === '') {
+    el.classList.add('bad');
+    if (msgEl) {
+      msgEl.classList.add('bad');
+      msgEl.innerHTML = '<i></i>Required \u2014 fill this in before you can save.';
+      msgEl.hidden = false;
+    }
+  } else if (el.value !== '') {
+    el.classList.remove('bad');
+    if (msgEl && msgEl.classList.contains('bad')) {
+      msgEl.hidden = true;
+      msgEl.classList.remove('bad');
+    }
+  }
+}, true);
+
+function flashStatus(text, ms) {
+  var b = document.getElementById('status-badge');
+  var prev = b.innerHTML;
+  b.innerHTML = text;
+  b.classList.add('sync');
+  window.setTimeout(function () { b.innerHTML = prev; b.classList.remove('sync'); }, ms || 900);
+}
+
+document.addEventListener('click', function (e) {
+  var t = e.target.closest(
+    '[data-panel],[data-toggle],[data-hour],[data-decision],[data-check],[data-go],[data-ep],[data-epgo],#btn-home,#btn-reload,#btn-logout');
+  if (!t) return;
+
+  if (t.id === 'btn-home')   { S.mode = 'home'; render(); window.scrollTo(0, 0); return; }
+  if (t.id === 'btn-reload') { flashStatus('&#9679; SYNCING'); render(); return; }
+  if (t.id === 'btn-logout') { S.mode = 'setup'; render(); window.scrollTo(0, 0); return; }
+
+  if (t.hasAttribute('data-go')) {
+    S.mode = t.getAttribute('data-go');
+    S.panel = 'onsite';
+    render(); window.scrollTo(0, 0); return;
+  }
+  if (t.hasAttribute('data-panel')) {
+    S.panel = t.getAttribute('data-panel');
+    render(); window.scrollTo(0, 0); return;
+  }
+  if (t.hasAttribute('data-toggle')) {
+    var store = t.getAttribute('data-store') === 'areas' ? S.areas : S.toggles;
+    var key = t.getAttribute('data-toggle');
+    var v = t.getAttribute('data-value');
+    store[key] = store[key] === v ? null : v;
+    render(); return;
+  }
+  if (t.hasAttribute('data-check')) {
+    var ck = t.getAttribute('data-check');
+    S.checks[ck] = !S.checks[ck];
+    render(); return;
+  }
+  if (t.hasAttribute('data-hour')) {
+    S.hour = parseInt(t.getAttribute('data-hour'), 10);
+    render(); return;
+  }
+  if (t.hasAttribute('data-ep')) {
+    var n = OC_EP.length;
+    S.ep = (S.ep + parseInt(t.getAttribute('data-ep'), 10) + n) % n;
+    render(); return;
+  }
+  if (t.hasAttribute('data-epgo')) {
+    S.ep = parseInt(t.getAttribute('data-epgo'), 10);
+    render(); return;
+  }
+  if (t.hasAttribute('data-decision')) {
+    var dk = t.getAttribute('data-decision');
+    var dv = t.getAttribute('data-value');
+    S.decision[dk] = S.decision[dk] === dv ? null : dv;
+    render();
+  }
+});
+
+/* Preview JSON / Save buttons that only exist as demonstrations */
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('.btn');
+  if (!b) return;
+  var txt = b.textContent.toLowerCase();
+  if (txt.indexOf('preview json') > -1) { S.json = !S.json; render(); return; }
+  if (txt.indexOf('save') > -1) flashStatus('&#9679; QUEUED', 1400);
+  if (txt.indexOf('fetch live') > -1 || txt.indexOf('download again') > -1) flashStatus('&#9679; FETCHING', 1200);
+});
+
+render();
+</script>
+</body>
+</html>
