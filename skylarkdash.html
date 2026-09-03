@@ -68,6 +68,11 @@
     --oc-danger-fill:   #fecdd3;
     --oc-danger-ink-deep: #881337; /* selected-toggle label */
 
+    /* Hazard cards - solid, not a wash. Deep maroon ground, near-white ink. */
+    --oc-hazard-ground: #7c1d32;
+    --oc-hazard-edge:   #5c1224;
+    --oc-hazard-ink:    #ffe9ed;
+
     /* neutral — was sky blue; now the same yellow as the Download 24 Hours
        button, so the forms carry one accent colour rather than two. */
     /* Matches the home screen's stage cards exactly - pale ground, accent
@@ -542,7 +547,14 @@
   /* Category colours */
   .info-cell.ic-contact  { border-left: 4px solid var(--oc-info-ink); background: var(--oc-info-tint); }
   .info-cell.ic-airspace { border-left: 4px solid var(--oc-info-strong); background: var(--oc-info-tint); }
-  .info-cell.ic-hazard   { border-left: 4px solid var(--danger); background: var(--danger-bg); }
+  /* Hazards were a pale pink wash that read as decorative. They carry the
+     things that hurt someone, so they get a solid maroon and light text. */
+  .info-cell.ic-hazard   {
+    border: 2px solid var(--oc-hazard-edge);
+    border-left: 4px solid var(--oc-hazard-edge);
+    background: var(--oc-hazard-ground);
+    color: var(--oc-hazard-ink);
+  }
   .info-cell.ic-notam    { border-left: 4px solid var(--oc-info-strong); background: var(--oc-info-tint); }
   .info-cell.ic-default  { border-left: 4px solid var(--border-strong); }
 
@@ -564,7 +576,8 @@
     letter-spacing: 0.05em;
   }
 
-  .info-cell.ic-hazard .ic-label { color: var(--danger); }
+  .info-cell.ic-hazard .ic-label { color: var(--oc-hazard-ink); }
+  .info-cell.ic-hazard .ic-value { color: var(--oc-hazard-ink); }
   .info-cell.ic-notam  .ic-label { color: var(--oc-info-strong); }
   .info-cell.ic-contact .ic-label { color: var(--oc-info-ink); }
   .info-cell.ic-airspace .ic-label { color: var(--oc-info-strong); }
@@ -1362,10 +1375,13 @@
   .oc-limits {
     display:flex; gap:7px; flex-wrap:wrap; margin-top:9px;
   }
+  /* The limits for the airframe you picked. Yellow, like the buttons, so
+     they read as part of the accent rather than as disabled grey chips. */
   .oc-limit-chip {
-    font-family:var(--mono); font-size:11px; font-weight:600;
+    font-family:var(--mono); font-size:11px; font-weight:700;
     padding:4px 9px; border-radius:5px;
-    background:var(--surface2); border:1.5px solid var(--border); color:var(--muted);
+    background:var(--oc-accent-btn); border:1.5px solid var(--oc-accent-strong);
+    color:var(--oc-accent-ink);
   }
   .oc-subcat-chip {
     font-family:var(--mono); font-size:11px; font-weight:700;
@@ -9575,8 +9591,10 @@ function ocTick(id, done) {
   if (!el) return;
   el.style.display = done ? 'inline-flex' : 'none';
   const body = el.closest('.card') && el.closest('.card').querySelector('.card-body');
-  // Completion is a status, so it takes the accent ground rather than green.
-  if (body) body.style.background = done ? 'var(--oc-accent-canvas)' : '';
+  // Green means done. It was moved onto the accent ground when the yellow
+  // went through the forms, but green is what "this section is finished"
+  // reads as on a brief - and it is the only green here that is not a GO.
+  if (body) body.style.background = done ? 'var(--oc-ok-canvas)' : '';
 }
 
 function ocWeatherWorst() {
