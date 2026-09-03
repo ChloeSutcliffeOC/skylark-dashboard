@@ -1859,10 +1859,14 @@
         Every one has to be true before take-off. If any of them cannot be, this is not an Open category flight
         &mdash; stop, and speak to a qualified remote pilot.
       </p>
+      <div class="field-label" style="margin-bottom:9px">Rules for the aircraft you selected</div>
       <div id="oc-rules-list" style="display:flex;flex-direction:column;gap:10px"></div>
 
-      <!-- Counted with the subcategory rules: the gate does not clear
-           without it, and the record says whether it was ticked. -->
+      <!-- Counted with the subcategory rules, but kept visually apart from
+           them: it applies whatever you are flying, and an unlabelled tick
+           sitting under an empty rules list reads as if it replaced them. -->
+      <div style="border-top:1.5px dashed var(--oc-accent-line);padding-top:14px;margin-top:4px">
+        <div class="field-label" style="margin-bottom:9px">Whatever you are flying</div>
       <label class="oc-rule" id="oc-rule-manual">
         <input type="checkbox" id="ocr-manual" onchange="ocRefresh()">
         <span class="oc-rule-box">&#10003;</span>
@@ -1871,6 +1875,7 @@
           <span class="oc-rule-sub" style="display:block">The manual governs these flights, not the PDRA-01 one. Where it is stricter than anything on this page, the manual wins.</span>
         </span>
       </label>
+      </div>
       <div class="gate-card gate-pending" id="oc-gate-rules">
         <div class="gate-indicator" id="oc-gate-rules-label">&mdash;</div>
         <div class="gate-msg" id="oc-gate-rules-msg">Select an aircraft to see the rules that apply.</div>
@@ -8758,7 +8763,11 @@ function ocRenderRules() {
   const ac = ocCurrentAircraft();
   if (!ac) {
     host.dataset.subcat = '';
-    host.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--faint)">Select an aircraft above and the rules for its subcategory appear here.</div>';
+    host.innerHTML = '<div style="border-radius:8px;padding:12px 15px;font-family:var(--mono);' +
+      'font-size:11.5px;line-height:1.6;background:var(--oc-accent-canvas);' +
+      'border:1.5px dashed var(--oc-accent-ink);color:var(--oc-accent-ink)">' +
+      '&#9650; Pick an aircraft in The Flight above. The Open category rules for its ' +
+      'subcategory load here, and every one of them has to be ticked before this gate clears.</div>';
     return;
   }
   const rules = OC_RULES[ac.subcat] || [];
