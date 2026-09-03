@@ -1584,13 +1584,13 @@
             </div>
             <div>
               <div class="field-label auto-label">Centre</div>
-              <input type="text" id="mamc-centre" placeholder="from the site data" oninput="mamcRefresh()">
+              <input type="text" id="mamc-centre" placeholder="from the site data" oninput="mamcRefresh()" onchange="mamcOnCentreBlur()" onblur="mamcOnCentreBlur()">
             </div>
           </div>
 
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="secondary-btn" type="button" id="mamc-w3w-btn" style="margin:0;flex:1 1 200px" onclick="mamcOpenW3w()">Open what3words Map</button>
-            <button class="secondary-btn" type="button" id="mamc-w3w-sync" style="margin:0;flex:1 1 200px" onclick="mamcW3wToCentre(true)">Set Centre From These Words</button>
+            <button class="secondary-btn" type="button" id="mamc-w3w-sync" style="margin:0;flex:1 1 200px" onclick="mamcPasteCoords()">Paste Coordinates</button>
           </div>
           <div id="mamc-w3w-status" style="display:none;font-family:var(--mono);font-size:11px;line-height:1.6;padding:9px 12px;border-radius:7px;background:var(--oc-accent-canvas);border:1.5px solid var(--oc-accent-line);color:var(--oc-accent-ink)"></div>
 
@@ -1598,8 +1598,11 @@
             The centre and what3words come from the estate's stored coordinate, which for most estates is
             derived from a postcode rather than the boundary. <strong>Edit both to the actual area of operation</strong>
             before sending &mdash; this is what tells a low-flying crew where you will be.
-            Open the map, drag onto the ground you will be flying over, and paste those three words back here:
-            the centre is then taken <strong>from the square you picked</strong>, not from the postcode.
+            Open the map, drag onto the ground you will be flying over, then bring back <strong>both</strong>:
+            the three words into the box on the left, and the coordinate what3words shows beside them via
+            <strong>Paste Coordinates</strong>. The centre is then the square you picked, not the postcode.
+            what3words will not let a phone convert words to a coordinate on its own, which is why it is a copy
+            rather than a lookup.
           </div>
 
           <div>
@@ -10145,11 +10148,17 @@ function mamcBuild() {
 }
 
 // ── what3words ───────────────────────────────────────────────────────────
-// The estate's stored square is a starting point, not the flying area. The
-// map button opens what3words at that square so the pilot can drag onto the
-// ground they will actually be over, and the words they come back with then
-// drive the coordinate rather than the other way round.
-const W3W_WORD = '[a-z\\u00C0-\\u024F\\u0400-\\u04FF\']+';
+// The estate's stored square is a starting point, not the flying area, so the
+// map button opens what3words there and the pilot drags onto the ground they
+// will actually be over.
+//
+// what3words does not answer cross-origin browser requests - both their public
+// map endpoint and their API host refuse the fetch outright - so a phone
+// cannot turn three words into a coordinate on its own, with or without a key.
+// What it CAN do is take the coordinate what3words already shows beside the
+// square. So the square the pilot picks still drives the centre; it arrives by
+// paste rather than by lookup, and that path never fails in a field.
+const W3W_WORD = '[a-z\u00C0-\u024F\u0400-\u04FF\']+';
 const W3W_RE   = new RegExp('^' + W3W_WORD + '\\.' + W3W_WORD + '\\.' + W3W_WORD + '$', 'i');
 
 function mamcW3wWords() {
@@ -10168,8 +10177,8 @@ function mamcW3wStatus(html, tone) {
   el.style.color       = bad ? 'var(--oc-danger-ink)'  : 'var(--oc-accent-ink)';
 }
 
-// Opens the square if we have valid words, otherwise the estate's coordinate,
-// otherwise the map itself. what3words resolves /lat,lon to the square there.
+// Opens the square if we have valid words, otherwise the estate's coordinate.
+// what3words resolves /lat,lon to the square that contains it.
 function mamcW3wHref() {
   const w = mamcW3wWords();
   if (W3W_RE.test(w)) return 'https://what3words.com/' + encodeURIComponent(w);
@@ -10181,79 +10190,129 @@ function mamcW3wHref() {
 
 function mamcOpenW3w() {
   window.open(mamcW3wHref(), '_blank', 'noopener,noreferrer');
-  mamcW3wStatus('Pick the square over your actual area of operation, copy the three words back into the box above, ' +
-                'then tap <strong>Set Centre From These Words</strong>.');
+  mamcW3wStatus('On the map: tap the square over your actual area of operation, copy its <strong>three words</strong> into the ' +
+                'what3words box, then copy the <strong>coordinates</strong> what3words shows beside them and tap ' +
+                '<strong>Paste Coordinates</strong>. The centre then comes from the square you picked.');
 }
 
-// words -> latitude/longitude. There is no key baked into this file, so it
-// tries the public map endpoint what3words.com itself uses, and an API key
-// only if one has been stored on the device. Either can fail on a bad signal,
-// so failure says plainly what to do by hand rather than leaving a stale
-// coordinate looking authoritative.
-async function mamcW3wLookup(words) {
-  const key = (localStorage.getItem('SKY_W3W_KEY') || '').trim();
-  const urls = [];
-  if (key) urls.push(`https://api.what3words.com/v3/convert-to-coordinates?words=${encodeURIComponent(words)}&key=${encodeURIComponent(key)}`);
-  urls.push(`https://mapapi.what3words.com/api/convert-to-coordinates?words=${encodeURIComponent(words)}`);
-  let lastErr = 'no response';
-  for (const url of urls) {
-    try {
-      const r = await fetch(url, { cache: 'no-store' });
-      if (!r.ok) { lastErr = 'HTTP ' + r.status; continue; }
-      const j = await r.json();
-      const c = j && (j.coordinates || j.coords || j);
-      const lat = parseFloat(c && (c.lat ?? c.latitude));
-      const lon = parseFloat(c && (c.lng ?? c.lon ?? c.longitude));
-      if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
-      lastErr = 'no coordinates in the reply';
-    } catch (err) { lastErr = err.message || String(err); }
+// Accepts anything what3words, Google Maps or a phone is likely to hand over:
+// 55.1234, -3.9876   |   55.1234 -3.9876   |   N 55.1234 W 3.9876
+// 55°7'24" N, 3°59'15" W   |   55 7 24 N, 3 59 15 W
+// Returns null rather than guessing when it cannot read the text.
+function mamcParseLatLon(text) {
+  if (!text) return null;
+  let t = String(text).replace(/[\u2032\u2019']/g, "'").replace(/[\u2033\u201D"]/g, '"')
+                      .replace(/[\u00B0\u00BA]/g, ' deg ').replace(/\s+/g, ' ').trim();
+  // Degrees / minutes / seconds, either order of hemisphere letter.
+  const dmsOne = "([NSEW])?\\s*(\\d{1,3}(?:\\.\\d+)?)(?:\\s*deg)?[\\s]*(\\d{1,2})?[']?[\\s]*(\\d{1,2}(?:\\.\\d+)?)?[\"]?\\s*([NSEW])?";
+  const dms = new RegExp('^' + dmsOne + '\\s*[,;/]?\\s*' + dmsOne + '$', 'i');
+  const m = t.match(dms);
+  if (m && (m[3] || m[8] || /[NSEW]/i.test(t))) {
+    // Decimal degrees cannot also carry minutes or seconds.
+    const mixed = (/\./.test(m[2]) && (m[3] || m[4])) || (/\./.test(m[7]) && (m[8] || m[9]));
+    if (mixed) return null;
+    const one = (pre, d, mi, se, post) => {
+      const hemi = (post || pre || '').toUpperCase();
+      let v = parseFloat(d) + (parseFloat(mi || 0) / 60) + (parseFloat(se || 0) / 3600);
+      if (hemi === 'S' || hemi === 'W') v = -v;
+      return { v, hemi };
+    };
+    const a = one(m[1], m[2], m[3], m[4], m[5]);
+    const b = one(m[6], m[7], m[8], m[9], m[10]);
+    // Whichever carries N/S is the latitude; with no letters at all, first is.
+    let lat = a.v, lon = b.v;
+    if (/[EW]/.test(a.hemi) || /[NS]/.test(b.hemi)) { lat = b.v; lon = a.v; }
+    if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) return { lat, lon };
+    return null;
   }
-  throw new Error(lastErr);
+  // Plain decimal pair.
+  const dec = t.match(/^(-?\d{1,3}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)$/);
+  if (dec) {
+    const lat = parseFloat(dec[1]), lon = parseFloat(dec[2]);
+    if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) return { lat, lon };
+  }
+  return null;
 }
 
-let mamcW3wBusy = false;
-let mamcW3wLast = '';
 let mamcLastEstate = '';
 
-async function mamcW3wToCentre(manual) {
+// Writes a parsed coordinate into Centre, in the DMS the notification uses.
+function mamcSetCentre(lat, lon, fromWhat) {
+  const cEl = ocEl('mamc-centre');
+  if (!cEl) return;
+  cEl.value = mamcDms(lat, lon);
+  cEl.dataset.touched = '1';
+  cEl.dataset.fromW3w = '1';
   const words = mamcW3wWords();
-  if (!W3W_RE.test(words)) {
-    if (manual) mamcW3wStatus('That is not a what3words address. It is three words separated by full stops, like <strong>filled.count.soap</strong>.', 'bad');
-    return;
-  }
-  if (mamcW3wBusy) return;
-  if (!navigator.onLine) {
-    mamcW3wStatus('No connection, so the words cannot be turned into a coordinate here. Open the what3words map when you have signal, ' +
-                  'or type the coordinate into <strong>Centre</strong> by hand.', 'bad');
-    return;
-  }
-  mamcW3wBusy = true;
-  mamcW3wStatus(`Looking up ///${ocEsc(words)}…`);
-  try {
-    const { lat, lon } = await mamcW3wLookup(words);
-    const cEl = ocEl('mamc-centre');
-    if (cEl) { cEl.value = mamcDms(lat, lon); cEl.dataset.touched = '1'; cEl.dataset.fromW3w = '1'; }
-    mamcW3wLast = words;
-    mamcW3wStatus(`Centre set from <strong>///${ocEsc(words)}</strong> &mdash; ${ocEsc(mamcDms(lat, lon))} ` +
-                  `(${lat.toFixed(5)}, ${lon.toFixed(5)}). This is what goes in the notification.`);
-    mamcRefresh();
-  } catch (err) {
-    mamcW3wStatus(`Could not turn ///${ocEsc(words)} into a coordinate (${ocEsc(err.message)}). ` +
-                  'Open the what3words map, read the coordinate off the square and type it into <strong>Centre</strong>.', 'bad');
-  } finally {
-    mamcW3wBusy = false;
-  }
+  const src = fromWhat === 'paste' && W3W_RE.test(words) ? ` for <strong>///${ocEsc(words)}</strong>` : '';
+  mamcW3wStatus(`Centre set${src} &mdash; ${ocEsc(mamcDms(lat, lon))} (${lat.toFixed(5)}, ${lon.toFixed(5)}). ` +
+                'This is the coordinate that goes in the notification.');
+  mamcRefresh();
 }
 
-// Typing the words is enough - once a complete address is in the box, the
-// centre follows it without another tap.
-let mamcW3wTimer = null;
+// The button. Reads the clipboard where the browser allows it, and otherwise
+// opens a box to paste into - iOS in particular will not hand over the
+// clipboard silently.
+async function mamcPasteCoords() {
+  let text = '';
+  try {
+    if (navigator.clipboard && navigator.clipboard.readText) text = await navigator.clipboard.readText();
+  } catch (err) { text = ''; }
+  if (text) {
+    const c = mamcParseLatLon(text);
+    if (c) { mamcSetCentre(c.lat, c.lon, 'paste'); return; }
+    mamcCoordBox(`That clipboard did not read as a coordinate (&ldquo;${ocEsc(text.slice(0, 60))}&rdquo;). Paste it here instead:`);
+    return;
+  }
+  mamcCoordBox('Paste the coordinate what3words shows for the square:');
+}
+
+// Visible paste box - always available, never depends on clipboard permission.
+function mamcCoordBox(prompt) {
+  mamcW3wStatus(
+    `${prompt}<br>` +
+    `<input type="text" id="mamc-coord-paste" placeholder="55.123456, -3.987654" ` +
+    `style="width:100%;margin-top:8px;font-family:var(--mono);font-size:12px;padding:9px 11px;` +
+    `border:1.5px solid var(--oc-accent-line);border-radius:7px" oninput="mamcCoordBoxInput()">` +
+    `<div id="mamc-coord-paste-msg" style="margin-top:6px"></div>`);
+  const el = ocEl('mamc-coord-paste');
+  if (el) el.focus();
+}
+
+function mamcCoordBoxInput() {
+  const el  = ocEl('mamc-coord-paste');
+  const msg = ocEl('mamc-coord-paste-msg');
+  if (!el || !msg) return;
+  const c = mamcParseLatLon(el.value);
+  if (!el.value.trim()) { msg.textContent = ''; return; }
+  if (!c) { msg.innerHTML = '<span style="color:var(--danger)">Not readable yet &mdash; decimal like 55.123456, -3.987654 works best.</span>'; return; }
+  mamcSetCentre(c.lat, c.lon, 'paste');
+}
+
+// Typing a coordinate straight into Centre is normalised to DMS on the way
+// out, so a pasted decimal pair does not reach the notification raw.
+function mamcOnCentreBlur() {
+  const cEl = ocEl('mamc-centre');
+  if (!cEl) return;
+  const v = cEl.value.trim();
+  if (!v || /^\d{1,3}\u00B0/.test(v)) { mamcRefresh(); return; }
+  const c = mamcParseLatLon(v);
+  if (c) mamcSetCentre(c.lat, c.lon, 'typed');
+  else mamcRefresh();
+}
+
 function mamcOnW3wInput() {
   mamcRefresh();
   const words = mamcW3wWords();
-  if (mamcW3wTimer) clearTimeout(mamcW3wTimer);
-  if (!W3W_RE.test(words) || words === mamcW3wLast) return;
-  mamcW3wTimer = setTimeout(() => mamcW3wToCentre(false), 700);
+  if (!words) { mamcW3wStatus(''); return; }
+  if (W3W_RE.test(words)) {
+    const cEl = ocEl('mamc-centre');
+    const stale = cEl && !cEl.dataset.fromW3w;
+    mamcW3wStatus(stale
+      ? `<strong>///${ocEsc(words)}</strong> is in the notification. The centre beside it is still the estate coordinate &mdash; ` +
+        'open the map, copy the coordinate what3words shows for this square and tap <strong>Paste Coordinates</strong> so the two agree.'
+      : `<strong>///${ocEsc(words)}</strong> is in the notification.`);
+  }
 }
 
 function mamcRefresh() {
