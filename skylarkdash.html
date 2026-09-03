@@ -1148,6 +1148,48 @@
   #panel-home select:focus,
   #setup-card input:focus { border-color:var(--oc-accent-line); outline:none; }
 
+  /* ── Home: a button has to look pressable ──
+     Everything on this screen was the same pale yellow, so a button and a
+     line of text read the same. Text surfaces keep the pale canvas; anything
+     you press takes a stronger fill, a solid edge and a shadow, and moves
+     when you press it. Two tiers: the primary action is one shade up again.
+     The red NOTAM button is deliberately outside all of this. */
+  #panel-home .secondary-btn,
+  #setup-card .secondary-btn {
+    background:var(--oc-accent-btn);
+    color:var(--oc-accent-deep);
+    border:2px solid var(--oc-accent-strong);
+    box-shadow:0 2px 0 var(--oc-accent-strong);
+    font-weight:700;
+    transition:background .12s, box-shadow .12s, transform .12s;
+  }
+  #panel-home .secondary-btn:hover,
+  #setup-card .secondary-btn:hover {
+    background:var(--oc-accent-fill);
+    border-color:var(--oc-accent-strong);
+    color:var(--oc-accent-deep);
+  }
+  #panel-home .submit-btn,
+  #setup-card .submit-btn {
+    background:var(--oc-accent-fill);
+    border-color:var(--oc-accent-strong);
+    border-left-color:var(--oc-accent-strong);
+    box-shadow:0 3px 0 var(--oc-accent-strong);
+    font-weight:700;
+  }
+  #panel-home .submit-btn:hover:not(:disabled),
+  #setup-card .submit-btn:hover:not(:disabled) { background:var(--oc-accent-btn); }
+  /* Pressed: the shadow collapses under the button. */
+  #panel-home .secondary-btn:active,
+  #setup-card .secondary-btn:active,
+  #panel-home .submit-btn:active:not(:disabled),
+  #setup-card .submit-btn:active:not(:disabled) {
+    transform:translateY(2px);
+    box-shadow:0 0 0 var(--oc-accent-strong);
+  }
+  /* The map's own controls sit on imagery, where white reads as a control. */
+  #panel-home #mamc-map button { box-shadow:0 1px 3px rgba(0,0,0,.3); }
+
   /* ── Cache panel ── */
   .cache-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
   .cache-row > div { flex:1; min-width:180px; }
@@ -1577,20 +1619,22 @@
             </div>
           </div>
 
+          <!-- Coordinate first: it is what the map produces, and what the
+               words are then looked up from. -->
           <div class="two-col">
-            <div>
-              <div class="field-label">what3words</div>
-              <input type="text" id="mamc-w3w" placeholder="what.three.words" oninput="mamcOnW3wInput()">
-            </div>
             <div>
               <div class="field-label auto-label">Centre</div>
               <input type="text" id="mamc-centre" placeholder="from the site data" oninput="mamcRefresh()" onchange="mamcOnCentreBlur()" onblur="mamcOnCentreBlur()">
+            </div>
+            <div>
+              <div class="field-label">what3words</div>
+              <input type="text" id="mamc-w3w" placeholder="what.three.words" oninput="mamcOnW3wInput()">
             </div>
           </div>
 
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="secondary-btn" type="button" id="mamc-map-btn" style="margin:0;flex:1 1 220px" onclick="mamcMapToggle()">Pick the Centre on a Map</button>
-            <button class="secondary-btn" type="button" id="mamc-w3w-btn" style="margin:0;flex:1 1 220px" onclick="mamcOpenW3w()">Open what3words for the Words</button>
+            <button class="secondary-btn" type="button" id="mamc-w3w-btn" style="margin:0;flex:1 1 220px" onclick="mamcOpenW3w()">Find the what3words for the Centre</button>
           </div>
 
           <!-- Map picker. what3words never shows a coordinate - not in the app,
@@ -1624,9 +1668,10 @@
             derived from a postcode rather than the boundary. <strong>Edit both to the actual area of operation</strong>
             before sending &mdash; this is what tells a low-flying crew where you will be.
             <strong>Pick the Centre on a Map</strong> drops a pin on the ground you will actually be flying over,
-            and the yellow circle shows exactly what your radius covers. what3words never displays a coordinate &mdash;
-            not in the app, not on the website &mdash; so the words and the coordinate come from different places:
-            type or paste the three words into the box on the left, and set the coordinate from the map.
+            and the yellow circle shows exactly what your radius covers. Then
+            <strong>Find the what3words for the Centre</strong> opens the square that pin lands in, so you can copy its
+            three words back. what3words never shows a coordinate and will not answer another site, so that last hop is a
+            copy rather than something Skylark can fill in for you.
           </div>
 
           <div>
@@ -10201,9 +10246,23 @@ function mamcW3wStatus(html, tone) {
   el.style.color       = bad ? 'var(--oc-danger-ink)'  : 'var(--oc-accent-ink)';
 }
 
-// Opens the square if we have valid words, otherwise the estate's coordinate.
-// what3words resolves /lat,lon to the square that contains it.
+// Coordinate to words is the one direction that works without a key: what3words
+// resolves /lat,lon by redirecting to the square that contains it, so the pin
+// goes straight to its own three words. Reading that answer back still needs a
+// person - the redirect is cross-origin, so this page cannot see where it landed.
+// The coordinate in Centre wins, because that is the pin; the words are only the
+// fallback for when there is no coordinate yet.
 function mamcW3wHref() {
+  const cEl = ocEl('mamc-centre');
+  const c = mamcParseLatLon(ocVal('mamc-centre'));
+  if (c) {
+    // Prefer the exact point behind the rounded display, when it is still the
+    // one on show.
+    const exact = cEl && cEl.dataset.exactFor === cEl.value
+      ? { lat: parseFloat(cEl.dataset.lat), lon: parseFloat(cEl.dataset.lon) } : null;
+    const use = exact && !isNaN(exact.lat) && !isNaN(exact.lon) ? exact : c;
+    return `https://what3words.com/${use.lat.toFixed(6)},${use.lon.toFixed(6)}`;
+  }
   const w = mamcW3wWords();
   if (W3W_RE.test(w)) return 'https://what3words.com/' + encodeURIComponent(w);
   const e = (typeof estatesData === 'object' && estatesData[ocVal('mamc-estate')]) || {};
@@ -10212,10 +10271,22 @@ function mamcW3wHref() {
   return 'https://what3words.com/';
 }
 
+// The button says which way round it is about to work.
+function mamcW3wBtnLabel() {
+  const btn = ocEl('mamc-w3w-btn');
+  if (!btn) return;
+  btn.textContent = mamcParseLatLon(ocVal('mamc-centre'))
+    ? 'Find the what3words for the Centre'
+    : 'Open what3words';
+}
+
 function mamcOpenW3w() {
   window.open(mamcW3wHref(), '_blank', 'noopener,noreferrer');
-  mamcW3wStatus('what3words gives you the <strong>words</strong> only &mdash; it never shows a coordinate. Copy the three words ' +
-                'into the box on the left, and set the coordinate with <strong>Pick the Centre on a Map</strong>.');
+  mamcW3wStatus(mamcParseLatLon(ocVal('mamc-centre'))
+    ? 'what3words has opened on <strong>the square containing your centre</strong>. Copy the three words it shows and paste ' +
+      'them into the what3words box. It cannot hand them back automatically &mdash; what3words does not answer other sites.'
+    : 'Set a coordinate first with <strong>Pick the Centre on a Map</strong>, then this button opens the square that ' +
+      'contains it and gives you its three words.');
 }
 
 // Accepts anything what3words, Google Maps or a phone is likely to hand over:
@@ -10266,6 +10337,13 @@ function mamcSetCentre(lat, lon, fromWhat) {
   cEl.value = mamcDms(lat, lon);
   cEl.dataset.touched = '1';
   cEl.dataset.fromW3w = '1';
+  // The field shows whole seconds, which is what the notification template
+  // wants but is about 15 m of slack - several what3words squares. Keep the
+  // exact point beside it so the words lookup lands on the square that was
+  // actually pinned.
+  cEl.dataset.lat = String(lat);
+  cEl.dataset.lon = String(lon);
+  cEl.dataset.exactFor = cEl.value;
   const words = mamcW3wWords();
   const how = fromWhat === 'map' ? ' from the pin on the map' : '';
   const wds = W3W_RE.test(words) ? ` It sits alongside <strong>///${ocEsc(words)}</strong> in the notification.` : '';
@@ -10568,6 +10646,7 @@ function mamcRefresh() {
     const r = parseFloat(e.notification_radius_nm);
     if (isFinite(r) && r > 0) rEl.value = r;
   }
+  mamcW3wBtnLabel();
   if (ocEl('mamc-map-wrap') && ocEl('mamc-map-wrap').style.display !== 'none') mamcMapDraw();
   const rNote = ocEl('mamc-radius-note');
   if (rNote) {
