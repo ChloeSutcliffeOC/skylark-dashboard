@@ -945,13 +945,16 @@
     font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--oc-accent-deep);
-    opacity: 0.22;
+    /* Yellow, not ink. These followed --oc-accent-deep, so turning that
+       black left them reading as grey. They are brand furniture, so they
+       take the brand colour and a higher opacity to carry it. */
+    color: var(--oc-accent-fill);
+    opacity: 0.85;
     transition: color 0.25s, opacity 0.25s;
   }
-  #panel-indicator.pi-onsite .pi-label    { opacity: 0.26; }
-  #panel-indicator.pi-preflight .pi-label { opacity: 0.26; }
-  #panel-indicator.pi-debrief .pi-label   { opacity: 0.26; }
+  #panel-indicator.pi-onsite .pi-label    { opacity: 0.95; }
+  #panel-indicator.pi-preflight .pi-label { opacity: 0.95; }
+  #panel-indicator.pi-debrief .pi-label   { opacity: 0.95; }
 
   /* -- Header action buttons -- */
   .hdr-btn {
@@ -1513,8 +1516,11 @@
     .mode-card-title { font-size:16px; }
   }
 
+  /* Home and Open sat at 0.22 back when the label was brown ink. In yellow
+     they need the same weight as the rest, or the right-hand gutter reads as
+     a smudge next to a solid SKYLARK on the left. */
   #panel-indicator.pi-home .pi-label,
-  #panel-indicator.pi-open .pi-label { opacity:0.22; }
+  #panel-indicator.pi-open .pi-label { opacity:0.85; }
 
 </style>
 </head>
