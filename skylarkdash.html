@@ -1589,8 +1589,33 @@
           </div>
 
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="secondary-btn" type="button" id="mamc-w3w-btn" style="margin:0;flex:1 1 200px" onclick="mamcOpenW3w()">Open what3words Map</button>
-            <button class="secondary-btn" type="button" id="mamc-w3w-sync" style="margin:0;flex:1 1 200px" onclick="mamcPasteCoords()">Paste Coordinates</button>
+            <button class="secondary-btn" type="button" id="mamc-map-btn" style="margin:0;flex:1 1 220px" onclick="mamcMapToggle()">Pick the Centre on a Map</button>
+            <button class="secondary-btn" type="button" id="mamc-w3w-btn" style="margin:0;flex:1 1 220px" onclick="mamcOpenW3w()">Open what3words for the Words</button>
+          </div>
+
+          <!-- Map picker. what3words never shows a coordinate - not in the app,
+               not on the website - and refuses browser lookups, so the coordinate
+               cannot come from there at all. It comes from a pin instead. -->
+          <div id="mamc-map-wrap" style="display:none">
+            <div id="mamc-map" style="position:relative;width:100%;height:340px;overflow:hidden;border:2px solid var(--oc-accent-line);border-radius:9px;background:#e6e4dd;touch-action:none;cursor:grab;user-select:none">
+              <div id="mamc-map-pane" style="position:absolute;left:0;top:0;width:100%;height:100%"></div>
+              <div id="mamc-map-ring" style="position:absolute;left:50%;top:50%;width:0;height:0;transform:translate(-50%,-50%);border:2px solid var(--oc-accent-strong);background:rgba(234,179,8,.10);border-radius:50%;pointer-events:none"></div>
+              <div style="position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;pointer-events:none">
+                <div style="position:absolute;left:16px;top:0;width:2px;height:34px;background:#b91c1c"></div>
+                <div style="position:absolute;top:16px;left:0;height:2px;width:34px;background:#b91c1c"></div>
+                <div style="position:absolute;left:11px;top:11px;width:12px;height:12px;border:2px solid #b91c1c;border-radius:50%"></div>
+              </div>
+              <div style="position:absolute;right:9px;top:9px;display:flex;flex-direction:column;gap:6px">
+                <button type="button" onclick="mamcMapZoom(1)" style="width:36px;height:36px;font-size:20px;line-height:1;font-weight:700;border:1.5px solid var(--oc-accent-line);border-radius:7px;background:#fff;color:var(--oc-accent-ink);cursor:pointer">+</button>
+                <button type="button" onclick="mamcMapZoom(-1)" style="width:36px;height:36px;font-size:20px;line-height:1;font-weight:700;border:1.5px solid var(--oc-accent-line);border-radius:7px;background:#fff;color:var(--oc-accent-ink);cursor:pointer">&minus;</button>
+              </div>
+              <button type="button" id="mamc-map-layer" onclick="mamcMapLayer()" style="position:absolute;left:9px;top:9px;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.04em;padding:8px 12px;border:1.5px solid var(--oc-accent-line);border-radius:7px;background:#fff;color:var(--oc-accent-ink);cursor:pointer">SATELLITE</button>
+              <div id="mamc-map-attr" style="position:absolute;right:0;bottom:0;font-size:9px;line-height:1.4;background:rgba(255,255,255,.82);padding:2px 6px;color:#333"></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap">
+              <div id="mamc-map-readout" style="flex:1 1 220px;font-family:var(--mono);font-size:11.5px;line-height:1.55;color:var(--oc-accent-ink)"></div>
+              <button class="secondary-btn" type="button" id="mamc-map-use" style="margin:0;flex:0 1 auto" onclick="mamcMapUse()">Use This Point As the Centre</button>
+            </div>
           </div>
           <div id="mamc-w3w-status" style="display:none;font-family:var(--mono);font-size:11px;line-height:1.6;padding:9px 12px;border-radius:7px;background:var(--oc-accent-canvas);border:1.5px solid var(--oc-accent-line);color:var(--oc-accent-ink)"></div>
 
@@ -1598,11 +1623,10 @@
             The centre and what3words come from the estate's stored coordinate, which for most estates is
             derived from a postcode rather than the boundary. <strong>Edit both to the actual area of operation</strong>
             before sending &mdash; this is what tells a low-flying crew where you will be.
-            Open the map, drag onto the ground you will be flying over, then bring back <strong>both</strong>:
-            the three words into the box on the left, and the coordinate what3words shows beside them via
-            <strong>Paste Coordinates</strong>. The centre is then the square you picked, not the postcode.
-            what3words will not let a phone convert words to a coordinate on its own, which is why it is a copy
-            rather than a lookup.
+            <strong>Pick the Centre on a Map</strong> drops a pin on the ground you will actually be flying over,
+            and the yellow circle shows exactly what your radius covers. what3words never displays a coordinate &mdash;
+            not in the app, not on the website &mdash; so the words and the coordinate come from different places:
+            type or paste the three words into the box on the left, and set the coordinate from the map.
           </div>
 
           <div>
@@ -10190,9 +10214,8 @@ function mamcW3wHref() {
 
 function mamcOpenW3w() {
   window.open(mamcW3wHref(), '_blank', 'noopener,noreferrer');
-  mamcW3wStatus('On the map: tap the square over your actual area of operation, copy its <strong>three words</strong> into the ' +
-                'what3words box, then copy the <strong>coordinates</strong> what3words shows beside them and tap ' +
-                '<strong>Paste Coordinates</strong>. The centre then comes from the square you picked.');
+  mamcW3wStatus('what3words gives you the <strong>words</strong> only &mdash; it never shows a coordinate. Copy the three words ' +
+                'into the box on the left, and set the coordinate with <strong>Pick the Centre on a Map</strong>.');
 }
 
 // Accepts anything what3words, Google Maps or a phone is likely to hand over:
@@ -10244,27 +10267,11 @@ function mamcSetCentre(lat, lon, fromWhat) {
   cEl.dataset.touched = '1';
   cEl.dataset.fromW3w = '1';
   const words = mamcW3wWords();
-  const src = fromWhat === 'paste' && W3W_RE.test(words) ? ` for <strong>///${ocEsc(words)}</strong>` : '';
-  mamcW3wStatus(`Centre set${src} &mdash; ${ocEsc(mamcDms(lat, lon))} (${lat.toFixed(5)}, ${lon.toFixed(5)}). ` +
-                'This is the coordinate that goes in the notification.');
+  const how = fromWhat === 'map' ? ' from the pin on the map' : '';
+  const wds = W3W_RE.test(words) ? ` It sits alongside <strong>///${ocEsc(words)}</strong> in the notification.` : '';
+  mamcW3wStatus(`Centre set${how} &mdash; ${ocEsc(mamcDms(lat, lon))} (${lat.toFixed(5)}, ${lon.toFixed(5)}). ` +
+                `This is the coordinate a low-flying crew will be given.${wds}`);
   mamcRefresh();
-}
-
-// The button. Reads the clipboard where the browser allows it, and otherwise
-// opens a box to paste into - iOS in particular will not hand over the
-// clipboard silently.
-async function mamcPasteCoords() {
-  let text = '';
-  try {
-    if (navigator.clipboard && navigator.clipboard.readText) text = await navigator.clipboard.readText();
-  } catch (err) { text = ''; }
-  if (text) {
-    const c = mamcParseLatLon(text);
-    if (c) { mamcSetCentre(c.lat, c.lon, 'paste'); return; }
-    mamcCoordBox(`That clipboard did not read as a coordinate (&ldquo;${ocEsc(text.slice(0, 60))}&rdquo;). Paste it here instead:`);
-    return;
-  }
-  mamcCoordBox('Paste the coordinate what3words shows for the square:');
 }
 
 // Visible paste box - always available, never depends on clipboard permission.
@@ -10301,6 +10308,217 @@ function mamcOnCentreBlur() {
   else mamcRefresh();
 }
 
+// ── Map picker ───────────────────────────────────────────────────────────
+// A plain Web Mercator tile map, hand-rolled so the file stays self-contained.
+// It exists because what3words cannot give a coordinate to a browser by any
+// route: the app and the website show only the words, and both of their
+// endpoints refuse cross-origin requests. A pin does not depend on any of that,
+// and the radius ring shows at a glance whether the circle covers the estate.
+const MAMC_MAP_LAYERS = {
+  map: { url: z => `https://tile.openstreetmap.org/{z}/{x}/{y}.png`, max: 19,
+         attr: '&copy; OpenStreetMap contributors', next: 'SATELLITE' },
+  sat: { url: z => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}`, max: 19,
+         attr: 'Imagery &copy; Esri, Maxar, Earthstar Geographics', next: 'MAP' },
+};
+
+const mamcMap = { lat: 55, lon: -3, z: 14, layer: 'map', ready: false, drag: null, tiles: {} };
+let mamcMapRetry = 0;
+
+const mMercY = lat => {
+  const r = Math.max(-85.05112878, Math.min(85.05112878, lat)) * Math.PI / 180;
+  return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2;
+};
+const mMercLat = y => {
+  const n = Math.PI * (1 - 2 * y);
+  return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+};
+// World pixel coordinates at the current zoom.
+const mWorld = z => 256 * Math.pow(2, z);
+const mPxX = (lon, z) => (lon + 180) / 360 * mWorld(z);
+const mPxY = (lat, z) => mMercY(lat) * mWorld(z);
+const mLonPx = (x, z) => x / mWorld(z) * 360 - 180;
+const mLatPx = (y, z) => mMercLat(y / mWorld(z));
+
+// Metres per pixel, which is what turns the radius in nautical miles into a
+// ring the right size on screen.
+const mMetresPerPx = (lat, z) => 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, z);
+
+function mamcMapToggle() {
+  const wrap = ocEl('mamc-map-wrap');
+  const btn  = ocEl('mamc-map-btn');
+  if (!wrap) return;
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? '' : 'none';
+  if (btn) btn.textContent = open ? 'Hide the Map' : 'Pick the Centre on a Map';
+  if (!open) return;
+  // Start on whatever the Centre already says, falling back to the estate.
+  const c = mamcParseLatLon(ocVal('mamc-centre'));
+  if (c) { mamcMap.lat = c.lat; mamcMap.lon = c.lon; }
+  else {
+    const e = (typeof estatesData === 'object' && estatesData[ocVal('mamc-estate')]) || {};
+    const lat = parseFloat(e.lat), lon = parseFloat(e.lon);
+    if (!isNaN(lat) && !isNaN(lon)) { mamcMap.lat = lat; mamcMap.lon = lon; }
+  }
+  if (!mamcMap.ready) mamcMapBind();
+  mamcMapFit();
+  mamcMapDraw();
+  if (!navigator.onLine) {
+    mamcCoordBox('No connection, so the map tiles will not load. If you already have a coordinate, type it here:');
+  }
+}
+
+function mamcMapBind() {
+  const el = ocEl('mamc-map');
+  if (!el) return;
+  mamcMap.ready = true;
+
+  el.addEventListener('pointerdown', ev => {
+    if (ev.target.tagName === 'BUTTON') return;
+    el.setPointerCapture(ev.pointerId);
+    mamcMap.drag = { x: ev.clientX, y: ev.clientY, lat: mamcMap.lat, lon: mamcMap.lon };
+    el.style.cursor = 'grabbing';
+  });
+  el.addEventListener('pointermove', ev => {
+    const d = mamcMap.drag;
+    if (!d) return;
+    const z = mamcMap.z;
+    const px = mPxX(d.lon, z) - (ev.clientX - d.x);
+    const py = mPxY(d.lat, z) - (ev.clientY - d.y);
+    mamcMap.lon = mLonPx(px, z);
+    mamcMap.lat = mLatPx(Math.max(0, Math.min(mWorld(z), py)), z);
+    mamcMapDraw();
+  });
+  const end = ev => {
+    if (!mamcMap.drag) return;
+    mamcMap.drag = null;
+    el.style.cursor = 'grab';
+    mamcMapDraw();
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('wheel', ev => { ev.preventDefault(); mamcMapZoom(ev.deltaY < 0 ? 1 : -1); }, { passive: false });
+  el.addEventListener('dblclick', ev => { ev.preventDefault(); mamcMapZoom(1); });
+
+  // A rotated phone, or the card finishing its open, changes the size under us.
+  if (typeof ResizeObserver === 'function') {
+    new ResizeObserver(() => {
+      const wrap = ocEl('mamc-map-wrap');
+      if (wrap && wrap.style.display !== 'none' && el.clientWidth) mamcMapDraw();
+    }).observe(el);
+  }
+}
+
+function mamcMapZoom(d) {
+  const max = MAMC_MAP_LAYERS[mamcMap.layer].max;
+  mamcMap.z = Math.max(4, Math.min(max, mamcMap.z + d));
+  mamcMapDraw();
+}
+
+function mamcMapLayer() {
+  mamcMap.layer = mamcMap.layer === 'map' ? 'sat' : 'map';
+  const btn = ocEl('mamc-map-layer');
+  if (btn) btn.textContent = MAMC_MAP_LAYERS[mamcMap.layer].next;
+  mamcMap.tiles = {};
+  const pane = ocEl('mamc-map-pane');
+  if (pane) pane.innerHTML = '';
+  mamcMapDraw();
+}
+
+function mamcMapTileUrl(z, x, y) {
+  const n = Math.pow(2, z);
+  const wrapX = ((x % n) + n) % n;
+  return MAMC_MAP_LAYERS[mamcMap.layer].url(z)
+    .replace('{z}', z).replace('{x}', wrapX).replace('{y}', y);
+}
+
+// Lays the visible tiles out in viewport pixels. Tiles are reused by key so a
+// pan does not refetch what is already on screen.
+function mamcMapDraw() {
+  const el   = ocEl('mamc-map');
+  const pane = ocEl('mamc-map-pane');
+  if (!el || !pane) return;
+  const W = el.clientWidth, H = el.clientHeight;
+  // The card may still be collapsed or mid-open, in which case the map has no
+  // size yet. Come back for it rather than drawing nothing and stopping.
+  if (!W || !H) {
+    if (mamcMapRetry < 40) { mamcMapRetry++; requestAnimationFrame(mamcMapDraw); }
+    return;
+  }
+  mamcMapRetry = 0;
+  const z = mamcMap.z;
+  const cx = mPxX(mamcMap.lon, z), cy = mPxY(mamcMap.lat, z);
+  const left = cx - W / 2, top = cy - H / 2;
+  const x0 = Math.floor(left / 256), x1 = Math.floor((left + W) / 256);
+  const y0 = Math.floor(top / 256),  y1 = Math.floor((top + H) / 256);
+  const maxY = Math.pow(2, z) - 1;
+
+  const seen = {};
+  for (let x = x0; x <= x1; x++) {
+    for (let y = y0; y <= y1; y++) {
+      if (y < 0 || y > maxY) continue;
+      const key = `${z}/${x}/${y}/${mamcMap.layer}`;
+      seen[key] = true;
+      let img = mamcMap.tiles[key];
+      if (!img) {
+        img = document.createElement('img');
+        img.alt = '';
+        img.decoding = 'async';
+        img.style.cssText = 'position:absolute;width:256px;height:256px;pointer-events:none';
+        img.src = mamcMapTileUrl(z, x, y);
+        img.onerror = () => { img.style.visibility = 'hidden'; };
+        mamcMap.tiles[key] = img;
+        pane.appendChild(img);
+      }
+      img.style.left = (x * 256 - left) + 'px';
+      img.style.top  = (y * 256 - top)  + 'px';
+    }
+  }
+  // Drop anything that has scrolled well out of view.
+  Object.keys(mamcMap.tiles).forEach(k => {
+    if (seen[k]) return;
+    const img = mamcMap.tiles[k];
+    if (img && img.parentNode) img.parentNode.removeChild(img);
+    delete mamcMap.tiles[k];
+  });
+
+  // The radius ring, in the same nautical miles the notification will carry.
+  const ring = ocEl('mamc-map-ring');
+  if (ring) {
+    const d = 2 * (mamcRadiusNm() * 1852) / mMetresPerPx(mamcMap.lat, z);
+    ring.style.width = ring.style.height = Math.min(d, 40000) + 'px';
+  }
+  const attr = ocEl('mamc-map-attr');
+  if (attr) attr.innerHTML = MAMC_MAP_LAYERS[mamcMap.layer].attr;
+
+  const out = ocEl('mamc-map-readout');
+  if (out) {
+    out.innerHTML = `<strong>${ocEsc(mamcDms(mamcMap.lat, mamcMap.lon))}</strong><br>` +
+      `${mamcMap.lat.toFixed(5)}, ${mamcMap.lon.toFixed(5)} &middot; zoom ${z} &middot; ` +
+      `ring ${mamcRadiusNm()} nm`;
+  }
+}
+
+// Opens at a zoom that frames the radius ring rather than an arbitrary one, so
+// the first thing the pilot sees is whether the circle covers the ground.
+function mamcMapFit() {
+  const el = ocEl('mamc-map');
+  const W = el ? el.clientWidth : 0;
+  if (!W) return;
+  const want = (mamcRadiusNm() * 1852 * 2) / (W * 0.62);   // metres per pixel
+  const max = MAMC_MAP_LAYERS[mamcMap.layer].max;
+  let best = 12, bestGap = Infinity;
+  for (let z = 4; z <= max; z++) {
+    const gap = Math.abs(Math.log(mMetresPerPx(mamcMap.lat, z) / want));
+    if (gap < bestGap) { bestGap = gap; best = z; }
+  }
+  mamcMap.z = best;
+}
+
+// Commits the crosshair to the Centre field.
+function mamcMapUse() {
+  mamcSetCentre(mamcMap.lat, mamcMap.lon, 'map');
+}
+
 function mamcOnW3wInput() {
   mamcRefresh();
   const words = mamcW3wWords();
@@ -10310,7 +10528,7 @@ function mamcOnW3wInput() {
     const stale = cEl && !cEl.dataset.fromW3w;
     mamcW3wStatus(stale
       ? `<strong>///${ocEsc(words)}</strong> is in the notification. The centre beside it is still the estate coordinate &mdash; ` +
-        'open the map, copy the coordinate what3words shows for this square and tap <strong>Paste Coordinates</strong> so the two agree.'
+        'use <strong>Pick the Centre on a Map</strong> so the two agree.'
       : `<strong>///${ocEsc(words)}</strong> is in the notification.`);
   }
 }
@@ -10350,6 +10568,7 @@ function mamcRefresh() {
     const r = parseFloat(e.notification_radius_nm);
     if (isFinite(r) && r > 0) rEl.value = r;
   }
+  if (ocEl('mamc-map-wrap') && ocEl('mamc-map-wrap').style.display !== 'none') mamcMapDraw();
   const rNote = ocEl('mamc-radius-note');
   if (rNote) {
     const nm = mamcRadiusNm();
