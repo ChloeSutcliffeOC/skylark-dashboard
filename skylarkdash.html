@@ -65,11 +65,14 @@
 
     /* neutral — was sky blue; now the same yellow as the Download 24 Hours
        button, so the forms carry one accent colour rather than two. */
+    /* Matches the home screen's stage cards exactly - pale ground, accent
+       line border, accent ink text. The earlier #fef08a fill read as too
+       bright once it was carrying whole cards rather than one button. */
     --oc-info-ink:    #6d6000;
-    --oc-info-strong: #6d6000;
-    --oc-info-line:   #6d6000;
-    --oc-info-tint:   #fef08a;
-    --oc-info-fill:   #fef08a;
+    --oc-info-strong: #fcd34d;
+    --oc-info-line:   #fcd34d;
+    --oc-info-tint:   #fefce8;
+    --oc-info-fill:   #fef9c3;
 
     /* auto-filled — violet. A MEANING, not a brand colour: it marks data
        Skylark fetched rather than data a person typed. Don't restyle. */
@@ -1004,8 +1007,8 @@
   .db-dump { border:2px dashed var(--oc-accent-line); border-radius:10px; background:var(--oc-accent-canvas); padding:14px; display:flex; flex-direction:column; gap:12px; }
   .db-dump.listening { border-style:solid; border-color:var(--oc-accent-strong); background:var(--oc-accent-tint); }
   .db-dump-title { font-family:var(--mono); font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.09em; color:var(--oc-accent-ink); }
-  .db-big-mic { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:17px 20px; border-radius:10px; border:2px solid var(--oc-accent-ink); background:var(--oc-accent-btn); color:var(--oc-accent-ink); font-family:var(--mono); font-size:13.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; cursor:pointer; transition:background .15s, border-color .15s; -webkit-tap-highlight-color:transparent; }
-  .db-big-mic:hover:not(:disabled) { background:var(--oc-accent-fill); border-color:var(--oc-accent-ink); }
+  .db-big-mic { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:17px 20px; border-radius:10px; border:2px solid var(--oc-accent-ink); background:var(--oc-accent-canvas); color:var(--oc-accent-ink); font-family:var(--mono); font-size:13.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; cursor:pointer; transition:background .15s, border-color .15s; -webkit-tap-highlight-color:transparent; }
+  .db-big-mic:hover:not(:disabled) { background:var(--oc-accent-tint); border-color:var(--oc-accent-ink); }
   .db-big-mic.listening { background:var(--danger); border-color:var(--danger); color:#fff; animation:micPulse 1.2s infinite; }
   .db-big-mic:disabled { opacity:.35; cursor:not-allowed; }
   #db-transcript { min-height:104px; font-size:15px; line-height:1.6; background:#fff; }
@@ -1113,7 +1116,7 @@
     text-transform:uppercase; letter-spacing:.08em;
     padding:3px 8px; border-radius:4px;
   }
-  .mode-tag-open { background:var(--oc-accent-fill); color:var(--oc-accent-ink);  border:1px solid var(--oc-accent-deep); }
+  .mode-tag-open { background:var(--oc-accent-canvas); color:var(--oc-accent-ink);  border:1px solid var(--oc-accent-line); }
   .mode-tag-pdra { background:var(--oc-ink);         color:var(--oc-accent-fill); border:1px solid var(--oc-ink); }
   .mode-card-desc  { font-size:13px; color:var(--muted); line-height:1.55; }
   .mode-card-steps { font-family:var(--mono); font-size:11px; color:var(--faint); line-height:1.6; }
@@ -1131,13 +1134,17 @@
   #setup-card .card-header { border-bottom:3px solid var(--oc-accent-line); }
   #panel-home .field-label { color:var(--oc-accent-ink); }
   /* Same treatment as the debrief mic: soft fill, brown ink, brown edge. */
+  /* Same three colours as a stage card, plus the stage's left bar so a
+     primary action still has some weight at this lightness. */
   #panel-home .submit-btn,
   #setup-card .submit-btn {
-    background:var(--oc-accent-btn); color:var(--oc-accent-ink);
-    border:2px solid var(--oc-accent-ink); padding:16px;
+    background:var(--oc-accent-canvas); color:var(--oc-accent-ink);
+    border:2px solid var(--oc-accent-line);
+    border-left:6px solid var(--oc-accent-strong);
+    padding:16px;
   }
   #panel-home .submit-btn:hover:not(:disabled),
-  #setup-card .submit-btn:hover:not(:disabled) { background:var(--oc-accent-fill); }
+  #setup-card .submit-btn:hover:not(:disabled) { background:var(--oc-accent-tint); }
   #panel-home select:focus,
   #setup-card input:focus { border-color:var(--oc-accent-line); outline:none; }
 
@@ -1151,7 +1158,7 @@
     border:2px solid var(--border); background:var(--surface2); color:var(--muted);
   }
   .cache-status.fresh { background:var(--oc-accent-canvas); border-color:var(--oc-accent-line); color:var(--oc-accent-ink); }
-  .cache-status.aging { background:var(--oc-accent-tint);   border-color:var(--oc-accent-ink);  color:var(--oc-accent-ink); }
+  .cache-status.aging { background:var(--oc-accent-tint);   border-color:var(--oc-accent-line); color:var(--oc-accent-ink); }
   .cache-status.busy  { background:var(--oc-accent-canvas); border-color:var(--oc-accent-line); color:var(--oc-accent-ink); }
   /* Left red on purpose: 'stale' here means the data you need is missing
      or failed to save, which is a flying decision, not a status note. */
@@ -1164,7 +1171,7 @@
     padding:9px 13px; font-size:13px; background:var(--surface);
   }
   .cache-item.fresh { border-left-color:var(--oc-accent-line); background:var(--oc-accent-canvas); }
-  .cache-item.aging { border-left-color:var(--oc-accent-ink);  background:var(--oc-accent-tint); }
+  .cache-item.aging { border-left-color:var(--oc-accent-strong); background:var(--oc-accent-tint); }
   .cache-item.stale { border-left-color:var(--danger); background:#fff6f6; }
   .cache-item-name { font-weight:600; }
   .cache-item-age  { font-family:var(--mono); font-size:11px; color:var(--muted); margin-left:auto; }
@@ -1196,8 +1203,8 @@
   }
   .oc-hour-time { font-size:12px; font-weight:700; letter-spacing:.02em; }
   .oc-hour.sel  {
-    background:var(--oc-accent-btn); border-color:var(--oc-accent-ink);
-    color:var(--oc-accent-ink); box-shadow:0 0 0 3px var(--oc-accent-tint);
+    background:var(--oc-accent-canvas); border-color:var(--oc-accent-strong);
+    color:var(--oc-accent-ink); box-shadow:0 0 0 3px var(--oc-accent-line);
   }
   .oc-hour.past { opacity:.4; }
   .oc-hour.past.sel { opacity:1; }
@@ -1350,7 +1357,7 @@
     border:1.5px solid var(--border); background:var(--surface2); color:var(--muted);
   }
   .mamc-deadline.visible { display:block; }
-  .mamc-deadline.ok   { background:var(--oc-ok-fill);     border-color:var(--oc-ok-strong);     color:var(--oc-ok-ink); }
+  .mamc-deadline.ok   { background:var(--oc-accent-canvas); border-color:var(--oc-accent-line); color:var(--oc-accent-ink); }
   .mamc-deadline.late { background:var(--oc-danger-tint); border-color:var(--oc-danger-strong); color:var(--oc-danger-ink); }
 
   /* ── Open Category: emergency procedures, one card per swipe ──
@@ -9083,15 +9090,18 @@ function ocLoadCacheForEstate(estate) {
   if (src) {
     if (!ocCache) {
       src.style.display = '';
-      src.style.background = '#fde8e8'; src.style.borderColor = '#991b1b'; src.style.color = '#6b1212';
+      src.style.background = 'var(--oc-danger-tint)'; src.style.borderColor = 'var(--oc-danger-strong)'; src.style.color = 'var(--oc-danger-ink)';
       src.innerHTML = '&#9888; <strong>No data cached for this estate.</strong> Go back to the home screen and download the next 24 hours while you have signal.';
     } else {
       const hrs = ocCacheAgeHours(ocCache);
       const cls = ocAgeClass(hrs);
       src.style.display = '';
-      if (cls === 'fresh') { src.style.background = '#f0f7f0'; src.style.borderColor = '#4caf70'; src.style.color = '#166a2a'; }
-      else if (cls === 'aging') { src.style.background = '#fff0e0'; src.style.borderColor = '#d45a00'; src.style.color = '#8a3300'; }
-      else { src.style.background = '#fde8e8'; src.style.borderColor = '#991b1b'; src.style.color = '#6b1212'; }
+      // Fresh and aging are status, so they take the accent palette. Stale
+      // stays red: data too old to fly on is a decision, not a note.
+      const accent = () => { src.style.background = 'var(--oc-accent-canvas)'; src.style.borderColor = 'var(--oc-accent-line)'; src.style.color = 'var(--oc-accent-ink)'; };
+      if (cls === 'fresh') accent();
+      else if (cls === 'aging') { src.style.background = 'var(--oc-accent-tint)'; src.style.borderColor = 'var(--oc-accent-line)'; src.style.color = 'var(--oc-accent-ink)'; }
+      else { src.style.background = 'var(--oc-danger-tint)'; src.style.borderColor = 'var(--oc-danger-strong)'; src.style.color = 'var(--oc-danger-ink)'; }
       src.innerHTML =
         `&#127780; Met Office DataHub &middot; &#9728; NOAA Kp &middot; NATS NOTAMs<br>` +
         `Cached ${ocAgeText(hrs)}` +
@@ -9336,7 +9346,8 @@ function ocTick(id, done) {
   if (!el) return;
   el.style.display = done ? 'inline-flex' : 'none';
   const body = el.closest('.card') && el.closest('.card').querySelector('.card-body');
-  if (body) body.style.background = done ? '#f0f7f0' : '';
+  // Completion is a status, so it takes the accent ground rather than green.
+  if (body) body.style.background = done ? 'var(--oc-accent-canvas)' : '';
 }
 
 function ocWeatherWorst() {
