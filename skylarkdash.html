@@ -1389,11 +1389,8 @@
     background:var(--oc-accent-btn); border:1.5px solid var(--oc-accent-strong);
     color:var(--oc-accent-ink);
   }
-  .oc-subcat-chip {
-    font-family:var(--mono); font-size:11px; font-weight:700;
-    padding:4px 9px; border-radius:5px; letter-spacing:.06em;
-    background:#ede9fe; border:1.5px solid #7c3aed; color:#4c1d95;
-  }
+  /* .oc-subcat-chip removed with the subcategory badge itself - the rule
+     had outlived its markup, and was the last violet in Open category. */
   .oc-source-note {
     margin-top:9px; border-radius:7px; padding:9px 13px;
     font-family:var(--mono); font-size:11px; line-height:1.55;
@@ -9069,7 +9066,10 @@ function ocRenderRules() {
   rules.forEach(r => { const b = ocEl('ocr-' + r.key); if (b) wasChecked[r.key] = b.checked; });
   if (host.dataset.subcat === ac.subcat && host.querySelector('.oc-rule')) return;
   host.dataset.subcat = ac.subcat;
-  const intro = `<div style="border-radius:8px;padding:11px 14px;margin-bottom:2px;font-family:var(--mono);font-size:11px;line-height:1.6;background:#ede9fe;border:1.5px solid #7c3aed;color:#4c1d95">${OC_SUBCAT_NOTE[ac.subcat]}</div>`;
+  // The last violet in the brief. It was on the "Skylark fetched this" ramp,
+  // but this note is not fetched data - it is the subcategory the airframe
+  // you picked puts you in, so it takes the accent like everything else.
+  const intro = `<div style="border-radius:8px;padding:11px 14px;margin-bottom:2px;font-family:var(--mono);font-size:11px;line-height:1.6;background:var(--oc-accent-canvas);border:1.5px solid var(--oc-accent-line);border-left:4px solid var(--oc-accent-strong);color:var(--oc-accent-ink)">${OC_SUBCAT_NOTE[ac.subcat]}</div>`;
   host.innerHTML = intro + rules.map(r => `
     <label class="oc-rule">
       <input type="checkbox" id="ocr-${r.key}"${wasChecked[r.key] ? ' checked' : ''} onchange="ocRefresh()">
