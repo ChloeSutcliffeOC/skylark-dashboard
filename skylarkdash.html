@@ -1150,6 +1150,7 @@
   /* Same three colours as a stage card, plus the stage's left bar so a
      primary action still has some weight at this lightness. */
   #panel-home .submit-btn,
+  #panel-open .submit-btn,
   #setup-card .submit-btn {
     background:var(--oc-accent-canvas); color:var(--oc-accent-ink);
     border:2px solid var(--oc-accent-line);
@@ -1157,6 +1158,7 @@
     padding:16px;
   }
   #panel-home .submit-btn:hover:not(:disabled),
+  #panel-open .submit-btn:hover:not(:disabled),
   #setup-card .submit-btn:hover:not(:disabled) { background:var(--oc-accent-tint); }
   #panel-home select:focus,
   #setup-card input:focus { border-color:var(--oc-accent-line); outline:none; }
@@ -1210,6 +1212,7 @@
      when you press it. Two tiers: the primary action is one shade up again.
      The red NOTAM button is deliberately outside all of this. */
   #panel-home .secondary-btn,
+  #panel-open .secondary-btn,
   #setup-card .secondary-btn {
     background:var(--oc-accent-btn);
     color:var(--oc-accent-deep);
@@ -1219,12 +1222,14 @@
     transition:background .12s, box-shadow .12s, transform .12s;
   }
   #panel-home .secondary-btn:hover,
+  #panel-open .secondary-btn:hover,
   #setup-card .secondary-btn:hover {
     background:var(--oc-accent-fill);
     border-color:var(--oc-accent-strong);
     color:var(--oc-accent-deep);
   }
   #panel-home .submit-btn,
+  #panel-open .submit-btn,
   #setup-card .submit-btn {
     background:var(--oc-accent-fill);
     border-color:var(--oc-accent-strong);
@@ -1233,11 +1238,14 @@
     font-weight:700;
   }
   #panel-home .submit-btn:hover:not(:disabled),
+  #panel-open .submit-btn:hover:not(:disabled),
   #setup-card .submit-btn:hover:not(:disabled) { background:var(--oc-accent-btn); }
   /* Pressed: the shadow collapses under the button. */
   #panel-home .secondary-btn:active,
+  #panel-open .secondary-btn:active,
   #setup-card .secondary-btn:active,
   #panel-home .submit-btn:active:not(:disabled),
+  #panel-open .submit-btn:active:not(:disabled),
   #setup-card .submit-btn:active:not(:disabled) {
     transform:translateY(2px);
     box-shadow:0 0 0 var(--oc-accent-strong);
@@ -1254,14 +1262,16 @@
   #panel-home .submit-btn.mamc-outlook:hover:not(:disabled) { background:var(--oc-accent-fill); }
   /* Preview and the no-Outlook fallback are neither the route to take first
      nor a decision, so they stay out of the accent entirely. */
-  #panel-home .secondary-btn.mamc-quiet {
+  #panel-home .secondary-btn.btn-quiet,
+  #panel-open .secondary-btn.btn-quiet {
     background:var(--surface2);
     color:var(--muted);
     border-color:var(--oc-line-mid, var(--border));
     box-shadow:0 2px 0 var(--border);
     font-weight:600;
   }
-  #panel-home .secondary-btn.mamc-quiet:hover {
+  #panel-home .secondary-btn.btn-quiet:hover,
+  #panel-open .secondary-btn.btn-quiet:hover {
     background:#e9e9ec; color:#000; border-color:#9a9aa2;
   }
 
@@ -1705,12 +1715,12 @@
                the three together are the area the notification describes. -->
           <div class="three-col">
             <div>
-              <div class="field-label auto-label">Centre</div>
-              <input type="text" id="mamc-centre" placeholder="from the site data" oninput="mamcRefresh()" onchange="mamcOnCentreBlur()" onblur="mamcOnCentreBlur()">
+              <div class="field-label">Centre</div>
+              <input type="text" id="mamc-centre" placeholder="pick it on the map" oninput="mamcRefresh()" onchange="mamcOnCentreBlur()" onblur="mamcOnCentreBlur()">
             </div>
             <div>
               <div class="field-label">what3words</div>
-              <input type="text" id="mamc-w3w" placeholder="what.three.words" oninput="mamcOnW3wInput()">
+              <input type="text" id="mamc-w3w" placeholder="///what.three.words" oninput="mamcOnW3wInput()">
             </div>
             <div>
               <div class="field-label">Radius (nm)</div>
@@ -1793,8 +1803,8 @@
             <textarea id="mamc-copytext" readonly style="min-height:150px;font-family:var(--mono);font-size:12px"></textarea>
           </div>
 
-          <button class="secondary-btn mamc-quiet" type="button" style="margin:0" onclick="mamcTogglePreview()">Preview</button>
-          <button class="secondary-btn mamc-quiet" type="button" style="margin:0;font-size:11px" onclick="mamcOpenDefaultMail()">No Outlook on this device? Open the default mail app</button>
+          <button class="secondary-btn btn-quiet" type="button" style="margin:0" onclick="mamcTogglePreview()">Preview</button>
+          <button class="secondary-btn btn-quiet" type="button" style="margin:0;font-size:11px" onclick="mamcOpenDefaultMail()">No Outlook on this device? Open the default mail app</button>
           <pre class="json-preview" id="mamc-preview"></pre>
         </div>
       </div>
@@ -2161,7 +2171,7 @@
 
       <div id="oc-occurrence-warn" style="display:none;border-radius:8px;padding:12px 15px;font-family:var(--mono);font-size:11px;line-height:1.65;background:#fde8e8;border:2px solid #991b1b;color:#6b1212">
         &#9888; If this was an <strong>incident, accident or airprox</strong>, the note is not enough.
-        Tell the UAS operator as soon as you can. A mandatory occurrence report goes to ECCAIRS2 within 72 hours;
+        Tell the <strong>Accountable Manager (Doris)</strong> as soon as you can. A mandatory occurrence report goes to ECCAIRS2 within 72 hours;
         an airprox goes to the Airprox Board within 7 days. Section 2.16 of the operations manual has the detail.
       </div>
     </div>
@@ -2174,8 +2184,8 @@
       <div id="oc-completion-banner" style="display:none;padding:12px 16px;border-radius:8px;font-family:var(--mono);font-size:12px;line-height:1.6"></div>
       <div id="oc-submit-info" class="info-bar"></div>
       <button id="oc-submit-btn" class="submit-btn" type="button" onclick="ocSave()">Save Flight Record</button>
-      <button class="secondary-btn" type="button" onclick="ocDownload()" style="margin-top:4px">Download JSON</button>
-      <button class="secondary-btn" type="button" onclick="ocPreviewJson()">Preview JSON</button>
+      <button class="secondary-btn btn-quiet" type="button" onclick="ocDownload()" style="margin-top:4px">Download JSON</button>
+      <button class="secondary-btn btn-quiet" type="button" onclick="ocPreviewJson()">Preview JSON</button>
       <pre class="json-preview" id="oc-json-preview"></pre>
     </div>
   </div>
@@ -9531,17 +9541,32 @@ function ocClearWxOverride() {
 // ══════════════════════════════════════════════════════
 // TOGGLES, TICKS AND THE DECISION
 // ══════════════════════════════════════════════════════
+// Yes is normally the good answer and No the bad one, so Yes goes green and
+// No red. "Did anything happen you need to report?" inverts that: Nothing to
+// Report is the clean outcome, and a Yes is not a failure - it is a borderline
+// thing to write up - so it takes the amber the other borderline answers use.
+const OC_TOGGLE_TONE = {
+  'oc-issues': { Yes: 'sel-borderline', No: 'sel-green' },
+};
+const OC_TOGGLE_CLASSES = ['sel-yes', 'sel-no', 'sel-green', 'sel-borderline'];
+
+function ocToggleClass(key, value) {
+  const tone = OC_TOGGLE_TONE[key];
+  if (tone && tone[value]) return tone[value];
+  return value === 'Yes' ? 'sel-yes' : 'sel-no';
+}
+
 function ocSetToggle(key, value, btn) {
-  if (btn.classList.contains('sel-yes') || btn.classList.contains('sel-no')) {
+  if (OC_TOGGLE_CLASSES.some(c => btn.classList.contains(c))) {
     ocToggleState[key] = '';
-    btn.classList.remove('sel-yes', 'sel-no');
+    btn.classList.remove(...OC_TOGGLE_CLASSES);
     ocRefresh();
     return;
   }
   ocToggleState[key] = value;
   const group = btn.closest('.toggle-group');
-  if (group) group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('sel-yes', 'sel-no'));
-  btn.classList.add(value === 'Yes' ? 'sel-yes' : 'sel-no');
+  if (group) group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove(...OC_TOGGLE_CLASSES));
+  btn.classList.add(ocToggleClass(key, value));
   ocRefresh();
 }
 const ocGetToggle = key => ocToggleState[key] || '';
@@ -10682,30 +10707,31 @@ function mamcOnW3wInput() {
 function mamcRefresh() {
   mamcSaveContact();
 
-  // Estate centre and what3words, straight from the site data, unless they
-  // have been typed over. `what3words` is read from staticdata.json; an
-  // estate without one just leaves the field empty to be filled by hand.
+  // Centre and what3words start blank and stay blank until the pilot sets
+  // them. They used to be pre-filled from the estate's stored coordinate,
+  // which for most estates is derived from a postcode rather than the
+  // boundary - a plausible-looking wrong answer sitting in the field a crew
+  // will fly to. An empty field asks to be filled; a wrong one does not.
   const estate = ocVal('mamc-estate');
   const e = (typeof estatesData === 'object' && estatesData[estate]) || {};
   const cEl = ocEl('mamc-centre');
-  // A change of estate throws away anything the what3words lookup filled in -
-  // a coordinate from the last estate's square is worse than no coordinate.
-  // Anything typed by hand is left alone, as it always was.
+  const wEl = ocEl('mamc-w3w');
+  // A change of estate clears both, whatever put them there. A coordinate
+  // from the last estate is worse than no coordinate at all.
   if (estate && estate !== mamcLastEstate) {
     mamcLastEstate = estate;
     mamcW3wLast = '';
     mamcW3wStatus('');
-    const wE = ocEl('mamc-w3w');
-    if (cEl && cEl.dataset.fromW3w) { delete cEl.dataset.touched; delete cEl.dataset.fromW3w; }
-    if (wE  && wE.dataset.fromW3w)  { delete wE.dataset.touched;  delete wE.dataset.fromW3w; }
-  }
-  if (cEl && estate && !cEl.dataset.touched) {
-    const lat = parseFloat(e.lat), lon = parseFloat(e.lon);
-    cEl.value = (!isNaN(lat) && !isNaN(lon)) ? mamcDms(lat, lon) : '';
-  }
-  const wEl = ocEl('mamc-w3w');
-  if (wEl && estate && !wEl.dataset.touched) {
-    wEl.value = String(e.what3words || e.w3w || '').replace(/^\/+/, '');
+    [cEl, wEl].forEach(el => {
+      if (!el) return;
+      el.value = '';
+      delete el.dataset.touched;
+      delete el.dataset.fromW3w;
+      delete el.dataset.lat;
+      delete el.dataset.lon;
+      delete el.dataset.exactFor;
+    });
+    mamcW3wBtnLabel();
   }
   // Per-estate radius from the site data when there is one, so an estate
   // that needs 4 nm does not get 2 nm by default every time.
